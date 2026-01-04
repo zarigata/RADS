@@ -1,0 +1,1 @@
+bash: ./rads: No such file or directory

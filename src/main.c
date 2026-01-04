@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "lexer.h"
+#include "parser.h"
+#include "interpreter.h"
 
 void print_usage() {
     printf("RADS Programming Language v0.1.0-alpha\n");
@@ -104,15 +106,38 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
-    // For now, we only have the lexer implemented
+    // Lexer test mode
     if (token_mode) {
         test_lexer(source);
-    } else {
-        printf("RADS compiler is under construction! 🚧\n");
-        printf("Currently only lexer is implemented.\n");
-        printf("Use -t flag to see tokenization output.\n");
+        free(source);
+        return 0;
     }
     
+    // Normal execution mode
+    printf("🚀 RADS v0.1.0-alpha\n");
+    printf("Executing: %s\n\n", filename);
+    
+    // Tokenize
+    Lexer lexer;
+    lexer_init(&lexer, source);
+    
+    // Parse
+    Parser parser;
+    parser_init(&parser, &lexer);
+    ASTNode* program = parser_parse(&parser);
+    
+    if (program == NULL) {
+        fprintf(stderr, "\n❌ Compilation failed\n");
+        free(source);
+        return 1;
+    }
+    
+    // Interpret
+    int result = interpret(program);
+    
+    // Cleanup
+    ast_free(program);
     free(source);
-    return 0;
+    
+    return result;
 }

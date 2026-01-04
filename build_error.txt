@@ -1,0 +1,32 @@
+src/ast.c: In function ‘type_info_create’:
+src/ast.c:37:18: error: implicit declaration of function ‘strdup’; did you mean ‘strcmp’? [-Wimplicit-function-declaration]
+   37 |     type->name = strdup(name);
+      |                  ^~~~~~
+      |                  strcmp
+src/ast.c:37:16: error: assignment to ‘char *’ from ‘int’ makes pointer from integer without a cast [-Wint-conversion]
+   37 |     type->name = strdup(name);
+      |                ^
+src/ast.c: In function ‘ast_create_string’:
+src/ast.c:74:32: error: assignment to ‘char *’ from ‘int’ makes pointer from integer without a cast [-Wint-conversion]
+   74 |     node->string_literal.value = strdup(value);
+      |                                ^
+src/ast.c: In function ‘ast_create_identifier’:
+src/ast.c:92:27: error: assignment to ‘char *’ from ‘int’ makes pointer from integer without a cast [-Wint-conversion]
+   92 |     node->identifier.name = strdup(name);
+      |                           ^
+src/ast.c: In function ‘ast_create_function_decl’:
+src/ast.c:122:30: error: assignment to ‘char *’ from ‘int’ makes pointer from integer without a cast [-Wint-conversion]
+  122 |     node->function_decl.name = strdup(name);
+      |                              ^
+src/ast.c: In function ‘ast_create_variable_decl’:
+src/ast.c:135:30: error: assignment to ‘char *’ from ‘int’ makes pointer from integer without a cast [-Wint-conversion]
+  135 |     node->variable_decl.name = strdup(name);
+      |                              ^
+src/interpreter.c: In function ‘make_string’:
+src/interpreter.c:37:20: error: implicit declaration of function ‘strdup’; did you mean ‘strcmp’? [-Wimplicit-function-declaration]
+   37 |     v.string_val = strdup(val);
+      |                    ^~~~~~
+      |                    strcmp
+src/interpreter.c:37:18: error: assignment to ‘char *’ from ‘int’ makes pointer from integer without a cast [-Wint-conversion]
+   37 |     v.string_val = strdup(val);
+      |                  ^
