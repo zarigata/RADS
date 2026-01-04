@@ -1,0 +1,18 @@
+# Build artifacts
+build/
+rads
+*.o
+*.rbc
+
+# Temporary files
+*.tmp
+*.log
+output.txt
+output2.txt
+build_error.txt
+build2_error.txt
+build_and_test.sh
+
+# System files
+.DS_Store
+Thumbs.db
