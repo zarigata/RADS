@@ -1,7 +1,12 @@
-mkdir -p build
-gcc -Wall -Wextra -std=c11 -O2 -c src/main.c -o build/main.o
-src/main.c: In function ‘main’:
-src/main.c:140:18: error: implicit declaration of function ‘interpret’ [-Wimplicit-function-declaration]
-  140 |     int result = interpret(program);
-      |                  ^~~~~~~~~
-make: *** [Makefile:23: build/main.o] Error 1
+src/interpreter.c: In function ‘eval_call’:
+src/interpreter.c:212:13: error: implicit declaration of function ‘exec_statement’ [-Wimplicit-function-declaration]
+  212 |             exec_statement(func->function_decl.body);
+      |             ^~~~~~~~~~~~~~
+src/interpreter.c: At top level:
+src/interpreter.c:313:13: warning: conflicting types for ‘exec_statement’; have ‘void(ASTNode *)’
+  313 | static void exec_statement(ASTNode* node) {
+      |             ^~~~~~~~~~~~~~
+src/interpreter.c:313:13: error: static declaration of ‘exec_statement’ follows non-static declaration
+src/interpreter.c:212:13: note: previous implicit declaration of ‘exec_statement’ with type ‘void(ASTNode *)’
+  212 |             exec_statement(func->function_decl.body);
+      |             ^~~~~~~~~~~~~~

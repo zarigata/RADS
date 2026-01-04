@@ -1,0 +1,14 @@
+#!/bin/bash
+# RADS-Convert Wrapper Script
+# Usage: ./rads-convert [args]
+
+BINARY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RADS_BIN="$BINARY_DIR/rads"
+SCRIPT_PATH="$BINARY_DIR/tools/rads-convert/rads-convert.rads"
+
+if [ ! -f "$RADS_BIN" ]; then
+    echo "⚠️ Error: rads binary not found. Please run 'make' first."
+    exit 1
+fi
+
+"$RADS_BIN" "$SCRIPT_PATH" "$@"

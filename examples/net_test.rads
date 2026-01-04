@@ -1,0 +1,18 @@
+// Basic Server Test
+blast home_page() {
+    echo("🏠 Home page handler triggered!");
+}
+
+blast main() {
+    echo("🚀 Initializing RADS Net Stack...");
+    
+    turbo server = net.http_server("127.0.0.1", 8080);
+    
+    echo("Mapping route / to home_page");
+    net.route(server, "/", home_page);
+    
+    echo("Starting server...");
+    net.serve(server);
+    
+    echo("✅ Network test complete!");
+}

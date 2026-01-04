@@ -5,6 +5,9 @@
 #include "parser.h"
 #include "interpreter.h"
 #include "stdlib_io.h"
+#include "stdlib_media.h"
+#include "stdlib_net.h"
+#include "stdlib_ffi.h"
 
 void print_usage() {
     printf("RADS Programming Language v0.1.0-alpha\n");
@@ -120,6 +123,9 @@ int main(int argc, char* argv[]) {
     
     // Initialize standard library
     stdlib_io_register();
+    stdlib_media_register();
+    stdlib_net_register();
+    stdlib_ffi_register();
     
     // Tokenize
     Lexer lexer;

@@ -9,7 +9,8 @@ typedef enum {
     VAL_BOOL,
     VAL_INT,
     VAL_FLOAT,
-    VAL_STRING
+    VAL_STRING,
+    VAL_FUNCTION
 } ValueType;
 
 typedef struct {
@@ -19,6 +20,7 @@ typedef struct {
         long long int_val;
         double float_val;
         char* string_val;
+        ASTNode* func_node;
     };
 } Value;
 

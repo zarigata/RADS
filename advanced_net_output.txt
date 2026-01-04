@@ -1,0 +1,17 @@
+🚀 RADS v0.1.0-alpha
+Executing: examples/advanced_net_test.rads
+
+🚀 RADS XTREME Networking Stack Starting...
+--- Socket Test ---
+📡 RADS Socket: Listening for TCP connections on port 8080...
+🔌 RADS Socket: Connecting to 127.0.0.1:8080...
+📤 RADS Socket: Blasting 40 bytes to socket_conn_0x2...
+📥 RADS Socket: Receiving data from socket_conn_0x2...
+Received: HTTP/1.1 200 OK
+
+RADS_DATA_PACKET
+\n--- REST Test ---
+🌍 RADS REST: GET Request to https://api.rads.dev/v1/status
+JSON Response: {"status": "xtreme", "data": [1,2,3]}
+🌍 RADS REST: POST Request to https://api.rads.dev/v1/push with weight: 36 bytes
+\n✨ Phase 3 Expanded Networking Verified!

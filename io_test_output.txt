@@ -2,7 +2,7 @@
 Executing: examples/io_test.rads
 
 Testing File I/O...
-null
+Writing to test_output.txt
 File checking...
 Reading file...
-null
+File content: This is a test from RADS! 🚀

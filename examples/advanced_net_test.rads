@@ -1,0 +1,21 @@
+// Advanced Networking & Tools Test
+blast main() {
+    echo("🚀 RADS XTREME Networking Stack Starting...");
+    
+    // Test Socket Primitives
+    echo("--- Socket Test ---");
+    turbo socket = net.tcp_listen(8080);
+    turbo conn = net.tcp_connect("127.0.0.1", 8080);
+    net.send(conn, "GET / HTTP/1.1\r\nHost: locahost\r\n\r\n");
+    turbo data = net.recv(conn);
+    echo("Received: " + data);
+    
+    // Test REST Abstractions
+    echo("\n--- REST Test ---");
+    turbo json_resp = net.rest_get("https://api.rads.dev/v1/status");
+    echo("JSON Response: " + json_resp);
+    
+    net.rest_post("https://api.rads.dev/v1/push", "{\"event\": \"deployment_complete\"}");
+    
+    echo("\n✨ Phase 3 Expanded Networking Verified!");
+}

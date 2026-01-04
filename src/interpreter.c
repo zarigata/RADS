@@ -56,6 +56,9 @@ void value_print(Value* value) {
         case VAL_STRING:
             printf("%s", value->string_val);
             break;
+        case VAL_FUNCTION:
+            printf("<blast function %s>", value->func_node->function_decl.name);
+            break;
     }
 }
 
@@ -63,6 +66,76 @@ void value_free(Value* value) {
     if (value->type == VAL_STRING) {
         free(value->string_val);
     }
+}
+
+// Environment (Variables)
+typedef struct Environment {
+    char* name;
+    Value value;
+    struct Environment* next;
+} Environment;
+
+static Environment* global_env = NULL;
+
+static void env_set(const char* name, Value value) {
+    // Check existing
+    Environment* current = global_env;
+    while (current) {
+        if (strcmp(current->name, name) == 0) {
+            value_free(&current->value); // Free old value
+            current->value = value;
+            // Deep copy string if needed? Value semantics usually mean ownership transfer or copy
+            // Here assuming value copy
+            if (value.type == VAL_STRING) {
+                current->value.string_val = strdup(value.string_val); // Copy for storage
+            } else if (value.type == VAL_FUNCTION) {
+                current->value.func_node = value.func_node;
+            }
+            return;
+        }
+        current = current->next;
+    }
+    
+    // Create new
+    Environment* env = malloc(sizeof(Environment));
+    env->name = strdup(name);
+    env->value = value;
+     if (value.type == VAL_STRING) {
+        env->value.string_val = strdup(value.string_val);
+    } else if (value.type == VAL_FUNCTION) {
+        env->value.func_node = value.func_node;
+    }
+    env->next = global_env;
+    global_env = env;
+}
+
+static Value env_get(const char* name) {
+    Environment* current = global_env;
+    while (current) {
+        if (strcmp(current->name, name) == 0) {
+            Value v = current->value;
+            // Return copy
+            if (v.type == VAL_STRING) {
+                v.string_val = strdup(v.string_val);
+            }
+            // Functions are nodes, we assume they live as long as the AST
+            return v;
+        }
+        current = current->next;
+    }
+    return make_null();
+}
+
+static void env_free() {
+    Environment* current = global_env;
+    while (current) {
+        Environment* next = current->next;
+        free(current->name);
+        value_free(&current->value);
+        free(current);
+        current = next;
+    }
+    global_env = NULL;
 }
 
 // Native function registry
@@ -93,8 +166,10 @@ static NativeFn find_native(const char* name) {
     return NULL;
 }
 
-// Forward declaration
+// Forward declarations
 static Value eval_expression(ASTNode* node);
+static void exec_statement(ASTNode* node);
+static void exec_function(ASTNode* node);
 
 // Evaluate call expression
 static Value eval_call(ASTNode* node) {
@@ -141,6 +216,20 @@ static Value eval_call(ASTNode* node) {
             if (full_name) free(full_name);
             return result;
         }
+        
+        // Check for user function in environment
+        Value func_val = env_get(name);
+        if (func_val.type == VAL_FUNCTION) {
+            ASTNode* func = func_val.func_node;
+            // Simplified execution: no args for now in prototype user calls
+            // Real version would set up scope and params
+            exec_statement(func->function_decl.body);
+            value_free(&func_val);
+            if (full_name) free(full_name);
+            return make_null(); 
+        }
+        value_free(&func_val);
+
         if (full_name) free(full_name);
     }
     
@@ -217,6 +306,9 @@ static Value eval_expression(ASTNode* node) {
             
         case AST_CALL_EXPR:
             return eval_call(node);
+            
+        case AST_IDENTIFIER:
+            return env_get(node->identifier.name);
         
         default:
             return make_null();
@@ -245,18 +337,37 @@ static void exec_statement(ASTNode* node) {
                 exec_statement(node->block.statements->nodes[i]);
             }
             break;
+            
+        case AST_VARIABLE_DECL: {
+            Value val = make_null();
+            if (node->variable_decl.initializer) {
+                val = eval_expression(node->variable_decl.initializer);
+            }
+            // If default initialization is needed for types, handle here. 
+            // For now default is null if no init.
+            
+            env_set(node->variable_decl.name, val);
+            value_free(&val); // env_set makes a copy
+            break;
+        }
         
         default:
-            // Ignore other statements for now
+            // For other nodes (like AST_CALL_EXPR used as expression statements), evaluate and free
+            {
+                Value v = eval_expression(node);
+                value_free(&v);
+            }
             break;
     }
 }
 
 // Execute function
 static void exec_function(ASTNode* node) {
-    if (strcmp(node->function_decl.name, "main") == 0) {
-        exec_statement(node->function_decl.body);
-    }
+    // Store in environment for lookup (including as first-class values)
+    Value v;
+    v.type = VAL_FUNCTION;
+    v.func_node = node;
+    env_set(node->function_decl.name, v);
 }
 
 // Main interpreter
@@ -266,7 +377,7 @@ int interpret(ASTNode* program) {
         return 1;
     }
     
-    // Find and execute main function
+    // Pass 1: Register all functions
     for (size_t i = 0; i < program->program.declarations->count; i++) {
         ASTNode* decl = program->program.declarations->nodes[i];
         if (decl->type == AST_FUNCTION_DECL) {
@@ -274,5 +385,23 @@ int interpret(ASTNode* program) {
         }
     }
     
+    // Pass 2: Execute main function if it exists
+    Value main_val = env_get("main");
+    if (main_val.type == VAL_FUNCTION) {
+        exec_statement(main_val.func_node->function_decl.body);
+        value_free(&main_val);
+    } else {
+        // Fallback: search declarations (legacy)
+        for (size_t i = 0; i < program->program.declarations->count; i++) {
+            ASTNode* decl = program->program.declarations->nodes[i];
+            if (decl->type == AST_FUNCTION_DECL && strcmp(decl->function_decl.name, "main") == 0) {
+                exec_statement(decl->function_decl.body);
+                break;
+            }
+        }
+    }
+    
+    
+    env_free();
     return 0;
 }

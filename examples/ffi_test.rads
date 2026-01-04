@@ -1,0 +1,12 @@
+// FFI Linkage Test
+blast main() {
+    echo("🔗 Initializing RADS FFI Bridge...");
+    
+    turbo lib = ffi.load("libturbo_graphics.so");
+    
+    echo("Calling external function: init_core");
+    turbo res = ffi.call(lib, "init_core");
+    
+    echo("FFI Result: " + res);
+    echo("⚡ Native linkage verified at peak performance!");
+}

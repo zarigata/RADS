@@ -1,0 +1,20 @@
+// Media Engine Test
+blast main() {
+    echo("🚀 RADS Media Engine Starting...");
+    
+    turbo str image_file = "cool_design.png";
+    turbo str audio_file = "nu_metal_track.mp3";
+    
+    echo("Checking Image: " + image_file);
+    turbo str img_info = media.image_info(image_file);
+    echo("Result: " + img_info);
+    
+    echo("Checking Audio: " + audio_file);
+    turbo str aud_info = media.audio_info(audio_file);
+    echo("Result: " + aud_info);
+    
+    echo("Starting Conversion Process...");
+    media.convert(audio_file, "ogg");
+    
+    echo("✨ Media processing complete!");
+}

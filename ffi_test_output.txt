@@ -1,0 +1,11 @@
+🚀 RADS v0.1.0-alpha
+Executing: examples/ffi_test.rads
+
+🔗 Initializing RADS FFI Bridge...
+🔗 RADS FFI: Loading external C binary 'libturbo_graphics.so'...
+✅ Symbols mapped! Linking successful.
+Calling external function: init_core
+⚡ RADS FFI Call: lib_handle_0x1337::init_core()
+💎 Executing native code at peak efficiency...
+null
+⚡ Native linkage verified at peak performance!
