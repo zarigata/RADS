@@ -1,0 +1,7 @@
+mkdir -p build
+gcc -Wall -Wextra -std=c11 -O2 -c src/main.c -o build/main.o
+src/main.c: In function ‘main’:
+src/main.c:140:18: error: implicit declaration of function ‘interpret’ [-Wimplicit-function-declaration]
+  140 |     int result = interpret(program);
+      |                  ^~~~~~~~~
+make: *** [Makefile:23: build/main.o] Error 1

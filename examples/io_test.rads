@@ -1,0 +1,22 @@
+// IO Test
+blast main() {
+    echo("Testing File I/O...");
+    
+    // Write file
+    turbo str filename = "test_output.txt";
+    turbo str content = "This is a test from RADS! 🚀";
+    
+    echo("Writing to " + filename);
+    turbo bool success = io.write_file(filename, content);
+    
+    // Check existence
+    turbo bool exist = io.file_exists(filename);
+    echo("File checking...");
+    
+    // Read file
+    echo("Reading file...");
+    turbo str read_content = io.read_file(filename);
+    
+    echo("File content: " + read_content);
+    
+}

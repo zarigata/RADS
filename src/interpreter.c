@@ -65,8 +65,88 @@ void value_free(Value* value) {
     }
 }
 
+// Native function registry
+typedef struct NativeBinding {
+    char* name;
+    NativeFn fn;
+    struct NativeBinding* next;
+} NativeBinding;
+
+static NativeBinding* native_functions = NULL;
+
+void register_native(const char* name, NativeFn fn) {
+    NativeBinding* binding = malloc(sizeof(NativeBinding));
+    binding->name = strdup(name);
+    binding->fn = fn;
+    binding->next = native_functions;
+    native_functions = binding;
+}
+
+static NativeFn find_native(const char* name) {
+    NativeBinding* current = native_functions;
+    while (current) {
+        if (strcmp(current->name, name) == 0) {
+            return current->fn;
+        }
+        current = current->next;
+    }
+    return NULL;
+}
+
 // Forward declaration
 static Value eval_expression(ASTNode* node);
+
+// Evaluate call expression
+static Value eval_call(ASTNode* node) {
+    // For now, only support calling global native functions or simple function calls
+    // Real implementation would need full environment/scope support
+    
+    char* name = NULL;
+    char* full_name = NULL;
+    
+    if (node->call_expr.callee->type == AST_IDENTIFIER) {
+        name = node->call_expr.callee->identifier.name;
+    } else if (node->call_expr.callee->type == AST_MEMBER_EXPR) {
+        ASTNode* obj = node->call_expr.callee->member_expr.object;
+        if (obj->type == AST_IDENTIFIER) {
+            char* obj_name = obj->identifier.name;
+            char* member = node->call_expr.callee->member_expr.member;
+            
+            // Construct "obj.member"
+            int len = strlen(obj_name) + 1 + strlen(member) + 1;
+            full_name = malloc(len);
+            sprintf(full_name, "%s.%s", obj_name, member);
+            name = full_name;
+        }
+    }
+    
+    if (name) {
+        // Check for native function
+        NativeFn native = find_native(name);
+        if (native) {
+             int argc = node->call_expr.arguments->count;
+            Value* args = malloc(sizeof(Value) * argc);
+            
+            for (int i = 0; i < argc; i++) {
+                args[i] = eval_expression(node->call_expr.arguments->nodes[i]);
+            }
+            
+            Value result = native(NULL, argc, args);
+            
+            // Cleanup args
+            for (int i = 0; i < argc; i++) {
+                value_free(&args[i]);
+            }
+            free(args);
+            if (full_name) free(full_name);
+            return result;
+        }
+        if (full_name) free(full_name);
+    }
+    
+    // Fallback for user functions (not fully implemented in this prototype)
+    return make_null();
+}
 
 // Evaluate binary operation
 static Value eval_binary_op(ASTNode* node) {
@@ -134,6 +214,9 @@ static Value eval_expression(ASTNode* node) {
         
         case AST_BINARY_OP:
             return eval_binary_op(node);
+            
+        case AST_CALL_EXPR:
+            return eval_call(node);
         
         default:
             return make_null();

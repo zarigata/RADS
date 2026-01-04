@@ -184,7 +184,7 @@ static TokenType identifier_type(Lexer* lexer) {
                 switch (lexer->start[1]) {
                     case '3': return check_keyword(lexer, 2, 1, "2", TOKEN_I32);
                     case '6': return check_keyword(lexer, 2, 1, "4", TOKEN_I64);
-                    case 'f': return TOKEN_IF;
+                    case 'f': return check_keyword(lexer, 2, 0, "", TOKEN_IF);
                     case 'm': return check_keyword(lexer, 2, 4, "port", TOKEN_IMPORT);
                 }
             }

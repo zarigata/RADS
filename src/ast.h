@@ -236,6 +236,7 @@ ASTNode* ast_create_loop(ASTNode* condition, ASTNode* body, int line, int column
 ASTNode* ast_create_echo(ASTNode* expression, int line, int column);
 ASTNode* ast_create_block(ASTList* statements, int line, int column);
 ASTNode* ast_create_call(ASTNode* callee, ASTList* arguments, int line, int column);
+ASTNode* ast_create_member_expr(ASTNode* object, const char* member, int line, int column);
 ASTNode* ast_create_assign(ASTNode* target, ASTNode* value, int line, int column);
 ASTNode* ast_create_program(ASTList* declarations);
 

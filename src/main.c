@@ -4,6 +4,7 @@
 #include "lexer.h"
 #include "parser.h"
 #include "interpreter.h"
+#include "stdlib_io.h"
 
 void print_usage() {
     printf("RADS Programming Language v0.1.0-alpha\n");
@@ -116,6 +117,9 @@ int main(int argc, char* argv[]) {
     // Normal execution mode
     printf("🚀 RADS v0.1.0-alpha\n");
     printf("Executing: %s\n\n", filename);
+    
+    // Initialize standard library
+    stdlib_io_register();
     
     // Tokenize
     Lexer lexer;

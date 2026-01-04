@@ -27,4 +27,16 @@ int interpret(ASTNode* program);
 void value_print(Value* value);
 void value_free(Value* value);
 
+// Native function type
+struct Interpreter; // Forward decl
+typedef Value (*NativeFn)(struct Interpreter* interp, int argc, Value* args);
+
+// Function types
+typedef enum {
+    FUNC_USER,
+    FUNC_NATIVE
+} FunctionType;
+
+void register_native(const char* name, NativeFn fn);
+
 #endif // RADS_INTERPRETER_H

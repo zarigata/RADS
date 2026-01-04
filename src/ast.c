@@ -208,6 +208,16 @@ ASTNode* ast_create_assign(ASTNode* target, ASTNode* value, int line, int column
     return node;
 }
 
+ASTNode* ast_create_member_expr(ASTNode* object, const char* member, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_MEMBER_EXPR;
+    node->line = line;
+    node->column = column;
+    node->member_expr.object = object;
+    node->member_expr.member = strdup(member);
+    return node;
+}
+
 ASTNode* ast_create_program(ASTList* declarations) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_PROGRAM;

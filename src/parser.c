@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include "parser.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -133,6 +134,13 @@ static ASTNode* parse_call(Parser* parser) {
             
             consume(parser, TOKEN_RIGHT_PAREN, "Expected ')' after arguments");
             expr = ast_create_call(expr, args, parser->previous.line, parser->previous.column);
+        } else if (match(parser, TOKEN_DOT)) {
+            consume(parser, TOKEN_IDENTIFIER, "Expected property name after '.'");
+            char* name = malloc(parser->previous.length + 1);
+            memcpy(name, parser->previous.start, parser->previous.length);
+            name[parser->previous.length] = '\0';
+            expr = ast_create_member_expr(expr, name, parser->previous.line, parser->previous.column);
+            free(name);
         } else {
             break;
         }
@@ -188,20 +196,52 @@ static ASTNode* parse_block(Parser* parser) {
     return ast_create_block(statements, line, column);
 }
 
-// Parse statement
-static ASTNode* parse_statement(Parser* parser) {
-    if (match(parser, TOKEN_ECHO)) {
-        return parse_echo_statement(parser);
+// Parse variable declaration
+static ASTNode* parse_variable(Parser* parser) {
+    int line = parser->previous.line;
+    int column = parser->previous.column;
+    bool is_turbo = (parser->previous.type == TOKEN_TURBO);
+    
+    TypeInfo* type = NULL;
+    
+    // Check for type if not just 'turbo' used as inference (optional feature, for now explicit types)
+    // If turbo is used, we might still expect a type or inference
+    // Simplified: turbo <type> <name> = <value>; OR <type> <name> = <value>;
+    
+    if (is_turbo) {
+        // Consume type
+        if (match(parser, TOKEN_I32) || match(parser, TOKEN_STR) || match(parser, TOKEN_BOOL)) {
+             // Basic types
+             char* type_name = strdup(token_type_to_string(parser->previous.type));
+             type = type_info_create(type_name, false, true);
+             free(type_name);
+        } else {
+             // Implicit type or identifier type
+             // For now assume explicit type required
+        }
+    } else {
+         // Non-turbo type (already consumed by caller?)
+         // We need to handle this in parse_declaration
+         char* type_name = strdup(token_type_to_string(parser->previous.type));
+         type = type_info_create(type_name, false, false);
+         free(type_name);
     }
     
-    if (match(parser, TOKEN_LEFT_BRACE)) {
-        return parse_block(parser);
+    consume(parser, TOKEN_IDENTIFIER, "Expected variable name");
+    char* name = malloc(parser->previous.length + 1);
+    memcpy(name, parser->previous.start, parser->previous.length);
+    name[parser->previous.length] = '\0';
+    
+    ASTNode* initializer = NULL;
+    if (match(parser, TOKEN_EQUAL)) {
+        initializer = parse_expression(parser);
     }
     
-    // Expression statement
-    ASTNode* expr = parse_expression(parser);
-    consume(parser, TOKEN_SEMICOLON, "Expected ';' after expression");
-    return expr;
+    consume(parser, TOKEN_SEMICOLON, "Expected ';' after variable declaration");
+    
+    ASTNode* node = ast_create_variable_decl(name, type, initializer, is_turbo, line, column);
+    free(name);
+    return node;
 }
 
 // Parse function declaration
@@ -241,7 +281,47 @@ static ASTNode* parse_declaration(Parser* parser) {
         return parse_function(parser);
     }
     
+    // Statements (including variable decls inside blocks, but here we are at top level?)
+    // Actually RADS allows top level vars? Maybe.
+    // For blocks, we use parse_statement.
+    
+    // Let's handle statements
     return parse_statement(parser);
+}
+
+// Parse statement
+static ASTNode* parse_statement(Parser* parser) {
+    if (match(parser, TOKEN_ECHO)) {
+        return parse_echo_statement(parser);
+    }
+    
+    if (match(parser, TOKEN_LEFT_BRACE)) {
+        return parse_block(parser);
+    }
+    
+    if (match(parser, TOKEN_IF)) {
+        int line = parser->previous.line;
+        int column = parser->previous.column;
+        consume(parser, TOKEN_LEFT_PAREN, "Expected '(' after 'if'");
+        ASTNode* condition = parse_expression(parser);
+        consume(parser, TOKEN_RIGHT_PAREN, "Expected ')' after condition");
+        ASTNode* then_branch = parse_statement(parser);
+        ASTNode* else_branch = NULL;
+        if (match(parser, TOKEN_ELSE)) {
+            else_branch = parse_statement(parser);
+        }
+        return ast_create_if(condition, then_branch, else_branch, line, column);
+    }
+    
+    // Variable declaration checks
+    if (match(parser, TOKEN_TURBO) || match(parser, TOKEN_STR) || match(parser, TOKEN_I32) || match(parser, TOKEN_BOOL)) {
+        return parse_variable(parser);
+    }
+    
+    // Expression statement
+    ASTNode* expr = parse_expression(parser);
+    consume(parser, TOKEN_SEMICOLON, "Expected ';' after expression");
+    return expr;
 }
 
 // Initialize parser
