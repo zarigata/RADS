@@ -39,12 +39,16 @@ clean:
 # Install (copy to /usr/local/bin)
 install: $(TARGET)
 	install -m 755 $(TARGET) /usr/local/bin/
-	@echo "✅ RADS installed to /usr/local/bin/"
+	# Build rpm before install if it doesn't exist
+	gcc -D_POSIX_C_SOURCE=200809L -Isrc tools/rpm/rpm.c -o tools/rpm/rpm
+	install -m 755 tools/rpm/rpm /usr/local/bin/
+	@echo "✅ RADS and RPM installed to /usr/local/bin/"
 
 # Uninstall
 uninstall:
 	rm -f /usr/local/bin/$(TARGET)
-	@echo "🗑️  RADS uninstalled"
+	rm -f /usr/local/bin/rpm
+	@echo "🗑️  RADS and RPM uninstalled"
 
 # Run tests (placeholder)
 test: $(TARGET)

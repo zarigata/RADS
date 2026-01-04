@@ -1,5 +1,0 @@
-🚀 RADS v0.1.0-alpha
-Executing: examples/hello_world.rads
-
-Hello, RADS World! 🚀
-Welcome to the future of retro computing!
