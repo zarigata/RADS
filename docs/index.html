@@ -284,5 +284,29 @@
   <footer>
     RADS • Rapid Asynchronous Data Server Language • Built for retro-future builders
   </footer>
+
+  <script>
+    const installCmd = 'curl -fsSL https://raw.githubusercontent.com/zarigata/rads/main/install.sh | bash';
+    const userCmd = 'USE_SUDO=no RADS_PREFIX=$HOME/.local curl -fsSL https://raw.githubusercontent.com/zarigata/rads/main/install.sh | bash';
+
+    function copyText(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = event?.target;
+        if (!btn) return;
+        const original = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = original, 1400);
+      }).catch(() => {
+        alert('Copy failed. Please copy manually.');
+      });
+    }
+
+    document.getElementById('copy-btn').addEventListener('click', (e) => {
+      copyText(installCmd);
+    });
+    document.getElementById('copy-user-btn').addEventListener('click', (e) => {
+      copyText(userCmd);
+    });
+  </script>
 </body>
 </html>
