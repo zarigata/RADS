@@ -1,0 +1,7 @@
+// Hello World in RADS
+// The classic first program!
+
+blast main() {
+    echo("Hello, RADS World! 🚀");
+    echo("Welcome to the future of retro computing!");
+}

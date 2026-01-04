@@ -1,0 +1,100 @@
+// Advanced Example: File Server with Authentication
+// Demonstrates structs, async, and networking
+
+import net;
+import io;
+
+struct User {
+    str username;
+    str password_hash;
+    bool is_admin;
+}
+
+struct Session {
+    str token;
+    str username;
+    i64 expires;
+}
+
+// Global sessions storage (simplified)
+dynarray<Session> sessions = dynarray();
+
+blast authenticate(str username, str password) -> bool {
+    // In real app, check against database
+    if (username == "admin" && password == "turbo123") {
+        return true;
+    }
+    return false;
+}
+
+blast create_session(str username) -> str {
+    turbo Session session = Session {
+        token: "token_" + username + "_" + random_string(16),
+        username: username,
+        expires: current_time() + 3600  // 1 hour
+    };
+    
+    sessions.push(session);
+    return session.token;
+}
+
+async blast handle_login(stream req) -> str {
+    turbo str body = await req.read_body();
+    turbo obj = json.parse(body);
+    
+    if (authenticate(obj.username, obj.password)) {
+        turbo str token = create_session(obj.username);
+        return '{"success": true, "token": "' + token + '"}';
+    }
+    
+    return '{"success": false, "error": "Invalid credentials"}';
+}
+
+async blast handle_files(stream req) -> str {
+    // Check authentication
+    turbo str auth_header = req.header("Authorization");
+    if (auth_header == null) {
+        return '{"error": "Unauthorized"}';
+    }
+    
+    // List files
+    turbo array<str> files = io.list_dir("./uploads");
+    turbo str json = '{"files": [';
+    
+    cruise (i in 0..files.length()) {
+        if (i > 0) json = json + ", ";
+        json = json + '"' + files[i] + '"';
+    }
+    
+    json = json + "]}";
+    return json;
+}
+
+async blast handle_upload(stream req) -> str {
+    turbo str filename = req.query("filename");
+    turbo bytes data = await req.read_bytes();
+    
+    io.write_file("./uploads/" + filename, data);
+    
+    return '{"success": true, "message": "File uploaded"}';
+}
+
+async blast main() {
+    turbo server = net.http_server("0.0.0.0", 8080);
+    
+    echo("🔐 RADS File Server");
+    echo("==================");
+    echo("📡 Listening on http://localhost:8080");
+    echo("");
+    echo("Endpoints:");
+    echo("  POST /login - Authenticate");
+    echo("  GET  /files - List files");
+    echo("  POST /upload - Upload file");
+    echo("");
+    
+    server.route("/login", handle_login);
+    server.route("/files", handle_files);
+    server.route("/upload", handle_upload);
+    
+    await server.serve();
+}

@@ -1,0 +1,44 @@
+// Audio Converter Example
+// Convert between different audio formats
+
+import media;
+import io;
+
+blast main() {
+    echo("🎵 RADS Audio Converter");
+    echo("======================");
+    echo("");
+    
+    // Load audio file
+    echo("Loading input.mp3...");
+    turbo audio = media.load_audio("input.mp3");
+    
+    if (audio == null) {
+        echo("❌ Error: Could not load audio file!");
+        return;
+    }
+    
+    echo("✅ Audio loaded successfully");
+    echo("   Duration: " + audio.duration() + " seconds");
+    echo("   Sample rate: " + audio.sample_rate() + " Hz");
+    echo("   Channels: " + audio.channels());
+    echo("");
+    
+    // Convert to WAV
+    echo("Converting to WAV format...");
+    audio.convert("output.wav", format: "wav", bitrate: 320);
+    echo("✅ Saved as output.wav");
+    
+    // Convert to OGG
+    echo("Converting to OGG format...");
+    audio.convert("output.ogg", format: "ogg", quality: 8);
+    echo("✅ Saved as output.ogg");
+    
+    // Convert to FLAC (lossless)
+    echo("Converting to FLAC format...");
+    audio.convert("output.flac", format: "flac");
+    echo("✅ Saved as output.flac");
+    
+    echo("");
+    echo("🎉 All conversions complete!");
+}

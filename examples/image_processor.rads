@@ -1,0 +1,55 @@
+// Image Processor Example
+// Process and convert images with filters
+
+import media;
+import io;
+
+blast main() {
+    echo("📸 RADS Image Processor");
+    echo("=======================");
+    echo("");
+    
+    // Load image
+    echo("Loading photo.jpg...");
+    turbo img = media.load_image("photo.jpg");
+    
+    if (img == null) {
+        echo("❌ Error: Could not load image!");
+        return;
+    }
+    
+    echo("✅ Image loaded successfully");
+    echo("   Dimensions: " + img.width() + "x" + img.height());
+    echo("   Format: " + img.format());
+    echo("");
+    
+    // Resize
+    echo("Resizing to 800x600...");
+    img.resize(800, 600);
+    echo("✅ Resized");
+    
+    // Apply vintage filter (90s aesthetic!)
+    echo("Applying vintage filter...");
+    img.apply_filter("vintage");
+    echo("✅ Filter applied");
+    
+    // Adjust brightness
+    echo("Adjusting brightness...");
+    img.brightness(1.2);
+    echo("✅ Brightness adjusted");
+    
+    // Save as PNG
+    echo("Saving as output.png...");
+    img.save("output.png");
+    echo("✅ Saved");
+    
+    // Create thumbnail
+    echo("Creating thumbnail...");
+    turbo thumb = img.clone();
+    thumb.resize(150, 150);
+    thumb.save("thumbnail.png");
+    echo("✅ Thumbnail created");
+    
+    echo("");
+    echo("🎉 Image processing complete!");
+}
