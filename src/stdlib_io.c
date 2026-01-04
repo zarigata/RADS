@@ -95,9 +95,83 @@ Value native_io_file_exists(struct Interpreter* interp, int argc, Value* args) {
     return v;
 }
 
+Value native_io_delete_file(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    
+    if (!check_argc(argc, 1) || args[0].type != VAL_STRING) {
+        Value v;
+        v.type = VAL_BOOL;
+        v.bool_val = false;
+        return v;
+    }
+    
+    Value v;
+    v.type = VAL_BOOL;
+    v.bool_val = (remove(args[0].string_val) == 0);
+    return v;
+}
+
+Value native_io_append_file(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    
+    if (!check_argc(argc, 2) || args[0].type != VAL_STRING || args[1].type != VAL_STRING) {
+        Value v;
+        v.type = VAL_BOOL;
+        v.bool_val = false;
+        return v;
+    }
+    
+    FILE* file = fopen(args[0].string_val, "ab");
+    if (!file) {
+        Value v;
+        v.type = VAL_BOOL;
+        v.bool_val = false;
+        return v;
+    }
+    
+    fwrite(args[1].string_val, 1, strlen(args[1].string_val), file);
+    fclose(file);
+    
+    Value v;
+    v.type = VAL_BOOL;
+    v.bool_val = true;
+    return v;
+}
+
+Value native_io_file_size(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    
+    if (!check_argc(argc, 1) || args[0].type != VAL_STRING) {
+        Value v;
+        v.type = VAL_INT;
+        v.int_val = -1;
+        return v;
+    }
+    
+    FILE* file = fopen(args[0].string_val, "rb");
+    if (!file) {
+        Value v;
+        v.type = VAL_INT;
+        v.int_val = -1;
+        return v;
+    }
+    
+    fseek(file, 0, SEEK_END);
+    long size = ftell(file);
+    fclose(file);
+    
+    Value v;
+    v.type = VAL_INT;
+    v.int_val = size;
+    return v;
+}
+
 // Registration
 void stdlib_io_register(void) {
     register_native("io.read_file", native_io_read_file);
     register_native("io.write_file", native_io_write_file);
     register_native("io.file_exists", native_io_file_exists);
+    register_native("io.delete_file", native_io_delete_file);
+    register_native("io.append_file", native_io_append_file);
+    register_native("io.file_size", native_io_file_size);
 }

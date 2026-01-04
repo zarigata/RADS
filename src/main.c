@@ -8,6 +8,8 @@
 #include "stdlib_media.h"
 #include "stdlib_net.h"
 #include "stdlib_ffi.h"
+#include "stdlib_string.h"
+#include "stdlib_math.h"
 
 void print_usage() {
     printf("RADS Programming Language v0.1.0-alpha\n");
@@ -126,6 +128,8 @@ int main(int argc, char* argv[]) {
     stdlib_media_register();
     stdlib_net_register();
     stdlib_ffi_register();
+    stdlib_string_register();
+    stdlib_math_register();
     
     // Tokenize
     Lexer lexer;

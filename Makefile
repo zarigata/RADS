@@ -2,13 +2,14 @@
 
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c11 -O2
+LIBS = -lm
 DEBUG_FLAGS = -g -DDEBUG
 SRC_DIR = src
 BUILD_DIR = build
 TARGET = rads
 
 # Source files
-SOURCES = $(SRC_DIR)/main.c $(SRC_DIR)/lexer.c $(SRC_DIR)/ast.c $(SRC_DIR)/parser.c $(SRC_DIR)/interpreter.c $(SRC_DIR)/stdlib_io.c $(SRC_DIR)/stdlib_media.c $(SRC_DIR)/stdlib_net.c $(SRC_DIR)/stdlib_ffi.c
+SOURCES = $(SRC_DIR)/main.c $(SRC_DIR)/lexer.c $(SRC_DIR)/ast.c $(SRC_DIR)/parser.c $(SRC_DIR)/interpreter.c $(SRC_DIR)/stdlib_io.c $(SRC_DIR)/stdlib_media.c $(SRC_DIR)/stdlib_net.c $(SRC_DIR)/stdlib_ffi.c $(SRC_DIR)/stdlib_string.c $(SRC_DIR)/stdlib_math.c
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 
 # Default target
@@ -24,7 +25,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
 
 # Link executable
 $(TARGET): $(OBJECTS)
-	$(CC) $(CFLAGS) $(OBJECTS) -o $(TARGET)
+	$(CC) $(CFLAGS) $(OBJECTS) $(LIBS) -o $(TARGET)
 	@echo "✅ RADS compiler built successfully!"
 
 # Debug build

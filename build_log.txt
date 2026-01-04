@@ -1,0 +1,36 @@
+mkdir -p build
+gcc -Wall -Wextra -std=c11 -O2 -c src/main.c -o build/main.o
+gcc -Wall -Wextra -std=c11 -O2 -c src/lexer.c -o build/lexer.o
+gcc -Wall -Wextra -std=c11 -O2 -c src/ast.c -o build/ast.o
+gcc -Wall -Wextra -std=c11 -O2 -c src/parser.c -o build/parser.o
+gcc -Wall -Wextra -std=c11 -O2 -c src/interpreter.c -o build/interpreter.o
+gcc -Wall -Wextra -std=c11 -O2 -c src/stdlib_io.c -o build/stdlib_io.o
+gcc -Wall -Wextra -std=c11 -O2 -c src/stdlib_media.c -o build/stdlib_media.o
+gcc -Wall -Wextra -std=c11 -O2 -c src/stdlib_net.c -o build/stdlib_net.o
+gcc -Wall -Wextra -std=c11 -O2 -c src/stdlib_ffi.c -o build/stdlib_ffi.o
+gcc -Wall -Wextra -std=c11 -O2 -c src/stdlib_string.c -o build/stdlib_string.o
+gcc -Wall -Wextra -std=c11 -O2 -c src/stdlib_math.c -o build/stdlib_math.o
+gcc -Wall -Wextra -std=c11 -O2 build/main.o build/lexer.o build/ast.o build/parser.o build/interpreter.o build/stdlib_io.o build/stdlib_media.o build/stdlib_net.o build/stdlib_ffi.o build/stdlib_string.o build/stdlib_math.o -o rads
+/usr/bin/ld: build/stdlib_math.o: in function `native_math_sqrt':
+stdlib_math.c:(.text+0x319): undefined reference to `sqrt'
+/usr/bin/ld: build/stdlib_math.o: in function `native_math_pow':
+stdlib_math.c:(.text+0x376): undefined reference to `pow'
+/usr/bin/ld: build/stdlib_math.o: in function `native_math_floor':
+stdlib_math.c:(.text+0x423): undefined reference to `floor'
+/usr/bin/ld: stdlib_math.c:(.text+0x436): undefined reference to `floor'
+/usr/bin/ld: build/stdlib_math.o: in function `native_math_ceil':
+stdlib_math.c:(.text+0x493): undefined reference to `ceil'
+/usr/bin/ld: stdlib_math.c:(.text+0x4a6): undefined reference to `ceil'
+/usr/bin/ld: build/stdlib_math.o: in function `native_math_round':
+stdlib_math.c:(.text+0x512): undefined reference to `round'
+/usr/bin/ld: build/stdlib_math.o: in function `native_math_sin':
+stdlib_math.c:(.text+0x573): undefined reference to `sin'
+/usr/bin/ld: stdlib_math.c:(.text+0x586): undefined reference to `sin'
+/usr/bin/ld: build/stdlib_math.o: in function `native_math_cos':
+stdlib_math.c:(.text+0x5eb): undefined reference to `cos'
+/usr/bin/ld: stdlib_math.c:(.text+0x606): undefined reference to `cos'
+/usr/bin/ld: build/stdlib_math.o: in function `native_math_tan':
+stdlib_math.c:(.text+0x663): undefined reference to `tan'
+/usr/bin/ld: stdlib_math.c:(.text+0x676): undefined reference to `tan'
+collect2: error: ld returned 1 exit status
+make: *** [Makefile:27: rads] Error 1

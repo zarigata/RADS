@@ -1,0 +1,47 @@
+// New features demo: string + math + io
+import io;
+
+blast show_strings() {
+    turbo str original = "  radS Turbo  ";
+    echo("length: " + str.length(original));
+    echo("upper: " + str.upper(original));
+    echo("lower: " + str.lower(original));
+    echo("trim : '" + str.trim(original) + "'");
+    echo("sub  : '" + str.substring(original, 2, 6) + "'");
+    echo("contains 'Turbo'? " + str.contains(original, "Turbo"));
+    echo("replace rad -> RAD: " + str.replace(original, "rad", "RAD"));
+    echo("starts_with '  r'? " + str.starts_with(original, "  r"));
+    echo("ends_with '  '? " + str.ends_with(original, "  "));
+}
+
+blast show_math() {
+    echo("abs(-42): " + math.abs(-42));
+    echo("sqrt(81): " + math.sqrt(81));
+    echo("pow(2,10): " + math.pow(2,10));
+    echo("floor(3.8): " + math.floor(3.8));
+    echo("ceil(3.2): " + math.ceil(3.2));
+    echo("round(3.6): " + math.round(3.6));
+    echo("sin(0): " + math.sin(0));
+    echo("random(): " + math.random());
+    echo("random_int(1,5): " + math.random_int(1,5));
+}
+
+blast show_io() {
+    turbo str path = "./examples/tmp_demo.txt";
+    io.delete_file(path);
+    io.write_file(path, "Hello from RADS!\n");
+    io.append_file(path, "Second line\n");
+    echo("file_exists: " + io.file_exists(path));
+    echo("file_size: " + io.file_size(path));
+    turbo str content = io.read_file(path);
+    echo("content:\n" + content);
+}
+
+blast main() {
+    echo("--- String demo ---");
+    show_strings();
+    echo("\n--- Math demo ---");
+    show_math();
+    echo("\n--- IO demo ---");
+    show_io();
+}

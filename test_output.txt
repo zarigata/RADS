@@ -1,0 +1,34 @@
+=== RADS Installation Test ===
+
+Step 1: Checking if rads executable exists...
+✓ rads executable found
+-rwxr-xr-x 1 zarigata zarigata 49K Jan  4 15:37 ./rads
+
+Step 2: Testing rads --version...
+RADS v0.1.0-alpha
+Rapid Asynchronous Data Server Language
+Built: Jan  4 2026 15:37:45
+
+Step 3: Testing rads --help...
+RADS Programming Language v0.1.0-alpha
+Usage: rads [options] <file>
+
+Options:
+  -h, --help     Show this help message
+  -v, --version  Show version information
+  -t, --tokens   Print tokens (lexer test mode)
+
+
+Step 4: Running hello_world.rads...
+🚀 RADS v0.1.0-alpha
+Executing: examples/hello_world.rads
+
+Hello, RADS World! 🚀
+Welcome to the future of retro computing!
+
+Step 5: Running test.rads...
+🚀 RADS v0.1.0-alpha
+Executing: test.rads
+
+
+=== Test Complete ===
