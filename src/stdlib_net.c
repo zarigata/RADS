@@ -4,6 +4,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+static Value make_string(const char* s) {
+    Value v;
+    v.type = VAL_STRING;
+    v.string_val = strdup(s ? s : "");
+    return v;
+}
+
 // Mock Server Structure
 typedef struct {
     char* host;
@@ -81,6 +88,18 @@ Value native_net_serve(struct Interpreter* interp, int argc, Value* args) {
     return v;
 }
 
+// Minimal HTTP GET stub (simulated)
+Value native_net_http_get(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1 || args[0].type != VAL_STRING) {
+        printf("⚠️ Net Error: Expected URL for http_get\n");
+        return make_string("");
+    }
+    printf("🌐 RADS Network: HTTP GET %s (simulated)\n", args[0].string_val);
+    // Return a tiny JSON payload to pair with json.get_string demo
+    return make_string("{\"status\":\"ok\",\"message\":\"simulated response\"}");
+}
+
 Value native_net_tcp_listen(struct Interpreter* interp, int argc, Value* args) {
     (void)interp;
     if (argc < 1 || args[0].type != VAL_INT) {
@@ -151,6 +170,7 @@ void stdlib_net_register(void) {
     register_native("net.http_server", native_net_http_server);
     register_native("net.route", native_net_route);
     register_native("net.serve", native_net_serve);
+    register_native("net.http_get", native_net_http_get);
     register_native("net.tcp_listen", native_net_tcp_listen);
     register_native("net.tcp_connect", native_net_tcp_connect);
     register_native("net.send", native_net_send);

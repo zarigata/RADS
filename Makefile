@@ -9,7 +9,7 @@ BUILD_DIR = build
 TARGET = rads
 
 # Source files
-SOURCES = $(SRC_DIR)/main.c $(SRC_DIR)/lexer.c $(SRC_DIR)/ast.c $(SRC_DIR)/parser.c $(SRC_DIR)/interpreter.c $(SRC_DIR)/stdlib_io.c $(SRC_DIR)/stdlib_media.c $(SRC_DIR)/stdlib_net.c $(SRC_DIR)/stdlib_ffi.c $(SRC_DIR)/stdlib_string.c $(SRC_DIR)/stdlib_math.c
+SOURCES = $(SRC_DIR)/main.c $(SRC_DIR)/lexer.c $(SRC_DIR)/ast.c $(SRC_DIR)/parser.c $(SRC_DIR)/interpreter.c $(SRC_DIR)/stdlib_io.c $(SRC_DIR)/stdlib_media.c $(SRC_DIR)/stdlib_net.c $(SRC_DIR)/stdlib_ffi.c $(SRC_DIR)/stdlib_string.c $(SRC_DIR)/stdlib_math.c $(SRC_DIR)/stdlib_fs.c $(SRC_DIR)/stdlib_json.c
 OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 
 # Default target

@@ -1,0 +1,48 @@
+// RADS Importer: scaffold to convert Python/Node.js into RADS-friendly stubs
+// Usage: rads tools/import-to-rads/import-to-rads.rads <source_file>
+
+blast usage() {
+    echo("Usage: rads import-to-rads <source_file.py|source_file.js>");
+    echo("This is a lightweight scaffold that will:");
+    echo("  - detect language (Python / Node.js)");
+    echo("  - outline detected functions");
+    echo("  - emit RADS-styled stubs you can refine");
+}
+
+blast detect_language(str path) -> str {
+    if (path.ends_with(".py")) return "python";
+    if (path.ends_with(".js")) return "node";
+    return "unknown";
+}
+
+blast emit_stub(str lang, str path) {
+    echo("🔍 Detected: " + lang + " | Source: " + path);
+    echo("⚠️ Note: automatic AST conversion is not implemented yet; this emits a starter RADS skeleton.");
+    echo("");
+    echo("// RADS stub generated from " + path);
+    echo("blast main() {");
+    echo("    echo(\"TODO: port logic from " + path + " (" + lang + ")\");");
+    echo("    // Map your functions here");
+    echo("    // Example:");
+    echo("    // blast hello() { echo(\"hi\"); }");
+    echo("}");
+}
+
+blast main() {
+    // Minimal arg parsing (expects one argument)
+    turbo args = env.args();
+    if (args.length() < 2) {
+        usage();
+        return;
+    }
+
+    turbo str path = args[1];
+    turbo str lang = detect_language(path);
+
+    if (lang == "unknown") {
+        echo("❌ Unsupported file type. Please provide .py or .js");
+        return;
+    }
+
+    emit_stub(lang, path);
+}

@@ -1,0 +1,16 @@
+// Demonstrates net.http_get + json + fs
+import net;
+import json;
+import fs;
+
+blast main() {
+    echo("--- HTTP GET (simulated) ---");
+    turbo str body = net.http_get("https://api.rads.dev/ping");
+    echo("body: " + body);
+    turbo str msg = json.get_string(body, "message");
+    echo("message: " + msg);
+
+    echo("--- FS list_dir ---");
+    turbo str listing = fs.list_dir(".");
+    echo(listing);
+}

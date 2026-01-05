@@ -10,6 +10,8 @@
 #include "stdlib_ffi.h"
 #include "stdlib_string.h"
 #include "stdlib_math.h"
+#include "stdlib_fs.h"
+#include "stdlib_json.h"
 
 void print_usage() {
     printf("RADS Programming Language v0.1.0-alpha\n");
@@ -130,6 +132,8 @@ int main(int argc, char* argv[]) {
     stdlib_ffi_register();
     stdlib_string_register();
     stdlib_math_register();
+    stdlib_fs_register();
+    stdlib_json_register();
     
     // Tokenize
     Lexer lexer;

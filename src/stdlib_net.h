@@ -20,5 +20,6 @@ Value native_net_recv(struct Interpreter* interp, int argc, Value* args);
 // High-level REST stubs
 Value native_net_rest_get(struct Interpreter* interp, int argc, Value* args);
 Value native_net_rest_post(struct Interpreter* interp, int argc, Value* args);
+Value native_net_http_get(struct Interpreter* interp, int argc, Value* args);
 
 #endif // RADS_STDLIB_NET_H
