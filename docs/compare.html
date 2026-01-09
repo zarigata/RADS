@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Compare ⚖️ - RADS vs The World</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fira+Code&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fira+Code&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="bg-blur blur-1"></div>
     <div class="bg-blur blur-2"></div>
@@ -37,12 +40,16 @@
             <div class="glass-card">
                 <h2>Direct Code Comparison</h2>
                 <p>Task: Create a simple HTTP server that responds with "Hello World".</p>
-                <div class="compare-grid" style="margin-top: 2rem;">
-                    
+                <div class="compare-grid">
+
                     <!-- RADS Snippet -->
                     <div class="code-window">
                         <div class="window-header">
-                            <div class="window-dots"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+                            <div class="window-dots">
+                                <div class="dot red"></div>
+                                <div class="dot yellow"></div>
+                                <div class="dot green"></div>
+                            </div>
                             <span>RADS 🚀 (Clean & Async)</span>
                         </div>
                         <pre class="pre-container"><code><span style="color:#C678DD">import</span> net;
@@ -59,10 +66,15 @@
                     <!-- Python Snippet -->
                     <div class="code-window">
                         <div class="window-header">
-                            <div class="window-dots"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+                            <div class="window-dots">
+                                <div class="dot red"></div>
+                                <div class="dot yellow"></div>
+                                <div class="dot green"></div>
+                            </div>
                             <span>Python 🐍 (Verbose StdLib)</span>
                         </div>
-                        <pre class="pre-container"><code><span style="color:#C678DD">from</span> http.server <span style="color:#C678DD">import</span> HTTPServer, ...
+                        <pre
+                            class="pre-container"><code><span style="color:#C678DD">from</span> http.server <span style="color:#C678DD">import</span> HTTPServer, ...
 
 <span style="color:#C678DD">class</span> <span style="color:#E5C07B">Handler</span>(BaseHTTPRequestHandler):
     <span style="color:#C678DD">def</span> <span style="color:#61AFEF">do_GET</span>(self):
@@ -76,7 +88,11 @@ HTTPServer((<span style="color:#98C379">""</span>,<span style="color:#D19A66">80
                     <!-- Rust Snippet -->
                     <div class="code-window">
                         <div class="window-header">
-                            <div class="window-dots"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+                            <div class="window-dots">
+                                <div class="dot red"></div>
+                                <div class="dot yellow"></div>
+                                <div class="dot green"></div>
+                            </div>
                             <span>Rust 🦀 (Low-Level / Strict)</span>
                         </div>
                         <pre class="pre-container"><code><span style="color:#C678DD">use</span> axum::{routing::get, Router};
@@ -144,4 +160,5 @@ HTTPServer((<span style="color:#98C379">""</span>,<span style="color:#D19A66">80
         <p>&copy; 2026 RADS Dev Group. Crafted with precision and turbo speed.</p>
     </footer>
 </body>
+
 </html>

@@ -128,12 +128,16 @@ static Value make_response_tuple(int status, const char* body, const char* ctype
 static Value make_int(long long v);
 static Value make_json_response(const char* body);
 static Value clone_value(Value v);
+// Local array helpers (interpreter internals not exposed here)
+static Array* array_create_local(size_t capacity);
+static void array_push_local(Array* arr, Value v);
+Value native_net_serve(struct Interpreter* interp, int argc, Value* args);
+static TcpHandleCtx* register_tcp_ctx(struct Interpreter* interp, uv_tcp_t* handle, const char* prefix, bool is_listener, bool owns_handle, bool is_http, const char* explicit_id);
 static void buffer_free(RadsBufferNode* head);
 static RadsBufferNode* buffer_push(RadsBufferNode** head, const char* data, size_t len);
 static Value buffer_pop(RadsBufferNode** head);
 static void enqueue_data(TcpHandleCtx* ctx, const char* data, ssize_t len);
 static TcpHandleCtx* find_tcp_ctx(const char* id);
-static TcpHandleCtx* register_tcp_ctx(struct Interpreter* interp, uv_tcp_t* handle, const char* prefix, bool is_listener, bool owns_handle, bool is_http, const char* explicit_id);
 static void unregister_tcp_ctx(TcpHandleCtx* ctx);
 static void http_send_response(uv_stream_t* client, HttpResponse* resp);
 static HttpResponse* http_response_create(int status_code, const char* status_text);
@@ -192,6 +196,25 @@ static Value clone_value(Value v) {
         v.array_val->refcount++;
     }
     return out;
+}
+
+static Array* array_create_local(size_t capacity) {
+    Array* arr = malloc(sizeof(Array));
+    if (!arr) return NULL;
+    arr->refcount = 1;
+    arr->count = 0;
+    arr->capacity = capacity > 0 ? capacity : 4;
+    arr->items = calloc(arr->capacity, sizeof(Value));
+    return arr;
+}
+
+static void array_push_local(Array* arr, Value v) {
+    if (!arr) return;
+    if (arr->count >= arr->capacity) {
+        arr->capacity = arr->capacity > 0 ? arr->capacity * 2 : 4;
+        arr->items = realloc(arr->items, arr->capacity * sizeof(Value));
+    }
+    arr->items[arr->count++] = clone_value(v);
 }
 
 static HttpRequest* http_request_create(void) {
@@ -1128,6 +1151,7 @@ void on_new_connection(uv_stream_t* server, int status) {
         fprintf(stderr, "New connection error: %s\n", uv_strerror(status));
         return;
     }
+    fprintf(stderr, "[NET] on_new_connection status=%d\n", status);
     TcpHandleCtx* server_ctx = server ? server->data : NULL;
     uv_tcp_t* client = malloc(sizeof(uv_tcp_t));
     uv_tcp_init(server->loop, client);
@@ -1195,7 +1219,19 @@ static void http_send_response(uv_stream_t* client, HttpResponse* resp) {
 }
 
 static void http_handle_request(uv_stream_t* client, const char* data, ssize_t len) {
-    if (len <= 0 || !data) return;
+    if (len <= 0 || !data) {
+        fprintf(stderr, "[NET] http_handle_request early exit len=%zd data=%p\n", (size_t)len, (void*)data);
+        return;
+    }
+    TcpHandleCtx* ctx = client ? client->data : NULL;
+    if (!ctx) {
+        fprintf(stderr, "[NET] http_handle_request missing ctx\n");
+        return;
+    }
+    RouteRegistry* reg = ctx ? (RouteRegistry*)ctx->data : NULL;
+    if (!reg) {
+        fprintf(stderr, "[NET] http_handle_request missing route registry\n");
+    }
     HttpRequest* req = http_request_parse(data, len);
     HttpResponse* resp = NULL;
     if (!req) {
@@ -1206,9 +1242,6 @@ static void http_handle_request(uv_stream_t* client, const char* data, ssize_t l
         http_response_free(resp);
         return;
     }
-
-    TcpHandleCtx* ctx = client ? client->data : NULL;
-    RouteRegistry* reg = ctx ? (RouteRegistry*)ctx->data : NULL;
     if (!reg) {
         resp = http_response_create(500, "Internal Server Error");
         http_response_set_body(resp, "No route registry", "text/plain");
@@ -1291,12 +1324,23 @@ static void http_handle_request(uv_stream_t* client, const char* data, ssize_t l
         return;
     }
 
-    Value args[2];
+    Value args[4];
     args[0] = make_string(req->path);
     args[1] = make_string(req->method ? req->method : "");
-    Value resp_val = interpreter_execute_callback(route->handler, 2, args);
-    value_free(&args[0]);
-    value_free(&args[1]);
+    args[2] = req->body ? make_string(req->body) : make_null();
+    args[3] = req->query_string ? make_string(req->query_string) : make_null();
+    if (route->handler.type != VAL_FUNCTION) {
+        fprintf(stderr, "[NET] handler not function\n");
+        resp = http_response_create(500, "Internal Server Error");
+        http_response_set_body(resp, "Handler invalid", "text/plain");
+        http_send_response(client, resp);
+        http_request_free(req);
+        http_response_free(resp);
+        return;
+    }
+    fprintf(stderr, "[NET] executing handler path=%s method=%s\n", req->path, req->method ? req->method : "");
+    Value resp_val = interpreter_execute_callback(route->handler, 4, args);
+    for (int i = 0; i < 4; i++) value_free(&args[i]);
 
     int status = 200;
     const char* status_text = "OK";
@@ -1355,15 +1399,24 @@ static Value make_int(long long v) {
 }
 
 static Value make_response_tuple(int status, const char* body, const char* ctype) {
-    Array* arr = array_create(3);
-    Value code; code.type = VAL_INT; code.int_val = status;
-    Value b = make_string(body ? body : "");
-    Value ct = make_string(ctype ? ctype : "text/plain");
-    array_push(arr, code);
-    array_push(arr, b);
-    array_push(arr, ct);
-    Value out; out.type = VAL_ARRAY; out.array_val = arr;
+    Array* arr = array_create_local(3);
+    Value code = make_int(status);
+    Value bodyv = make_string(body ? body : "");
+    Value ctypev = make_string(ctype ? ctype : "text/plain");
+    array_push_local(arr, code);
+    array_push_local(arr, bodyv);
+    array_push_local(arr, ctypev);
+    value_free(&code);
+    value_free(&bodyv);
+    value_free(&ctypev);
+    Value out;
+    out.type = VAL_ARRAY;
+    out.array_val = arr;
     return out;
+}
+
+static Value make_json_response(const char* body) {
+    return make_response_tuple(200, body ? body : "", "application/json");
 }
 
 static void buffer_free(RadsBufferNode* head) {
@@ -1385,6 +1438,7 @@ Value native_net_http_server(struct Interpreter* interp, int argc, Value* args) 
         fprintf(stderr, " Net Error: Expected host and port for http_server\n");
         return make_null();
     }
+    fprintf(stderr, "[NET] http_server host=%s port=%lld\n", args[0].string_val, args[1].int_val);
     next_listen_is_http = true;
     return native_net_tcp_listen(interp, argc - 1, &args[1]);
 }
@@ -1411,6 +1465,7 @@ Value native_net_route(struct Interpreter* interp, int argc, Value* args) {
     }
     Value handler = clone_value(args[2]);
     bool ok = route_registry_add(reg, args[1].string_val, method, handler);
+    fprintf(stderr, "[NET] route added path=%s method=%s ok=%d\n", args[1].string_val, method ? method : "*", ok);
     return make_bool(ok);
 }
 
@@ -1432,6 +1487,7 @@ Value native_net_static(struct Interpreter* interp, int argc, Value* args) {
     }
     RouteRegistry* reg = (RouteRegistry*)ctx->data;
     bool ok = route_registry_add_static(reg, args[1].string_val, args[2].string_val);
+    fprintf(stderr, "[NET] static added prefix=%s dir=%s ok=%d\n", args[1].string_val, args[2].string_val, ok);
     return make_bool(ok);
 }
 
@@ -1441,6 +1497,16 @@ Value native_net_json_response(struct Interpreter* interp, int argc, Value* args
         return make_response_tuple(500, "Invalid JSON body", "text/plain");
     }
     return make_response_tuple(200, args[0].string_val, "application/json");
+}
+
+// Run the event loop (server serve)
+Value native_net_serve(struct Interpreter* interp, int argc, Value* args) {
+    (void)args;
+    if (!interp) return make_bool(false);
+    fprintf(stderr, "[NET] serve entering event loop\n");
+    interpreter_run_event_loop();
+    fprintf(stderr, "[NET] serve exit\n");
+    return make_bool(true);
 }
 
 Value native_net_http_get(struct Interpreter* interp, int argc, Value* args) {
@@ -1596,6 +1662,7 @@ void stdlib_net_register(void) {
     register_native("net.http_server", native_net_http_server);
     register_native("net.route", native_net_route);
     register_native("net.static", native_net_static);
+    register_native("net.json_response", native_net_json_response);
     register_native("net.serve", native_net_serve);
     register_native("net.http_get", native_net_http_get);
     register_native("net.tcp_listen", native_net_tcp_listen);

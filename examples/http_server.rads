@@ -42,8 +42,10 @@ async blast handle_home(stream req) -> str {
     """;
 }
 
-async blast handle_api(stream req) -> str {
-    return '{"status": "radical", "speed": 9001, "message": "RADS is running!"}';
+async blast handle_api(stream path, stream method, stream body, stream query) -> array {
+    // Demo JSON API: echo method, query, and a friendly message
+    turbo json = "{\"status\":\"radical\",\"speed\":9001,\"method\":\"" + method + "\",\"query\":\"" + query + "\"}";
+    return net.json_response(json);
 }
 
 async blast main() {
@@ -55,9 +57,10 @@ async blast main() {
     echo("");
     
     // Register routes
-    server.route("/", handle_home);
-    server.route("/api", handle_api);
+    net.route(server, "/", handle_home);
+    net.route(server, "/api", handle_api, "GET");
+    net.static(server, "/static", "./examples/static");
     
     // Start serving
-    await server.serve();
+    await net.serve(server);
 }

@@ -45,25 +45,28 @@ SRC_STDLIB_DIR = src/stdlib
 BUILD_DIR = build
 
 # VPATH for finding source files in different directories
-VPATH = $(SRC_CORE_DIR):$(SRC_STDLIB_DIR)
+VPATH =
 
 # Source files
 CORE_SOURCES = $(wildcard $(SRC_CORE_DIR)/*.c)
 STDLIB_SOURCES = $(wildcard $(SRC_STDLIB_DIR)/*.c)
 SOURCES = $(CORE_SOURCES) $(STDLIB_SOURCES)
 
-OBJECTS = $(patsubst $(SRC_CORE_DIR)/%.c,$(BUILD_DIR)/%.o,$(CORE_SOURCES)) \
-          $(patsubst $(SRC_STDLIB_DIR)/%.c,$(BUILD_DIR)/%.o,$(STDLIB_SOURCES))
+OBJECTS = $(patsubst $(SRC_CORE_DIR)/%.c,$(BUILD_DIR)/core/%.o,$(CORE_SOURCES)) \
+          $(patsubst $(SRC_STDLIB_DIR)/%.c,$(BUILD_DIR)/stdlib/%.o,$(STDLIB_SOURCES))
 
 # Default target
 all: $(TARGET)
 
 # Create build directory
 $(BUILD_DIR):
-	mkdir -p $(BUILD_DIR)
+	mkdir -p $(BUILD_DIR) $(BUILD_DIR)/core $(BUILD_DIR)/stdlib
 
-# Compile object files from core
-$(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
+# Compile object files from core and stdlib with explicit paths
+$(BUILD_DIR)/core/%.o: $(SRC_CORE_DIR)/%.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/stdlib/%.o: $(SRC_STDLIB_DIR)/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Link executable
