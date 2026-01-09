@@ -1104,6 +1104,7 @@ static TcpHandleCtx* register_tcp_ctx(struct Interpreter* interp, uv_tcp_t* hand
         ctx->data = route_registry_create();
         ctx->data_owner = true;
     }
+    fprintf(stderr, "[NET] register_tcp_ctx id=%s is_listener=%d is_http=%d data_owner=%d\n", ctx->id, is_listener, is_http, ctx->data_owner);
     return ctx;
 }
 
@@ -1449,6 +1450,7 @@ Value native_net_route(struct Interpreter* interp, int argc, Value* args) {
         fprintf(stderr, "⚠️ Net Error: Expected server, path, and handler function for route\n");
         return make_bool(false);
     }
+    fprintf(stderr, "[NET] route call server_arg=%s path=%s\n", args[0].type == VAL_STRING ? args[0].string_val : "<nonstring>", args[1].string_val);
     TcpHandleCtx* ctx = find_tcp_ctx(args[0].string_val);
     if (!ctx || !ctx->is_listener || !ctx->is_http) {
         fprintf(stderr, "⚠️ Net Error: Unknown or non-http server handle\n");
@@ -1476,6 +1478,7 @@ Value native_net_static(struct Interpreter* interp, int argc, Value* args) {
         fprintf(stderr, "⚠️ Net Error: Expected server, prefix, and directory for static\n");
         return make_bool(false);
     }
+    fprintf(stderr, "[NET] static call server_arg=%s prefix=%s dir=%s\n", args[0].string_val, args[1].string_val, args[2].string_val);
     TcpHandleCtx* ctx = find_tcp_ctx(args[0].string_val);
     if (!ctx || !ctx->is_listener || !ctx->is_http) {
         fprintf(stderr, "⚠️ Net Error: Unknown or non-http server handle\n");
@@ -1659,6 +1662,7 @@ Value native_net_rest_post(struct Interpreter* interp, int argc, Value* args) {
 
 
 void stdlib_net_register(void) {
+    fprintf(stderr, "[NET] stdlib_net_register\n");
     register_native("net.http_server", native_net_http_server);
     register_native("net.route", native_net_route);
     register_native("net.static", native_net_static);
