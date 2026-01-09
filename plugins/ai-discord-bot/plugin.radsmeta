@@ -1,0 +1,7 @@
+name = "ai-discord-bot"
+version = "0.1.0"
+entry = "main.rads"
+deps = ["net", "http"]
+bin = ["ai-discord-bot"]
+desc = "AI helper that wires to Discord commands"
+repo = "https://example.com/plugins/ai-discord-bot.git"

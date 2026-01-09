@@ -1,0 +1,20 @@
+// ai-discord-bot entrypoint
+// Why: Minimal runnable stub to validate RADStar plugin layout and wiring.
+// How to upgrade: Replace stubs with real Discord API calls and AI inference.
+
+import net;
+
+blast respond(str content) -> str {
+    // Why: Keep logic testable; returns bot reply for given content.
+    // How to upgrade: Add command routing, AI replies, and error handling.
+    if (content == "!ping") return "pong";
+    return "ack: " + content;
+}
+
+blast main() {
+    echo("ai-discord-bot stub running.");
+    echo("Set DISCORD_TOKEN and DISCORD_CHANNEL_ID to enable real sends (TODO).");
+    // TODO: Implement Discord webhook/bot client and dispatch to respond().
+    turbo demo = respond("!ping");
+    echo("demo: " + demo);
+}

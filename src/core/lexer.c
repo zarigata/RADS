@@ -41,13 +41,20 @@ static bool match(Lexer* lexer, char expected) {
     return true;
 }
 
+/* make_token
+ * Why: Centralizes token construction and guards column metadata from underflow so
+ *      parser diagnostics stay human-friendly and consistent.
+ * How to upgrade: If we add UTF-8 column tracking, adjust the column math here to
+ *      account for rune width. Keep the clamp to avoid negative/overflow columns.
+ */
 static Token make_token(Lexer* lexer, TokenType type) {
     Token token;
     token.type = type;
     token.start = lexer->start;
     token.length = (size_t)(lexer->current - lexer->start);
     token.line = lexer->line;
-    token.column = lexer->column - token.length;
+    int col = lexer->column - (int)token.length;
+    token.column = col > 0 ? col : 1;
     return token;
 }
 
@@ -372,9 +379,15 @@ Token lexer_next_token(Lexer* lexer) {
     return error_token(lexer, "Unexpected character");
 }
 
-// Utility functions
+/* token_type_to_string
+ * Why: Keeps lexer/debug output readable so parser and language errors remain
+ *      conversational per the "Mechanic" rule.
+ * How to upgrade: When adding new tokens, add their string names here; consider
+ *      generating this from the enum to avoid drift.
+ */
 const char* token_type_to_string(TokenType type) {
     switch (type) {
+        // Literals
         case TOKEN_INTEGER: return "INTEGER";
         case TOKEN_FLOAT: return "FLOAT";
         case TOKEN_STRING: return "STRING";
@@ -382,21 +395,91 @@ const char* token_type_to_string(TokenType type) {
         case TOKEN_TRUE: return "TRUE";
         case TOKEN_FALSE: return "FALSE";
         case TOKEN_NULL: return "NULL";
+
+        // Identifiers
         case TOKEN_IDENTIFIER: return "IDENTIFIER";
+
+        // Keywords
         case TOKEN_BLAST: return "BLAST";
         case TOKEN_TURBO: return "TURBO";
+        case TOKEN_STR: return "STR";
+        case TOKEN_ARRAY: return "ARRAY";
+        case TOKEN_DYNARRAY: return "DYNARRAY";
+        case TOKEN_STRUCT: return "STRUCT";
+        case TOKEN_ENUM: return "ENUM";
         case TOKEN_IF: return "IF";
         case TOKEN_ELSE: return "ELSE";
         case TOKEN_ELIF: return "ELIF";
         case TOKEN_LOOP: return "LOOP";
         case TOKEN_CRUISE: return "CRUISE";
+        case TOKEN_BREAK: return "BREAK";
+        case TOKEN_CONTINUE: return "CONTINUE";
         case TOKEN_RETURN: return "RETURN";
+        case TOKEN_IN: return "IN";
+        case TOKEN_SWITCH: return "SWITCH";
+        case TOKEN_CASE: return "CASE";
+        case TOKEN_DEFAULT: return "DEFAULT";
+        case TOKEN_ASYNC: return "ASYNC";
+        case TOKEN_AWAIT: return "AWAIT";
+        case TOKEN_SPAWN: return "SPAWN";
+        case TOKEN_STREAM: return "STREAM";
+        case TOKEN_IMPORT: return "IMPORT";
+        case TOKEN_EXPORT: return "EXPORT";
+        case TOKEN_PLUGIN: return "PLUGIN";
         case TOKEN_ECHO: return "ECHO";
+        case TOKEN_XTREME: return "XTREME";
+        case TOKEN_ALLOC: return "ALLOC";
+        case TOKEN_FREE: return "FREE";
+        case TOKEN_MOVE: return "MOVE";
+
+        // Types
+        case TOKEN_I32: return "I32";
+        case TOKEN_I64: return "I64";
+        case TOKEN_F32: return "F32";
+        case TOKEN_F64: return "F64";
+        case TOKEN_BOOL: return "BOOL";
+        case TOKEN_CHAR_TYPE: return "CHAR_TYPE";
+        case TOKEN_PTR: return "PTR";
+
+        // Operators
+        case TOKEN_PLUS: return "PLUS";
+        case TOKEN_MINUS: return "MINUS";
+        case TOKEN_STAR: return "STAR";
+        case TOKEN_SLASH: return "SLASH";
+        case TOKEN_PERCENT: return "PERCENT";
+        case TOKEN_EQUAL: return "EQUAL";
+        case TOKEN_EQUAL_EQUAL: return "EQUAL_EQUAL";
+        case TOKEN_BANG: return "BANG";
+        case TOKEN_BANG_EQUAL: return "BANG_EQUAL";
+        case TOKEN_LESS: return "LESS";
+        case TOKEN_LESS_EQUAL: return "LESS_EQUAL";
+        case TOKEN_GREATER: return "GREATER";
+        case TOKEN_GREATER_EQUAL: return "GREATER_EQUAL";
+        case TOKEN_AND_AND: return "AND_AND";
+        case TOKEN_OR_OR: return "OR_OR";
+        case TOKEN_AMPERSAND: return "AMPERSAND";
+        case TOKEN_PIPE: return "PIPE";
+        case TOKEN_CARET: return "CARET";
+        case TOKEN_TILDE: return "TILDE";
+        case TOKEN_LEFT_SHIFT: return "LEFT_SHIFT";
+        case TOKEN_RIGHT_SHIFT: return "RIGHT_SHIFT";
+        case TOKEN_ARROW: return "ARROW";
+        case TOKEN_DOT: return "DOT";
+        case TOKEN_DOT_DOT: return "DOT_DOT";
+        case TOKEN_COLON: return "COLON";
+        case TOKEN_DOUBLE_COLON: return "DOUBLE_COLON";
+
+        // Delimiters
         case TOKEN_LEFT_PAREN: return "LEFT_PAREN";
         case TOKEN_RIGHT_PAREN: return "RIGHT_PAREN";
         case TOKEN_LEFT_BRACE: return "LEFT_BRACE";
         case TOKEN_RIGHT_BRACE: return "RIGHT_BRACE";
+        case TOKEN_LEFT_BRACKET: return "LEFT_BRACKET";
+        case TOKEN_RIGHT_BRACKET: return "RIGHT_BRACKET";
+        case TOKEN_COMMA: return "COMMA";
         case TOKEN_SEMICOLON: return "SEMICOLON";
+
+        // Special
         case TOKEN_EOF: return "EOF";
         case TOKEN_ERROR: return "ERROR";
         default: return "UNKNOWN";

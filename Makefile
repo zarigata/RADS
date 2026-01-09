@@ -89,7 +89,12 @@ install: $(TARGET)
 	# Build rpm before install if it doesn't exist
 	gcc -D_POSIX_C_SOURCE=200809L -Isrc tools/rpm/rpm.c -o tools/rpm/rpm
 	install -m 755 tools/rpm/rpm /usr/local/bin/
-	@echo "✅ RADS and RPM installed to /usr/local/bin/"
+	# Build rstar (RADStar plugin manager skeleton)
+	gcc -D_POSIX_C_SOURCE=200809L -DRSTAR_TESTING -Isrc tools/rstar/rstar.c -o tools/rstar/rstar
+	# Build rstar tests (helper-level tests)
+	gcc -D_POSIX_C_SOURCE=200809L -DRSTAR_TESTING -Isrc tools/rstar/rstar_test.c -o tools/rstar/rstar_test
+	install -m 755 tools/rstar/rstar /usr/local/bin/
+	@echo "✅ RADS, RPM, and RStar installed to /usr/local/bin/"
 
 # Platform targets
 linux: all
