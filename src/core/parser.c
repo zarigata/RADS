@@ -107,6 +107,20 @@ static ASTNode* parse_primary(Parser* parser) {
         return node;
     }
     
+    if (match(parser, TOKEN_LEFT_BRACKET)) {
+        int line = parser->previous.line;
+        int column = parser->previous.column;
+        ASTList* elements = ast_list_create();
+        if (!check(parser, TOKEN_RIGHT_BRACKET)) {
+            do {
+                ASTNode* elem = parse_expression(parser);
+                if (elem) ast_list_append(elements, elem);
+            } while (match(parser, TOKEN_COMMA));
+        }
+        consume(parser, TOKEN_RIGHT_BRACKET, "Expected ']' after array literal");
+        return ast_create_array_literal(elements, line, column);
+    }
+    
     if (match(parser, TOKEN_LEFT_PAREN)) {
         ASTNode* expr = parse_expression(parser);
         consume(parser, TOKEN_RIGHT_PAREN, "Expected ')' after expression");
@@ -141,6 +155,10 @@ static ASTNode* parse_call(Parser* parser) {
             name[parser->previous.length] = '\0';
             expr = ast_create_member_expr(expr, name, parser->previous.line, parser->previous.column);
             free(name);
+        } else if (match(parser, TOKEN_LEFT_BRACKET)) {
+            ASTNode* index = parse_expression(parser);
+            consume(parser, TOKEN_RIGHT_BRACKET, "Expected ']' after index expression");
+            expr = ast_create_index(expr, index, parser->previous.line, parser->previous.column);
         } else {
             break;
         }
@@ -163,8 +181,37 @@ static ASTNode* parse_addition(Parser* parser) {
     return expr;
 }
 
+// Range has low precedence: <add> .. <add>
+static ASTNode* parse_range(Parser* parser) {
+    ASTNode* expr = parse_addition(parser);
+    if (match(parser, TOKEN_DOT_DOT)) {
+        Token op = parser->previous;
+        ASTNode* right = parse_addition(parser);
+        expr = ast_create_binary_op(OP_RANGE, expr, right, op.line, op.column);
+    }
+    return expr;
+}
+
+// Assignment (right-associative): target = value
+static ASTNode* parse_assignment(Parser* parser) {
+    ASTNode* expr = parse_range(parser);
+    
+    if (match(parser, TOKEN_EQUAL)) {
+        Token equals = parser->previous;
+        ASTNode* value = parse_assignment(parser);
+        
+        if (expr->type == AST_IDENTIFIER || expr->type == AST_INDEX_EXPR || expr->type == AST_MEMBER_EXPR) {
+            return ast_create_assign(expr, value, equals.line, equals.column);
+        }
+        
+        error_at(parser, &equals, "Invalid assignment target");
+    }
+    
+    return expr;
+}
+
 static ASTNode* parse_expression(Parser* parser) {
-    return parse_addition(parser);
+    return parse_assignment(parser);
 }
 
 // Parse echo statement
@@ -178,6 +225,45 @@ static ASTNode* parse_echo_statement(Parser* parser) {
     consume(parser, TOKEN_SEMICOLON, "Expected ';' after statement");
     
     return ast_create_echo(expr, line, column);
+}
+
+// Parse loop statement: loop (<condition>) <statement>
+static ASTNode* parse_loop_statement(Parser* parser) {
+    int line = parser->previous.line;
+    int column = parser->previous.column;
+    
+    consume(parser, TOKEN_LEFT_PAREN, "Expected '(' after 'loop'");
+    ASTNode* condition = parse_expression(parser);
+    consume(parser, TOKEN_RIGHT_PAREN, "Expected ')' after loop condition");
+    ASTNode* body = parse_statement(parser);
+    
+    return ast_create_loop(condition, body, line, column);
+}
+
+// Parse break/continue statements
+static ASTNode* parse_break_or_continue(Parser* parser, bool is_break) {
+    int line = parser->previous.line;
+    int column = parser->previous.column;
+    consume(parser, TOKEN_SEMICOLON, "Expected ';' after statement");
+    return is_break ? ast_create_break(line, column) : ast_create_continue(line, column);
+}
+
+// Parse cruise (for-range) statement: cruise (<id> in <iterable>) <statement>
+static ASTNode* parse_cruise_statement(Parser* parser) {
+    int line = parser->previous.line;
+    int column = parser->previous.column;
+    consume(parser, TOKEN_LEFT_PAREN, "Expected '(' after 'cruise'");
+    consume(parser, TOKEN_IDENTIFIER, "Expected iterator name after '('");
+    char* iter_name = malloc(parser->previous.length + 1);
+    memcpy(iter_name, parser->previous.start, parser->previous.length);
+    iter_name[parser->previous.length] = '\0';
+    consume(parser, TOKEN_IN, "Expected 'in' after iterator");
+    ASTNode* iterable = parse_expression(parser);
+    consume(parser, TOKEN_RIGHT_PAREN, "Expected ')' after cruise iterable");
+    ASTNode* body = parse_statement(parser);
+    ASTNode* cruise = ast_create_cruise(iter_name, iterable, body, line, column);
+    free(iter_name);
+    return cruise;
 }
 
 // Parse block
@@ -293,6 +379,22 @@ static ASTNode* parse_declaration(Parser* parser) {
 static ASTNode* parse_statement(Parser* parser) {
     if (match(parser, TOKEN_ECHO)) {
         return parse_echo_statement(parser);
+    }
+    
+    if (match(parser, TOKEN_LOOP)) {
+        return parse_loop_statement(parser);
+    }
+    
+    if (match(parser, TOKEN_CRUISE)) {
+        return parse_cruise_statement(parser);
+    }
+    
+    if (match(parser, TOKEN_BREAK)) {
+        return parse_break_or_continue(parser, true);
+    }
+    
+    if (match(parser, TOKEN_CONTINUE)) {
+        return parse_break_or_continue(parser, false);
     }
     
     if (match(parser, TOKEN_LEFT_BRACE)) {

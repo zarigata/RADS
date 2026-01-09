@@ -34,6 +34,7 @@ typedef enum {
     TOKEN_BREAK,        // break
     TOKEN_CONTINUE,     // continue
     TOKEN_RETURN,       // return
+    TOKEN_IN,           // in
     TOKEN_SWITCH,       // switch
     TOKEN_CASE,         // case
     TOKEN_DEFAULT,      // default

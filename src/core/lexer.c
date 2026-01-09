@@ -186,6 +186,7 @@ static TokenType identifier_type(Lexer* lexer) {
                     case '6': return check_keyword(lexer, 2, 1, "4", TOKEN_I64);
                     case 'f': return check_keyword(lexer, 2, 0, "", TOKEN_IF);
                     case 'm': return check_keyword(lexer, 2, 4, "port", TOKEN_IMPORT);
+                    case 'n': return check_keyword(lexer, 2, 0, "", TOKEN_IN);
                 }
             }
             break;
@@ -391,6 +392,11 @@ const char* token_type_to_string(TokenType type) {
         case TOKEN_CRUISE: return "CRUISE";
         case TOKEN_RETURN: return "RETURN";
         case TOKEN_ECHO: return "ECHO";
+        case TOKEN_LEFT_PAREN: return "LEFT_PAREN";
+        case TOKEN_RIGHT_PAREN: return "RIGHT_PAREN";
+        case TOKEN_LEFT_BRACE: return "LEFT_BRACE";
+        case TOKEN_RIGHT_BRACE: return "RIGHT_BRACE";
+        case TOKEN_SEMICOLON: return "SEMICOLON";
         case TOKEN_EOF: return "EOF";
         case TOKEN_ERROR: return "ERROR";
         default: return "UNKNOWN";

@@ -22,10 +22,86 @@ blast emit_stub(str lang, str path) {
     echo("// RADS stub generated from " + path);
     echo("blast main() {");
     echo("    echo(\"TODO: port logic from " + path + " (" + lang + ")\");");
-    echo("    // Map your functions here");
-    echo("    // Example:");
-    echo("    // blast hello() { echo(\"hi\"); }");
+    echo("    // Detected functions (best-effort):");
     echo("}");
+}
+
+blast parse_params(str sig) -> array<str> {
+    turbo params = array<str>();
+    turbo l = sig.indexOf("(");
+    turbo r = sig.indexOf(")");
+    if (l < 0 || r < 0 || r <= l) return params;
+    turbo inside = sig.substring(l + 1, r).trim();
+    if (inside.length() == 0) return params;
+    turbo parts = inside.split(",");
+    cruise (i in 0..parts.length()) {
+        turbo p = parts[i].trim();
+        if (p.length() > 0) params.push(p);
+    }
+    return params;
+}
+
+blast detect_functions(str source, str lang) -> array<array<str>> {
+    // Ultra-lightweight regex-ish scanning (no full parser)
+    // returns array of [name, params_as_string]
+    turbo funcs = array<array<str>>();
+    turbo lines = source.split("\n");
+    cruise (i in 0..lines.length()) {
+        turbo str line = lines[i].trim();
+        if (lang == "python" && line.starts_with("def ")) {
+            // def name(
+            turbo parts = line.split(" ");
+            if (parts.length() > 1) {
+                turbo name = parts[1];
+                turbo idx = name.indexOf("(");
+                if (idx >= 0) name = name.substring(0, idx);
+                turbo params = parse_params(line);
+                funcs.push(array<str> { name, params.join(", ") });
+            }
+        }
+        if (lang == "node" && (line.starts_with("function ") || line.contains("=>"))) {
+            // function name(
+            if (line.starts_with("function ")) {
+                turbo parts = line.split(" ");
+                if (parts.length() > 1) {
+                    turbo name = parts[1];
+                    turbo idx = name.indexOf("(");
+                    if (idx >= 0) name = name.substring(0, idx);
+                    turbo params = parse_params(line);
+                    funcs.push(array<str> { name, params.join(", ") });
+                }
+            } else if (line.contains("=>")) {
+                // const foo = (...) => {
+                turbo eq = line.indexOf("=");
+                if (eq > 0) {
+                    turbo left = line.substring(0, eq).trim();
+                    // take last token
+                    turbo parts = left.split(" ");
+                    if (parts.length() > 0) {
+                        turbo name = parts[parts.length()-1];
+                        turbo params = parse_params(line);
+                        funcs.push(array<str> { name, params.join(", ") });
+                    }
+                }
+            }
+        }
+    }
+    return funcs;
+}
+
+blast emit_functions(array<array<str>> funcs) {
+    if (funcs.length() == 0) {
+        echo("// No functions detected; add your own stubs");
+        return;
+    }
+    cruise (i in 0..funcs.length()) {
+        turbo f = funcs[i][0];
+        turbo params = funcs[i][1];
+        echo("blast " + f + "(" + params + ") {");
+        echo("    echo(\"TODO: port function: " + f + "\");");
+        echo("}");
+        echo("");
+    }
 }
 
 blast main() {
@@ -44,5 +120,9 @@ blast main() {
         return;
     }
 
+    // read source file
+    turbo str source = io.read_file(path);
     emit_stub(lang, path);
+    turbo funcs = detect_functions(source, lang);
+    emit_functions(funcs);
 }

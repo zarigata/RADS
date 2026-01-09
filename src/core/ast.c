@@ -208,6 +208,17 @@ ASTNode* ast_create_assign(ASTNode* target, ASTNode* value, int line, int column
     return node;
 }
 
+ASTNode* ast_create_cruise(const char* iterator, ASTNode* iterable, ASTNode* body, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_CRUISE_STMT;
+    node->line = line;
+    node->column = column;
+    node->cruise_stmt.iterator = strdup(iterator);
+    node->cruise_stmt.iterable = iterable;
+    node->cruise_stmt.body = body;
+    return node;
+}
+
 ASTNode* ast_create_member_expr(ASTNode* object, const char* member, int line, int column) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_MEMBER_EXPR;
@@ -215,6 +226,41 @@ ASTNode* ast_create_member_expr(ASTNode* object, const char* member, int line, i
     node->column = column;
     node->member_expr.object = object;
     node->member_expr.member = strdup(member);
+    return node;
+}
+
+ASTNode* ast_create_array_literal(ASTList* elements, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_ARRAY_LITERAL;
+    node->line = line;
+    node->column = column;
+    node->array_literal.elements = elements;
+    return node;
+}
+
+ASTNode* ast_create_index(ASTNode* array, ASTNode* index, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_INDEX_EXPR;
+    node->line = line;
+    node->column = column;
+    node->index_expr.array = array;
+    node->index_expr.index = index;
+    return node;
+}
+
+ASTNode* ast_create_break(int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_BREAK_STMT;
+    node->line = line;
+    node->column = column;
+    return node;
+}
+
+ASTNode* ast_create_continue(int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_CONTINUE_STMT;
+    node->line = line;
+    node->column = column;
     return node;
 }
 
@@ -268,6 +314,11 @@ void ast_free(ASTNode* node) {
             ast_free(node->loop_stmt.condition);
             ast_free(node->loop_stmt.body);
             break;
+        case AST_CRUISE_STMT:
+            free(node->cruise_stmt.iterator);
+            ast_free(node->cruise_stmt.iterable);
+            ast_free(node->cruise_stmt.body);
+            break;
         case AST_ECHO_STMT:
             ast_free(node->echo_stmt.expression);
             break;
@@ -278,9 +329,19 @@ void ast_free(ASTNode* node) {
             ast_free(node->call_expr.callee);
             ast_list_free(node->call_expr.arguments);
             break;
+        case AST_ARRAY_LITERAL:
+            ast_list_free(node->array_literal.elements);
+            break;
+        case AST_INDEX_EXPR:
+            ast_free(node->index_expr.array);
+            ast_free(node->index_expr.index);
+            break;
         case AST_ASSIGN_EXPR:
             ast_free(node->assign_expr.target);
             ast_free(node->assign_expr.value);
+            break;
+        case AST_BREAK_STMT:
+        case AST_CONTINUE_STMT:
             break;
         case AST_PROGRAM:
             ast_list_free(node->program.declarations);

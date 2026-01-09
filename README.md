@@ -18,7 +18,7 @@ RADS is a high-performance, low-level programming language designed for the mode
 - 🖥️ **Microservers & IoT**: Perfect for Raspberry Pi deployments running 24/7.
 - ⚡ **High-Speed Processing**: Digest images, audio, and video at processor-level speeds.
 - 🛠️ **Reliable Tooling**: Craft F2A (File-to-Any) servers with safety and precision.
-- 🎨 **Aesthetic**: Frutiger Aero design philosophy meet nu-metal intensity.
+- 🎨 **Aesthetic**: Frutiger Aero design philosophy meets nu-metal intensity.
 
 ## ✨ Features
 

@@ -1,0 +1,18 @@
+// RADS network + JSON + FS demo (simulated HTTP)
+import net;
+import json;
+import fs;
+
+blast main() {
+    echo("--- Simulated HTTP GET ---");
+    turbo str body = net.http_get("https://api.rads.dev/v1/info");
+    echo("raw body: " + body);
+    turbo str msg = json.get_string(body, "message");
+    turbo val = json.get_bool(body, "ok");
+    echo("message: " + msg);
+    echo("ok: " + val);
+
+    echo("--- FS quick check ---");
+    turbo str here = fs.list_dir(".");
+    echo(here);
+}

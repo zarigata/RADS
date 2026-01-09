@@ -69,7 +69,8 @@ typedef enum {
     OP_AND,
     OP_OR,
     OP_NOT,
-    OP_NEG
+    OP_NEG,
+    OP_RANGE
 } OperatorType;
 
 // Type information
@@ -237,7 +238,12 @@ ASTNode* ast_create_echo(ASTNode* expression, int line, int column);
 ASTNode* ast_create_block(ASTList* statements, int line, int column);
 ASTNode* ast_create_call(ASTNode* callee, ASTList* arguments, int line, int column);
 ASTNode* ast_create_member_expr(ASTNode* object, const char* member, int line, int column);
+ASTNode* ast_create_array_literal(ASTList* elements, int line, int column);
+ASTNode* ast_create_index(ASTNode* array, ASTNode* index, int line, int column);
 ASTNode* ast_create_assign(ASTNode* target, ASTNode* value, int line, int column);
+ASTNode* ast_create_cruise(const char* iterator, ASTNode* iterable, ASTNode* body, int line, int column);
+ASTNode* ast_create_break(int line, int column);
+ASTNode* ast_create_continue(int line, int column);
 ASTNode* ast_create_program(ASTList* declarations);
 
 // AST list functions

@@ -2,6 +2,15 @@
 #define RADS_INTERPRETER_H
 
 #include "ast.h"
+#include <uv.h>
+
+// Execution result for statements
+typedef enum {
+    EXEC_OK = 0,
+    EXEC_BREAK,
+    EXEC_CONTINUE,
+    EXEC_RETURN
+} ExecResult;
 
 // Value types for runtime
 typedef enum {
@@ -10,10 +19,20 @@ typedef enum {
     VAL_INT,
     VAL_FLOAT,
     VAL_STRING,
-    VAL_FUNCTION
+    VAL_FUNCTION,
+    VAL_ARRAY
 } ValueType;
 
-typedef struct {
+struct Value; // Forward declaration
+
+typedef struct Array {
+    size_t refcount;
+    size_t count;
+    size_t capacity;
+    struct Value* items;
+} Array;
+
+typedef struct Value {
     ValueType type;
     union {
         bool bool_val;
@@ -21,8 +40,13 @@ typedef struct {
         double float_val;
         char* string_val;
         ASTNode* func_node;
+        Array* array_val;
     };
 } Value;
+
+typedef struct Interpreter {
+    uv_loop_t* event_loop;
+} Interpreter;
 
 // Interpreter functions
 int interpret(ASTNode* program);
@@ -40,5 +64,9 @@ typedef enum {
 } FunctionType;
 
 void register_native(const char* name, NativeFn fn);
+uv_loop_t* interpreter_init_event_loop(void);
+void interpreter_cleanup_event_loop(void);
+void interpreter_run_event_loop(void);
+Value interpreter_execute_callback(Value callback, int argc, Value* args);
 
 #endif // RADS_INTERPRETER_H
