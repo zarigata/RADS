@@ -26,17 +26,17 @@ blast main() {
     
     // Convert to WAV
     echo("Converting to WAV format...");
-    audio.convert("output.wav", format: "wav", bitrate: 320);
+    audio.convert("output.wav", "wav", 320);
     echo("✅ Saved as output.wav");
     
     // Convert to OGG
     echo("Converting to OGG format...");
-    audio.convert("output.ogg", format: "ogg", quality: 8);
+    audio.convert("output.ogg", "ogg", 8);
     echo("✅ Saved as output.ogg");
     
     // Convert to FLAC (lossless)
     echo("Converting to FLAC format...");
-    audio.convert("output.flac", format: "flac");
+    audio.convert("output.flac", "flac");
     echo("✅ Saved as output.flac");
     
     echo("");

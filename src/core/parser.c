@@ -4,12 +4,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* error_at
+ * Why: Centralized, conversational parser diagnostics; guards against garbage
+ *      line/col to keep errors readable even if upstream tokens are bad.
+ * How to upgrade: Include token type/name and nearby source snippet once we
+ *      track file offsets; keep clamping to avoid overwhelming users.
+ */
 static void error_at(Parser* parser, Token* token, const char* message) {
     if (parser->panic_mode) return;
     parser->panic_mode = true;
     parser->had_error = true;
     
-    fprintf(stderr, "[Line %d, Col %d] Error", token->line, token->column);
+    int line = (token && token->line > 0) ? token->line : 1;
+    int col = (token && token->column > 0) ? token->column : 1;
+    fprintf(stderr, "[Line %d, Col %d] Error", line, col);
     
     if (token->type == TOKEN_EOF) {
         fprintf(stderr, " at end");
@@ -19,7 +27,7 @@ static void error_at(Parser* parser, Token* token, const char* message) {
         fprintf(stderr, " at '%.*s'", (int)token->length, token->start);
     }
     
-    fprintf(stderr, ": %s\n", message);
+    fprintf(stderr, " (token=%s): %s\n", token_type_to_string(token->type), message);
 }
 
 static void error(Parser* parser, const char* message) {
@@ -64,6 +72,7 @@ static void consume(Parser* parser, TokenType type, const char* message) {
 static ASTNode* parse_expression(Parser* parser);
 static ASTNode* parse_statement(Parser* parser);
 static ASTNode* parse_declaration(Parser* parser);
+static ASTNode* parse_comparison(Parser* parser);
 
 // Parse primary expressions
 static ASTNode* parse_primary(Parser* parser) {
@@ -96,6 +105,10 @@ static ASTNode* parse_primary(Parser* parser) {
     
     if (match(parser, TOKEN_FALSE)) {
         return ast_create_bool(false, parser->previous.line, parser->previous.column);
+    }
+
+    if (match(parser, TOKEN_NULL)) {
+        return ast_create_null(parser->previous.line, parser->previous.column);
     }
     
     if (match(parser, TOKEN_IDENTIFIER)) {
@@ -167,14 +180,50 @@ static ASTNode* parse_call(Parser* parser) {
     return expr;
 }
 
-// Parse binary expressions (simplified)
-static ASTNode* parse_addition(Parser* parser) {
+static ASTNode* parse_factor(Parser* parser) {
     ASTNode* expr = parse_call(parser);
+    
+    while (match(parser, TOKEN_STAR) || match(parser, TOKEN_SLASH) || match(parser, TOKEN_PERCENT)) {
+        Token op = parser->previous;
+        ASTNode* right = parse_call(parser);
+        OperatorType op_type;
+        if (op.type == TOKEN_STAR) op_type = OP_MUL;
+        else if (op.type == TOKEN_SLASH) op_type = OP_DIV;
+        else op_type = OP_MOD;
+        expr = ast_create_binary_op(op_type, expr, right, op.line, op.column);
+    }
+    
+    return expr;
+}
+
+static ASTNode* parse_term(Parser* parser) {
+    ASTNode* expr = parse_factor(parser);
     
     while (match(parser, TOKEN_PLUS) || match(parser, TOKEN_MINUS)) {
         Token op = parser->previous;
-        ASTNode* right = parse_call(parser);
+        ASTNode* right = parse_factor(parser);
         OperatorType op_type = (op.type == TOKEN_PLUS) ? OP_ADD : OP_SUB;
+        expr = ast_create_binary_op(op_type, expr, right, op.line, op.column);
+    }
+    
+    return expr;
+}
+
+static ASTNode* parse_comparison(Parser* parser) {
+    ASTNode* expr = parse_term(parser);
+    
+    while (match(parser, TOKEN_EQUAL_EQUAL) || match(parser, TOKEN_BANG_EQUAL) ||
+           match(parser, TOKEN_LESS) || match(parser, TOKEN_LESS_EQUAL) ||
+           match(parser, TOKEN_GREATER) || match(parser, TOKEN_GREATER_EQUAL)) {
+        Token op = parser->previous;
+        ASTNode* right = parse_term(parser);
+        OperatorType op_type;
+        if (op.type == TOKEN_EQUAL_EQUAL) op_type = OP_EQ;
+        else if (op.type == TOKEN_BANG_EQUAL) op_type = OP_NEQ;
+        else if (op.type == TOKEN_LESS) op_type = OP_LT;
+        else if (op.type == TOKEN_LESS_EQUAL) op_type = OP_LTE;
+        else if (op.type == TOKEN_GREATER) op_type = OP_GT;
+        else op_type = OP_GTE;
         expr = ast_create_binary_op(op_type, expr, right, op.line, op.column);
     }
     
@@ -183,10 +232,10 @@ static ASTNode* parse_addition(Parser* parser) {
 
 // Range has low precedence: <add> .. <add>
 static ASTNode* parse_range(Parser* parser) {
-    ASTNode* expr = parse_addition(parser);
+    ASTNode* expr = parse_comparison(parser);
     if (match(parser, TOKEN_DOT_DOT)) {
         Token op = parser->previous;
-        ASTNode* right = parse_addition(parser);
+        ASTNode* right = parse_comparison(parser);
         expr = ast_create_binary_op(OP_RANGE, expr, right, op.line, op.column);
     }
     return expr;
@@ -225,6 +274,28 @@ static ASTNode* parse_echo_statement(Parser* parser) {
     consume(parser, TOKEN_SEMICOLON, "Expected ';' after statement");
     
     return ast_create_echo(expr, line, column);
+}
+
+// Parse return statement
+static ASTNode* parse_return_statement(Parser* parser) {
+    int line = parser->previous.line;
+    int column = parser->previous.column;
+    ASTNode* value = NULL;
+    if (!check(parser, TOKEN_SEMICOLON)) {
+        value = parse_expression(parser);
+    }
+    consume(parser, TOKEN_SEMICOLON, "Expected ';' after return value");
+    return ast_create_return(value, line, column);
+}
+
+// Parse await statement: await <expr>;
+static ASTNode* parse_await_statement(Parser* parser) {
+    int line = parser->previous.line;
+    int column = parser->previous.column;
+    ASTNode* value = parse_expression(parser);
+    consume(parser, TOKEN_SEMICOLON, "Expected ';' after await expression");
+    // Reuse unary op node to represent await for now.
+    return ast_create_unary_op(OP_NOT, value, line, column); // placeholder op
 }
 
 // Parse loop statement: loop (<condition>) <statement>
@@ -345,11 +416,37 @@ static ASTNode* parse_function(Parser* parser, bool is_async) {
     consume(parser, TOKEN_LEFT_PAREN, "Expected '(' after function name");
     ASTList* params = ast_list_create();
     
-    if (!check(parser, TOKEN_RIGHT_PAREN)) {
-        // TODO: Parse parameters
+    // Robust parameter parsing: consume optional type tokens, then identifier, until ')'.
+    while (!check(parser, TOKEN_RIGHT_PAREN) && !check(parser, TOKEN_EOF)) {
+        if (match(parser, TOKEN_STREAM) || match(parser, TOKEN_STR) ||
+            match(parser, TOKEN_I32) || match(parser, TOKEN_BOOL) ||
+            match(parser, TOKEN_PTR)) {
+            // type token consumed and ignored
+        }
+        consume(parser, TOKEN_IDENTIFIER, "Expected parameter name");
+        char* pname = malloc(parser->previous.length + 1);
+        memcpy(pname, parser->previous.start, parser->previous.length);
+        pname[parser->previous.length] = '\0';
+        ASTNode* pid = ast_create_identifier(pname, parser->previous.line, parser->previous.column);
+        free(pname);
+        ast_list_append(params, pid);
+        if (!match(parser, TOKEN_COMMA)) {
+            break;
+        }
     }
-    
     consume(parser, TOKEN_RIGHT_PAREN, "Expected ')' after parameters");
+
+    // Optional return type arrow: accept and ignore the type token for now.
+    if (check(parser, TOKEN_ARROW)) {
+        advance(parser); // consume ->
+        // Consume a single type token if present (ignored for now).
+        if (check(parser, TOKEN_STREAM) || check(parser, TOKEN_STR) ||
+            check(parser, TOKEN_I32) || check(parser, TOKEN_BOOL) ||
+            check(parser, TOKEN_PTR) || check(parser, TOKEN_ARRAY) ||
+            check(parser, TOKEN_ARRAY)) {
+            advance(parser);
+        }
+    }
     
     // Body
     consume(parser, TOKEN_LEFT_BRACE, "Expected '{' before function body");
@@ -360,15 +457,95 @@ static ASTNode* parse_function(Parser* parser, bool is_async) {
     return func;
 }
 
-// Parse declaration
-static ASTNode* parse_declaration(Parser* parser) {
-    if (match(parser, TOKEN_ASYNC)) {
-        consume(parser, TOKEN_BLAST, "Expected 'blast' after 'async'");
-        return parse_function(parser, true);
+static ASTNode* parse_struct_declaration(Parser* parser) {
+    int line = parser->previous.line;
+    int column = parser->previous.column;
+
+    // The struct name is the token *after* 'struct'
+    consume(parser, TOKEN_IDENTIFIER, "Expected struct name");
+    char* name = malloc(parser->previous.length + 1);
+    memcpy(name, parser->previous.start, parser->previous.length);
+    name[parser->previous.length] = '\0';
+
+    consume(parser, TOKEN_LEFT_BRACE, "Expected '{' before struct body");
+
+    ASTList* fields = ast_list_create();
+    while (!check(parser, TOKEN_RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
+        // Parse field type
+        Token type_token;
+        if (check(parser, TOKEN_STR) || check(parser, TOKEN_I32) || check(parser, TOKEN_BOOL) || check(parser, TOKEN_IDENTIFIER)) {
+            type_token = parser->current;
+            advance(parser); // Consume the type token
+        } else {
+            error_at_current(parser, "Expected type for struct field");
+            break; // Exit loop on error
+        }
+
+        char* type_name;
+        if (type_token.type == TOKEN_IDENTIFIER) {
+            type_name = malloc(type_token.length + 1);
+            memcpy(type_name, type_token.start, type_token.length);
+            type_name[type_token.length] = '\0';
+        } else {
+            // For keyword types (STR, I32, BOOL), use token_type_to_string
+            type_name = strdup(token_type_to_string(type_token.type));
+        }
+
+        // Parse field name
+        consume(parser, TOKEN_IDENTIFIER, "Expected field name");
+        char* field_name = malloc(parser->previous.length + 1);
+        memcpy(field_name, parser->previous.start, parser->previous.length);
+        field_name[parser->previous.length] = '\0';
+        
+        TypeInfo* type = type_info_create(type_name, false, false); // Create TypeInfo
+        ASTNode* field = ast_create_variable_decl(field_name, type, NULL, false, parser->previous.line, parser->previous.column);
+        ast_list_append(fields, field);
+        free(field_name);
+        free(type_name); // Free the duplicated type_name
+        consume(parser, TOKEN_SEMICOLON, "Expected ';' after struct field");
     }
 
-    if (match(parser, TOKEN_BLAST)) {
-        return parse_function(parser, false);
+    consume(parser, TOKEN_RIGHT_BRACE, "Expected '}' after struct body");
+    
+    // Struct declaration can optionally end with a semicolon
+    if (match(parser, TOKEN_SEMICOLON)) {
+        // consumed
+    }
+
+    ASTNode* struct_decl = ast_create_struct_decl(name, fields, line, column);
+    free(name);
+    return struct_decl;
+}
+
+// Parse declaration
+static ASTNode* parse_declaration(Parser* parser) {
+    fprintf(stderr, "[PARSE] decl start token=%s line=%d col=%d\n",
+            token_type_to_string(parser->current.type),
+            parser->current.line,
+            parser->current.column);
+    // Lightweight import handling: current interpreter has no module system,
+    // so we parse and discard imports to keep scripts runnable.
+    if (match(parser, TOKEN_IMPORT)) {
+        consume(parser, TOKEN_IDENTIFIER, "Expected module name after 'import'");
+        consume(parser, TOKEN_SEMICOLON, "Expected ';' after import");
+        return NULL;
+    }
+
+    if (match(parser, TOKEN_STRUCT)) { // Match and consume the STRUCT token
+        return parse_struct_declaration(parser);
+    }
+
+    // Function declarations: allow either 'async blast' or plain 'blast'.
+    if (check(parser, TOKEN_ASYNC) || check(parser, TOKEN_BLAST)) {
+        bool is_async = false;
+        if (match(parser, TOKEN_ASYNC)) {
+            is_async = true;
+            consume(parser, TOKEN_BLAST, "Expected 'blast' after 'async'");
+        }
+        else {
+            consume(parser, TOKEN_BLAST, "Expected 'blast' for function");
+        }
+        return parse_function(parser, is_async);
     }
     
     // Statements (including variable decls inside blocks, but here we are at top level?)
@@ -383,6 +560,19 @@ static ASTNode* parse_declaration(Parser* parser) {
 static ASTNode* parse_statement(Parser* parser) {
     if (match(parser, TOKEN_ECHO)) {
         return parse_echo_statement(parser);
+    }
+    
+    if (match(parser, TOKEN_RETURN)) {
+        return parse_return_statement(parser);
+    }
+
+    if (match(parser, TOKEN_AWAIT)) {
+        return parse_await_statement(parser);
+    }
+
+    // Allow empty statements to recover from stray semicolons during panic-mode.
+    if (match(parser, TOKEN_SEMICOLON)) {
+        return NULL;
     }
     
     if (match(parser, TOKEN_LOOP)) {
@@ -432,9 +622,13 @@ static ASTNode* parse_statement(Parser* parser) {
 
 // Initialize parser
 void parser_init(Parser* parser, Lexer* lexer) {
+    // Defensive zeroing keeps current/previous deterministic before first advance.
+    memset(parser, 0, sizeof(Parser));
     parser->lexer = lexer;
     parser->had_error = false;
     parser->panic_mode = false;
+    parser->current.type = TOKEN_ERROR;
+    parser->previous.type = TOKEN_ERROR;
     advance(parser);
 }
 

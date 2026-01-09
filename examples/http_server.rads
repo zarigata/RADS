@@ -3,18 +3,18 @@
 
 import net;
 
-async blast handle_home(stream req) -> str {
+async blast handle_home(stream req) {
     return "<!DOCTYPE html>\n"
-           "<html><head><title>RADS Server 🚀</title>"
-           "<style>body{font-family:'Courier New',monospace;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:50px;text-align:center;}h1{font-size:3em;text-shadow:2px 2px 4px rgba(0,0,0,0.5);} .info{background:rgba(255,255,255,0.1);padding:20px;border-radius:10px;margin:20px auto;max-width:600px;}</style>"
-           "</head><body><h1>🚀 RADS Server Running!</h1>"
-           "<div class=\"info\"><p>Blasting data at turbo speed!</p>"
-           "<p>Built with RADS - Rapid Asynchronous Data Server Language</p>"
-           "<p>90s/2000s vibes, modern performance 💜</p></div>"
-           "</body></html>";
+         + "<html><head><title>RADS Server 🚀</title>"
+         + "<style>body{font-family:'Courier New',monospace;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:50px;text-align:center;}h1{font-size:3em;text-shadow:2px 2px 4px rgba(0,0,0,0.5);} .info{background:rgba(255,255,255,0.1);padding:20px;border-radius:10px;margin:20px auto;max-width:600px;}</style>"
+         + "</head><body><h1>🚀 RADS Server Running!</h1>"
+         + "<div class=\"info\"><p>Blasting data at turbo speed!</p>"
+         + "<p>Built with RADS - Rapid Asynchronous Data Server Language</p>"
+         + "<p>90s/2000s vibes, modern performance 💜</p></div>"
+         + "</body></html>";
 }
 
-async blast handle_api(stream path, stream method, stream body, stream query) -> array {
+async blast handle_api(stream path, stream method, stream body, stream query) {
     // Demo JSON API: echo method, query, and a friendly message
     turbo json = "{\"status\":\"radical\",\"speed\":9001,\"method\":\"" + method + "\",\"query\":\"" + query + "\"}";
     return net.json_response(json);

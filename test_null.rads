@@ -1,0 +1,6 @@
+blast main() {
+    turbo a = null;
+    if (a == null) {
+        echo("a is null");
+    }
+}

@@ -219,10 +219,11 @@ static TokenType identifier_type(Lexer* lexer) {
                                 case 'r':
                                     if (lexer->current - lexer->start == 3) return TOKEN_STR;
                                     if (lexer->start[3] == 'e') return check_keyword(lexer, 4, 2, "am", TOKEN_STREAM);
-                                    return TOKEN_IDENTIFIER;
+                                    break; // Removed return TOKEN_IDENTIFIER;
                                 case 'u': return check_keyword(lexer, 3, 3, "uct", TOKEN_STRUCT);
                             }
                         }
+                        return TOKEN_IDENTIFIER; // Moved here
                         break;
                     case 'w': return check_keyword(lexer, 2, 4, "itch", TOKEN_SWITCH);
                 }

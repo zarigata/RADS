@@ -85,6 +85,14 @@ ASTNode* ast_create_bool(bool value, int line, int column) {
     return node;
 }
 
+ASTNode* ast_create_null(int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_NULL_LITERAL;
+    node->line = line;
+    node->column = column;
+    return node;
+}
+
 ASTNode* ast_create_identifier(const char* name, int line, int column) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_IDENTIFIER;
@@ -137,6 +145,16 @@ ASTNode* ast_create_variable_decl(const char* name, TypeInfo* type, ASTNode* ini
     node->variable_decl.var_type = type;
     node->variable_decl.initializer = initializer;
     node->variable_decl.is_turbo = is_turbo;
+    return node;
+}
+
+ASTNode* ast_create_struct_decl(const char* name, ASTList* fields, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_STRUCT_DECL;
+    node->line = line;
+    node->column = column;
+    node->struct_decl.name = strdup(name);
+    node->struct_decl.fields = fields;
     return node;
 }
 
@@ -301,6 +319,10 @@ void ast_free(ASTNode* node) {
             free(node->variable_decl.name);
             type_info_free(node->variable_decl.var_type);
             ast_free(node->variable_decl.initializer);
+            break;
+        case AST_STRUCT_DECL:
+            free(node->struct_decl.name);
+            ast_list_free(node->struct_decl.fields);
             break;
         case AST_RETURN_STMT:
             ast_free(node->return_stmt.value);
