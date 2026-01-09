@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide 📚 - RADS Programming Language</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="bg-blur blur-1"></div>
+    <div class="bg-blur blur-2"></div>
+
+    <header>
+        <div class="header-inner">
+            <a href="index.html" class="logo-link">
+                <img src="assets/branding/logo.png" alt="RADS Logo" class="logo-img">
+            </a>
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="guide.html" class="active">Guide</a>
+                <a href="compare.html">Compare</a>
+                <a href="releases.html">Releases</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero-sub" style="padding: 4rem 1rem;">
+            <h1>Getting Started</h1>
+            <p>Ready to blast through your first project? Follow the guide below.</p>
+        </section>
+
+        <section id="install">
+            <div class="glass-card">
+                <h2>1. Install RADS</h2>
+                <p>Copy and paste the command below into your preferred terminal. This will download and install the latest RADS environment.</p>
+                <div class="install-container">
+                    <div class="terminal-line" id="installCmd">curl -fsSL https://raw.githubusercontent.com/zarigata/rads/main/install.sh | bash</div>
+                    <button class="copy-btn" onclick="copySnippet('installCmd', this)">Copy Command</button>
+                </div>
+                <p style="margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
+                    <strong>User Install:</strong> To install without root, use: <code>USE_SUDO=no RADS_PREFIX=$HOME/.local</code> before the curl command.
+                </p>
+            </div>
+        </section>
+
+        <section id="hello-world">
+            <div class="glass-card">
+                <h2>2. Your First Code</h2>
+                <p>Create a file named <code>hello.rads</code> and add the following "blast" function:</p>
+                <div class="code-window">
+                    <div class="window-header">
+                        <div class="window-dots">
+                            <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                        </div>
+                        <span>hello.rads</span>
+                    </div>
+                    <pre class="pre-container"><code><span style="color:#C678DD">blast</span> <span style="color:#61AFEF">main</span>() {
+    <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Hello, RADS World! 🚀"</span>);
+}</code></pre>
+                </div>
+                <p style="margin-top: 2rem;">Run it with the command:</p>
+                <div class="install-container" style="background: rgba(0,0,0,0.8); color: #FFF; padding: 1.5rem;">
+                    <code style="font-family: 'Fira Code', monospace;">rads hello.rads</code>
+                </div>
+            </div>
+        </section>
+
+        <section id="next-steps">
+            <div class="glass-card" style="background: linear-gradient(135deg, rgba(0,120,215,0.1), rgba(0,242,255,0.05)); border-color: rgba(0,120,215,0.2);">
+                <h2>3. Next Steps</h2>
+                <p>Explore the <a href="compare.html" style="color: var(--primary-blue); font-weight: 600;">Comparison Page</a> to see how RADS matches up against other tools, or check out the official examples in the GitHub repository.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <img src="assets/branding/emblem.png" alt="RADS Emblem" class="footer-emblem">
+        <p>&copy; 2026 RADS Dev Group. Crafted with precision and turbo speed.</p>
+    </footer>
+
+    <script>
+        function copySnippet(id, btn) {
+            const code = document.getElementById(id).innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = 'Copied!';
+                btn.style.background = '#4CAF50';
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.background = '';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

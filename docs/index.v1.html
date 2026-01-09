@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="RADS programming language – rapid, low-level, async-first scripting for microservers, APIs, and retro-inspired builders.">
+  <meta name="keywords" content="RADS language, microserver language, async language, lightweight programming language, retro programming, API language, IoT language">
+  <meta property="og:title" content="RADS Programming Language">
+  <meta property="og:description" content="Rapid Asynchronous Data Server language: lightweight, async-first, and ready for microservers and APIs.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#4fd1c5">
+  <title>RADS Programming Language</title>
+  <style>
+    :root {
+      --bg: radial-gradient(circle at 12% 18%, rgba(91, 230, 255, 0.28), transparent 32%),
+            radial-gradient(circle at 82% 12%, rgba(130, 255, 204, 0.25), transparent 30%),
+            radial-gradient(circle at 24% 82%, rgba(255, 255, 255, 0.14), transparent 36%),
+            linear-gradient(135deg, #0a1024 0%, #0b1738 45%, #0e234f 100%);
+      --panel: rgba(255,255,255,0.08);
+      --panel-strong: rgba(255,255,255,0.14);
+      --text: #f8fafc;
+      --muted: #cbd5e1;
+      --accent: #6ff3e4;
+      --accent-2: #7dd3fc;
+      --glow: 0 10px 60px rgba(111,243,228,0.25);
+      --shadow: 0 30px 60px rgba(0,0,0,0.35);
+      --mono: "JetBrains Mono", "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+      --sans: "Segoe UI", "Noto Sans", "Inter", system-ui, -apple-system, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.6;
+      position: relative;
+      overflow-x: hidden;
+    }
+    .hero {
+      padding: 72px 24px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .orb {
+      position: absolute;
+      filter: blur(40px);
+      opacity: 0.55;
+      z-index: -1;
+    }
+    .orb.a { width: 320px; height: 320px; background: #6ff3e4; top: 40px; left: 6%; }
+    .orb.b { width: 420px; height: 420px; background: #7dd3fc; top: -40px; right: 8%; }
+    .orb.c { width: 360px; height: 360px; background: #9ae6b4; bottom: -60px; left: 18%; }
+    .hero h1 {
+      font-size: clamp(2.8rem, 4vw, 3.6rem);
+      letter-spacing: 0.05em;
+      text-shadow: 0 14px 40px rgba(0,0,0,0.5);
+      margin: 0 0 12px;
+    }
+    .hero p.lead {
+      font-size: 1.2rem;
+      color: var(--muted);
+      max-width: 820px;
+      margin: 0 auto 28px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 18px;
+      border-radius: 999px;
+      background: linear-gradient(120deg, rgba(111,243,228,0.12), rgba(125,211,252,0.14));
+      border: 1px solid rgba(255,255,255,0.22);
+      color: var(--text);
+      font-size: 0.98rem;
+      box-shadow: var(--shadow);
+    }
+    .cta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .btn {
+      background: linear-gradient(120deg, #6ff3e4, #7dd3fc);
+      color: #0b1224;
+      border: none;
+      border-radius: 14px;
+      padding: 13px 19px;
+      font-weight: 800;
+      font-size: 1.02rem;
+      text-decoration: none;
+      box-shadow: var(--shadow);
+      transition: transform 0.12s ease, box-shadow 0.2s ease;
+    }
+    .btn.secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.3);
+      box-shadow: var(--glow);
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 18px 38px rgba(111,243,228,0.35); }
+    .section {
+      max-width: 1150px;
+      margin: 0 auto;
+      padding: 26px 20px 14px;
+    }
+    .grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      margin: 32px auto;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+    .card h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      letter-spacing: 0.02em;
+    }
+    .code-block {
+      background: #0b1224;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-family: var(--mono);
+      color: #e2e8f0;
+      overflow-x: auto;
+      box-shadow: var(--shadow);
+    }
+    .install-box {
+      background: var(--panel-strong);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 10px;
+    }
+    .install-box h2 { margin: 0; }
+    .badge {
+      display: inline-block;
+      padding: 7px 11px;
+      border-radius: 10px;
+      background: rgba(111,243,228,0.12);
+      border: 1px solid rgba(111,243,228,0.35);
+      color: var(--text);
+      font-size: 0.9rem;
+      margin-right: 8px;
+      margin-bottom: 6px;
+    }
+    footer {
+      text-align: center;
+      padding: 32px 10px 44px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    @media (max-width: 700px) {
+      .hero { padding-top: 56px; }
+      .install-box .code-block { font-size: 0.92rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="orb a"></div><div class="orb b"></div><div class="orb c"></div>
+    <div class="pill">Rapid Asynchronous Data Server • Lightweight • Async-first</div>
+    <h1>RADS Programming Language</h1>
+    <p class="lead">
+      A lightweight, low-level language channeling early-internet energy: fast to build, async by default,
+      and tuned to run on tiny machines, microservers, and always-on tools.
+    </p>
+    <div class="cta">
+      <a class="btn" href="#install">Copy the 1-line install</a>
+      <a class="btn secondary" href="https://github.com/zarigata/rads" target="_blank" rel="noreferrer">View on GitHub</a>
+    </div>
+  </header>
+
+  <section class="section" id="install">
+    <div class="install-box">
+      <h2>Install in One Line</h2>
+      <p>Copy/paste into your terminal (defaults to /usr/local; for user installs set <code>USE_SUDO=no</code> and <code>RADS_PREFIX=$HOME/.local</code>):</p>
+      <div class="code-block" id="install-command">
+        curl -fsSL https://raw.githubusercontent.com/zarigata/rads/main/install.sh | bash
+      </div>
+      <div class="cta" style="justify-content:flex-start; gap:10px;">
+        <button class="btn" id="copy-btn" aria-label="Copy install command">Copy command</button>
+        <button class="btn secondary" id="copy-user-btn" aria-label="Copy user install">Copy (user install)</button>
+      </div>
+      <p class="muted">After install: run <code>rads --help</code>. Make sure <code>$PREFIX/bin</code> is on your PATH.</p>
+      <p class="muted">User install variant (no sudo, home prefix): <code>USE_SUDO=no RADS_PREFIX=$HOME/.local</code></p>
+      <div>
+        <span class="badge">Runs on tiny machines</span>
+        <span class="badge">Async-first</span>
+        <span class="badge">Low-level speed</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="why">
+    <h2>Why RADS</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Turbo-speed, low-level</h3>
+        <p>Near-C performance with async-first primitives. Designed to live close to the metal yet stay simple.</p>
+      </div>
+      <div class="card">
+        <h3>Microserver-ready</h3>
+        <p>Perfect for tiny VPS, IoT boards, and retro hardware. Minimal footprint, fast startup, dependable runtimes.</p>
+      </div>
+      <div class="card">
+        <h3>Async baked in</h3>
+        <p>Built to stream, serve APIs, and react to events with native async keywords and network-oriented stdlib.</p>
+      </div>
+      <div class="card">
+        <h3>2000s-internet spirit</h3>
+        <p>Bold, direct, and practical. RADS keeps the no-nonsense ethos of early web builders while embracing modern safety.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="quickstart">
+    <h2>Quickstart</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Hello, RADS</h3>
+        <div class="code-block">blast main() {<br>    echo("Hello, RADS World! 🚀");<br>}</div>
+        <p>Run with <code>rads examples/hello_world.rads</code>.</p>
+      </div>
+      <div class="card">
+        <h3>HTTP microserver</h3>
+        <div class="code-block">import net;<br><br>async blast main() {<br>    turbo server = net.http_server("0.0.0.0", 8080);<br>    server.route("/", req -> "ok");<br>    await server.serve();<br>}</div>
+      </div>
+      <div class="card">
+        <h3>String + Math + IO</h3>
+        <div class="code-block">str.upper("retro");<br>math.pow(2,10);<br>io.write_file("out.txt","hi");</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="features">
+    <h2>Core Features</h2>
+    <div class="card">
+      <div class="badge">Async/await</div>
+      <div class="badge">HTTP server</div>
+      <div class="badge">File I/O</div>
+      <div class="badge">FFI hooks</div>
+      <div class="badge">String & Math stdlib</div>
+      <div class="badge">Low-level types</div>
+      <div class="badge">Retro aesthetics</div>
+      <p>RADS ships with a lexer, parser, and interpreter written in C11. It’s tuned for reliability on small machines and clear code paths for contributors.</p>
+    </div>
+  </section>
+
+  <section class="section" id="docs">
+    <h2>Documentation</h2>
+    <p>See the full language spec in <a href="https://raw.githubusercontent.com/zarigata/rads/main/docs/LANGUAGE_SPEC.md" target="_blank" rel="noreferrer">LANGUAGE_SPEC.md</a> and the examples in the repository.</p>
+    <ul>
+      <li><strong>Syntax:</strong> blast functions, turbo variables, async/await, echo, loops, conditionals.</li>
+      <li><strong>Stdlib:</strong> io, net, media (stubs), ffi, string, math.</li>
+      <li><strong>Examples:</strong> HTTP servers, file servers, media stubs, FFI sample, IO tests.</li>
+    </ul>
+  </section>
+
+  <section class="section" id="roadmap">
+    <h2>Roadmap</h2>
+    <div class="card">
+      <p><strong>Short-term:</strong> richer HTTP stack, JSON helpers, directory utilities, better error handling, bytecode VM prototype.</p>
+      <p><strong>Mid-term:</strong> package registry, REPL, debugger hooks, editor extensions, WebSocket support.</p>
+      <p><strong>Long-term:</strong> game-focused modules, graphics/audio helpers, and a compact VM with JIT experiments.</p>
+    </div>
+  </section>
+
+  <footer>
+    RADS • Rapid Asynchronous Data Server Language • Built for retro-future builders
+  </footer>
+
+  <script>
+    const installCmd = 'curl -fsSL https://raw.githubusercontent.com/zarigata/rads/main/install.sh | bash';
+    const userCmd = 'USE_SUDO=no RADS_PREFIX=$HOME/.local curl -fsSL https://raw.githubusercontent.com/zarigata/rads/main/install.sh | bash';
+
+    function copyText(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = event?.target;
+        if (!btn) return;
+        const original = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = original, 1400);
+      }).catch(() => {
+        alert('Copy failed. Please copy manually.');
+      });
+    }
+
+    document.getElementById('copy-btn').addEventListener('click', (e) => {
+      copyText(installCmd);
+    });
+    document.getElementById('copy-user-btn').addEventListener('click', (e) => {
+      copyText(userCmd);
+    });
+  </script>
+</body>
+</html>

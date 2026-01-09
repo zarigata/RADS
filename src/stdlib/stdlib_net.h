@@ -32,6 +32,7 @@ void stdlib_net_register(void);
 // Native functions
 Value native_net_http_server(struct Interpreter* interp, int argc, Value* args);
 Value native_net_route(struct Interpreter* interp, int argc, Value* args);
+Value native_net_static(struct Interpreter* interp, int argc, Value* args);
 Value native_net_serve(struct Interpreter* interp, int argc, Value* args);
 
 // Advanced Socket Primitives

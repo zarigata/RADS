@@ -9,6 +9,7 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <limits.h>
 
 extern uv_loop_t* global_event_loop;
 struct Interpreter;
@@ -123,6 +124,9 @@ typedef struct RouteRegistry {
 static Value make_string(const char* s);
 static Value make_bool(bool v);
 static Value make_null(void);
+static Value make_response_tuple(int status, const char* body, const char* ctype);
+static Value make_int(long long v);
+static Value make_json_response(const char* body);
 static Value clone_value(Value v);
 static void buffer_free(RadsBufferNode* head);
 static RadsBufferNode* buffer_push(RadsBufferNode** head, const char* data, size_t len);
@@ -148,6 +152,8 @@ static bool route_registry_add(RouteRegistry* reg, const char* path, const char*
 static bool route_registry_add_static(RouteRegistry* reg, const char* prefix, const char* dir);
 static RouteNode* route_registry_find(RouteRegistry* reg, const char* path, const char* method);
 static RouteNode* route_registry_find_static(RouteRegistry* reg, const char* path);
+static bool path_has_parent_ref(const char* path);
+static const char* guess_mime(const char* path);
 static HttpClientRequest* http_client_request_create(const char* method, const char* url);
 static void http_client_request_free(HttpClientRequest* req);
 static void http_client_request_add_header(HttpClientRequest* req, const char* name, const char* value);
@@ -719,6 +725,28 @@ static RouteNode* route_registry_find_static(RouteRegistry* reg, const char* pat
     return NULL;
 }
 
+static bool path_has_parent_ref(const char* path) {
+    if (!path) return true;
+    return strstr(path, "..") != NULL;
+}
+
+static const char* guess_mime(const char* path) {
+    if (!path) return "application/octet-stream";
+    const char* ext = strrchr(path, '.');
+    if (!ext) return "application/octet-stream";
+    ext++;
+    if (strcasecmp(ext, "html") == 0 || strcasecmp(ext, "htm") == 0) return "text/html";
+    if (strcasecmp(ext, "css") == 0) return "text/css";
+    if (strcasecmp(ext, "js") == 0) return "application/javascript";
+    if (strcasecmp(ext, "json") == 0) return "application/json";
+    if (strcasecmp(ext, "png") == 0) return "image/png";
+    if (strcasecmp(ext, "jpg") == 0 || strcasecmp(ext, "jpeg") == 0) return "image/jpeg";
+    if (strcasecmp(ext, "gif") == 0) return "image/gif";
+    if (strcasecmp(ext, "svg") == 0) return "image/svg+xml";
+    if (strcasecmp(ext, "txt") == 0) return "text/plain";
+    return "application/octet-stream";
+}
+
 // Parse URL format: http://host:port/path or https://host:port/path
 // Default port: 80 for http, 443 for https
 static bool url_parse(const char* url, char** host, int* port, char** path) {
@@ -1168,7 +1196,6 @@ static void http_send_response(uv_stream_t* client, HttpResponse* resp) {
 
 static void http_handle_request(uv_stream_t* client, const char* data, ssize_t len) {
     if (len <= 0 || !data) return;
-    fprintf(stderr, "[NET] http_handle_request len=%zd\n", len);
     HttpRequest* req = http_request_parse(data, len);
     HttpResponse* resp = NULL;
     if (!req) {
@@ -1182,6 +1209,78 @@ static void http_handle_request(uv_stream_t* client, const char* data, ssize_t l
 
     TcpHandleCtx* ctx = client ? client->data : NULL;
     RouteRegistry* reg = ctx ? (RouteRegistry*)ctx->data : NULL;
+    if (!reg) {
+        resp = http_response_create(500, "Internal Server Error");
+        http_response_set_body(resp, "No route registry", "text/plain");
+        http_send_response(client, resp);
+        http_request_free(req);
+        http_response_free(resp);
+        return;
+    }
+
+    // Static file handling
+    RouteNode* static_route = route_registry_find_static(reg, req->path);
+    if (static_route) {
+        const char* prefix = static_route->path;
+        const char* remainder = req->path + strlen(prefix);
+        if (*remainder == '/') remainder++;
+        if (path_has_parent_ref(remainder)) {
+            resp = http_response_create(403, "Forbidden");
+            http_response_set_body(resp, "Forbidden", "text/plain");
+            http_send_response(client, resp);
+            http_request_free(req);
+            http_response_free(resp);
+            return;
+        }
+        char fullpath[PATH_MAX];
+        if (snprintf(fullpath, sizeof(fullpath), "%s/%s", static_route->static_dir ? static_route->static_dir : ".", remainder) >= (int)sizeof(fullpath)) {
+            resp = http_response_create(414, "URI Too Long");
+            http_response_set_body(resp, "Path too long", "text/plain");
+            http_send_response(client, resp);
+            http_request_free(req);
+            http_response_free(resp);
+            return;
+        }
+        struct stat st;
+        if (stat(fullpath, &st) != 0 || !S_ISREG(st.st_mode)) {
+            resp = http_response_create(404, "Not Found");
+            http_response_set_body(resp, "Not Found", "text/plain");
+            http_send_response(client, resp);
+            http_request_free(req);
+            http_response_free(resp);
+            return;
+        }
+        FILE* f = fopen(fullpath, "rb");
+        if (!f) {
+            resp = http_response_create(500, "Internal Server Error");
+            http_response_set_body(resp, "Failed to read file", "text/plain");
+            http_send_response(client, resp);
+            http_request_free(req);
+            http_response_free(resp);
+            return;
+        }
+        char* buf = malloc((size_t)st.st_size + 1);
+        if (!buf) {
+            fclose(f);
+            resp = http_response_create(500, "Internal Server Error");
+            http_response_set_body(resp, "OOM", "text/plain");
+            http_send_response(client, resp);
+            http_request_free(req);
+            http_response_free(resp);
+            return;
+        }
+        size_t readn = fread(buf, 1, (size_t)st.st_size, f);
+        fclose(f);
+        buf[readn] = '\0';
+        resp = http_response_create(200, "OK");
+        http_response_set_body(resp, buf, guess_mime(fullpath));
+        free(buf);
+        http_send_response(client, resp);
+        http_request_free(req);
+        http_response_free(resp);
+        return;
+    }
+
     RouteNode* route = route_registry_find(reg, req->path, req->method);
     if (!route) {
         resp = http_response_create(404, "Not Found");
@@ -1192,14 +1291,32 @@ static void http_handle_request(uv_stream_t* client, const char* data, ssize_t l
         return;
     }
 
-    Value path_arg = make_string(req->path);
-    Value resp_val = interpreter_execute_callback(route->handler, 1, &path_arg);
-    value_free(&path_arg);
+    Value args[2];
+    args[0] = make_string(req->path);
+    args[1] = make_string(req->method ? req->method : "");
+    Value resp_val = interpreter_execute_callback(route->handler, 2, args);
+    value_free(&args[0]);
+    value_free(&args[1]);
 
     int status = 200;
     const char* status_text = "OK";
+    const char* content_type = "text/plain";
     char* body = NULL;
-    if (resp_val.type == VAL_STRING && resp_val.string_val) {
+
+    if (resp_val.type == VAL_ARRAY && resp_val.array_val && resp_val.array_val->count >= 2) {
+        Value code = resp_val.array_val->items[0];
+        Value body_val = resp_val.array_val->items[1];
+        Value ctype_val = resp_val.array_val->count >= 3 ? resp_val.array_val->items[2] : make_null();
+        if (code.type == VAL_INT) {
+            status = (int)code.int_val;
+        }
+        if (body_val.type == VAL_STRING && body_val.string_val) {
+            body = strdup(body_val.string_val);
+        }
+        if (ctype_val.type == VAL_STRING && ctype_val.string_val) {
+            content_type = ctype_val.string_val;
+        }
+    } else if (resp_val.type == VAL_STRING && resp_val.string_val) {
         body = strdup(resp_val.string_val);
     } else {
         status = 500;
@@ -1208,7 +1325,7 @@ static void http_handle_request(uv_stream_t* client, const char* data, ssize_t l
     }
 
     resp = http_response_create(status, status_text);
-    http_response_set_body(resp, body ? body : "", "text/plain");
+    http_response_set_body(resp, body ? body : "", content_type);
     http_send_response(client, resp);
 
     free(body);
@@ -1230,6 +1347,25 @@ static Value make_null(void) {
     return v;
 }
 
+static Value make_int(long long v) {
+    Value val;
+    val.type = VAL_INT;
+    val.int_val = v;
+    return val;
+}
+
+static Value make_response_tuple(int status, const char* body, const char* ctype) {
+    Array* arr = array_create(3);
+    Value code; code.type = VAL_INT; code.int_val = status;
+    Value b = make_string(body ? body : "");
+    Value ct = make_string(ctype ? ctype : "text/plain");
+    array_push(arr, code);
+    array_push(arr, b);
+    array_push(arr, ct);
+    Value out; out.type = VAL_ARRAY; out.array_val = arr;
+    return out;
+}
+
 static void buffer_free(RadsBufferNode* head) {
     while (head) {
         RadsBufferNode* next = head->next;
@@ -1246,13 +1382,14 @@ static bool next_listen_is_http = false;
 
 Value native_net_http_server(struct Interpreter* interp, int argc, Value* args) {
     if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_INT) {
-        fprintf(stderr, "⚠️ Net Error: Expected host and port for http_server\n");
+        fprintf(stderr, " Net Error: Expected host and port for http_server\n");
         return make_null();
     }
     next_listen_is_http = true;
     return native_net_tcp_listen(interp, argc - 1, &args[1]);
 }
 
+// Register a dynamic route; optional 4th arg is method.
 Value native_net_route(struct Interpreter* interp, int argc, Value* args) {
     if (argc < 3 || args[1].type != VAL_STRING || args[2].type != VAL_FUNCTION) {
         fprintf(stderr, "⚠️ Net Error: Expected server, path, and handler function for route\n");
@@ -1268,23 +1405,44 @@ Value native_net_route(struct Interpreter* interp, int argc, Value* args) {
         ctx->data_owner = true;
     }
     RouteRegistry* reg = (RouteRegistry*)ctx->data;
+    const char* method = NULL;
+    if (argc >= 4 && args[3].type == VAL_STRING) {
+        method = args[3].string_val;
+    }
     Value handler = clone_value(args[2]);
-    bool ok = route_registry_add(reg, args[1].string_val, NULL, handler);
+    bool ok = route_registry_add(reg, args[1].string_val, method, handler);
     return make_bool(ok);
 }
 
-// In stdlib_net.c or interpreter.c
-// We need access to eval_call or similar to execute the handler
-// For now, we manually execute the body in a simplified way
-
-Value native_net_serve(struct Interpreter* interp, int argc, Value* args) {
-    (void)args;
-    if (!interp) return make_bool(false);
-    interpreter_run_event_loop();
-    return make_bool(true);
+// Register a static prefix to directory mapping.
+Value native_net_static(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 3 || args[0].type != VAL_STRING || args[1].type != VAL_STRING || args[2].type != VAL_STRING) {
+        fprintf(stderr, "⚠️ Net Error: Expected server, prefix, and directory for static\n");
+        return make_bool(false);
+    }
+    TcpHandleCtx* ctx = find_tcp_ctx(args[0].string_val);
+    if (!ctx || !ctx->is_listener || !ctx->is_http) {
+        fprintf(stderr, "⚠️ Net Error: Unknown or non-http server handle\n");
+        return make_bool(false);
+    }
+    if (!ctx->data) {
+        ctx->data = route_registry_create();
+        ctx->data_owner = true;
+    }
+    RouteRegistry* reg = (RouteRegistry*)ctx->data;
+    bool ok = route_registry_add_static(reg, args[1].string_val, args[2].string_val);
+    return make_bool(ok);
 }
 
-// Minimal HTTP GET stub (simulated)
+Value native_net_json_response(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1 || args[0].type != VAL_STRING) {
+        return make_response_tuple(500, "Invalid JSON body", "text/plain");
+    }
+    return make_response_tuple(200, args[0].string_val, "application/json");
+}
+
 Value native_net_http_get(struct Interpreter* interp, int argc, Value* args) {
     (void)interp;
     if (argc < 1 || args[0].type != VAL_STRING) {
@@ -1437,6 +1595,7 @@ Value native_net_rest_post(struct Interpreter* interp, int argc, Value* args) {
 void stdlib_net_register(void) {
     register_native("net.http_server", native_net_http_server);
     register_native("net.route", native_net_route);
+    register_native("net.static", native_net_static);
     register_native("net.serve", native_net_serve);
     register_native("net.http_get", native_net_http_get);
     register_native("net.tcp_listen", native_net_tcp_listen);

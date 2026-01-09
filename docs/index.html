@@ -3,193 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RADS Programming Language - Turbocharge Your Code</title>
+    <title>RADS 🚀 - High Performance Retro-Future Language</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fira+Code&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div class="bg-blur blur-1"></div>
+    <div class="bg-blur blur-2"></div>
+
     <header>
         <div class="header-inner">
-            <h1>RADS</h1>
-            <nav>
-                <a href="#features">Features</a>
-                <a href="#compare">Compare</a>
-                <a href="#demos">Demos</a>
-                <a href="#install">Install</a>
+            <a href="index.html" class="logo-link">
+                <img src="assets/branding/logo.png" alt="RADS Logo" class="logo-img">
+            </a>
+            <nav class="nav-links">
+                <a href="index.html" class="active">Home</a>
+                <a href="guide.html">Guide</a>
+                <a href="compare.html">Compare</a>
+                <a href="releases.html">Releases</a>
             </nav>
         </div>
     </header>
 
     <main>
-        <section id="hero">
-            <div class="hero-content">
-                <h2>Blast Through Data at Turbo Speed!</h2>
-                <p>The ultimate retro-futuristic programming language.</p>
-                <a href="#install" class="cta-button">Get Started</a>
+        <section class="hero-sub">
+            <h1>Blast Through Data at <br>Turbo Speed!</h1>
+            <p>The ultimate high-performance language for microservers, IoT, and high-speed data processing. Designed with a premium retro-futuristic soul.</p>
+            <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center;">
+                <a href="guide.html" class="cta-button">Get Started Now</a>
+                <a href="https://github.com/zarigata/rads" class="cta-button secondary">Explore Source</a>
+            </div>
+            <div style="margin-top: 4rem;">
+                <img src="assets/branding/emblem.png" alt="RADS Emblem" class="float-img" style="max-width: 250px;">
             </div>
         </section>
 
         <section id="features">
-            <h2>Features</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <h3>Turbo Performance</h3>
-                    <p>Near-C speed with a custom VM. 10-50x faster than Python.</p>
+            <div class="glass-card">
+                <h2 style="text-align: center; margin-bottom: 3rem;">Why RADS?</h2>
+                <div class="compare-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+                    <div class="feature-card" style="text-align: center;">
+                        <span style="font-size: 3rem;">⚡</span>
+                        <h3>Turbo Performance</h3>
+                        <p>Built on C11, RADS offers execution speeds that rival native code. Perfect for latency-critical tasks.</p>
+                    </div>
+                    <div class="feature-card" style="text-align: center;">
+                        <span style="font-size: 3rem;">🌐</span>
+                        <h3>Async Primitives</h3>
+                        <p>Non-blocking I/O is baked into the language. Keywords like <code>async</code> and <code>await</code> are first-class citizens.</p>
+                    </div>
+                    <div class="feature-card" style="text-align: center;">
+                        <span style="font-size: 3rem;">💎</span>
+                        <h3>Glossy Syntax</h3>
+                        <p>A syntax that's easy to read and beautiful to write. Inspired by the best of C, Python, and Rust.</p>
+                    </div>
                 </div>
-                <div class="feature-card">
-                    <h3>Async by Design</h3>
-                    <p>Built-in async/await for high-performance network services.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>Simple & Clean Syntax</h3>
-                    <p>Easy to learn, with unique keywords like <code>blast</code>, <code>turbo</code>, and <code>cruise</code>.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>Rich Standard Library</h3>
-                    <p>Includes I/O, networking, and media processing out of the box.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>Low-Level Control</h3>
-                    <p>Access memory directly with <code>alloc</code>, <code>free</code>, and <code>xtreme</code> mode for max power.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>Retro-Modern Aesthetic</h3>
-                    <p>A mix of 2000s internet culture and modern programming features.</p>
-                </div>
-            </div>
-        </section>
-
-        <section id="compare">
-            <h2>Rads vs. The World</h2>
-            <table class="comparison-table">
-                <thead>
-                    <tr>
-                        <th>Feature</th>
-                        <th>Rads</th>
-                        <th>Python</th>
-                        <th>Rust</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Performance</td>
-                        <td>Excellent (Near C)</td>
-                        <td>Good (JIT, but interpreted)</td>
-                        <td>Exceptional (Compiled)</td>
-                    </tr>
-                    <tr>
-                        <td>Syntax</td>
-                        <td>C-like with a retro twist</td>
-                        <td>Simple and readable</td>
-                        <td>Modern and expressive</td>
-                    </tr>
-                    <tr>
-                        <td>Concurrency</td>
-                        <td>Built-in async/await</td>
-                        <td>Async/await, threading, GIL</td>
-                        <td>Fearless concurrency with ownership</td>
-                    </tr>
-                    <tr>
-                        <td>Primary Use Case</td>
-                        <td>Microservers, IoT, CLI tools</td>
-                        <td>Web dev, data science, scripting</td>
-                        <td>Systems programming, web assembly</td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
-
-        <section id="demos">
-            <h2>Demos</h2>
-            <div class="demos-grid">
-                <div class="code-demo">
-                    <h3>Rads</h3>
-                    <pre class="code-block"><code><span class="keyword">import</span> net;
-
-<span class="keyword">async</span> <span class="keyword">blast</span> main() {
-    <span class="keyword">turbo</span> server = net.http_server("0.0.0.0", 8080);
-    server.route("/", req -> "Hello, Rads!");
-    <span class="keyword">await</span> server.serve();
-}</code></pre>
-                </div>
-                <div class="code-demo">
-                    <h3>Python</h3>
-                    <pre class="code-block"><code><span class="keyword">from</span> http.server <span class="keyword">import</span> BaseHTTPRequestHandler, HTTPServer
-
-<span class="keyword">class</span> <span class="function">MyServer</span>(BaseHTTPRequestHandler):
-    <span class="keyword">def</span> <span class="function">do_GET</span>(<span class="self">self</span>):
-        <span class="self">self</span>.send_response(200)
-        <span class="self">self</span>.send_header("Content-type", "text/html")
-        <span class="self">self</span>.end_headers()
-        <span class="self">self</span>.wfile.write(bytes("Hello, Python!", "utf-8"))
-
-httpd = HTTPServer(("0.0.0.0", 8080), MyServer)
-httpd.serve_forever()</code></pre>
-                </div>
-                <div class="code-demo">
-                    <h3>Rust</h3>
-                    <pre class="code-block"><code><span class="keyword">use</span> std::net::{TcpListener, TcpStream};
-<span class="keyword">use</span> std::io::{Read, Write};
-
-<span class="keyword">fn</span> <span class="function">handle_client</span>(mut stream: TcpStream) {
-    <span class="keyword">let</span> mut buffer = [0; 1024];
-    stream.read(&mut buffer).unwrap();
-    <span class="keyword">let</span> response = "HTTP/1.1 200 OK\r\n\r\nHello, Rust!";
-    stream.write(response.as_bytes()).unwrap();
-    stream.flush().unwrap();
-}
-
-<span class="keyword">fn</span> <span class="function">main</span>() {
-    <span class="keyword">let</span> listener = TcpListener::bind("0.0.0.0:8080").unwrap();
-    <span class="keyword">for</span> stream <span class="keyword">in</span> listener.incoming() {
-        handle_client(stream.unwrap());
-    }
-}</code></pre>
-                </div>
-            </div>
-        </section>
-
-        <section id="install">
-            <h2>Install RADS</h2>
-            <div class="install-box">
-                <p>Copy and paste this command into your terminal to install RADS:</p>
-                <pre class="code-block" id="install-command"><code>curl -fsSL https://raw.githubusercontent.com/zarigata/rads/main/install.sh | bash</code></pre>
-                <div class="cta-buttons">
-                    <button class="cta-button" id="copy-btn">Copy Command</button>
-                    <button class="cta-button secondary" id="copy-user-btn">Copy User Install</button>
-                </div>
-                <p class="muted">After install: run <code>rads --help</code>. Make sure <code>$PREFIX/bin</code> is on your PATH.</p>
-                <p class="muted">User install variant (no sudo, home prefix): <code>USE_SUDO=no RADS_PREFIX=$HOME/.local</code></p>
             </div>
         </section>
     </main>
 
     <footer>
-        <p>&copy; 2026 RADS Community. All rights reserved.</p>
+        <img src="assets/branding/emblem.png" alt="RADS Emblem" class="footer-emblem">
+        <p>&copy; 2026 RADS Dev Group. Crafted with precision and turbo speed.</p>
     </footer>
-
-    <script>
-        const installCmd = 'curl -fsSL https://raw.githubusercontent.com/zarigata/rads/main/install.sh | bash';
-        const userCmd = 'USE_SUDO=no RADS_PREFIX=$HOME/.local curl -fsSL https://raw.githubusercontent.com/zarigata/rads/main/install.sh | bash';
-
-        function copyText(text, btn) {
-            navigator.clipboard.writeText(text).then(() => {
-                const original = btn.textContent;
-                btn.textContent = 'Copied!';
-                setTimeout(() => {
-                    btn.textContent = original;
-                }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy: ', err);
-            });
-        }
-
-        document.getElementById('copy-btn').addEventListener('click', (e) => {
-            copyText(installCmd, e.target);
-        });
-
-        document.getElementById('copy-user-btn').addEventListener('click', (e) => {
-            copyText(userCmd, e.target);
-        });
-    </script>
 </body>
 </html>
