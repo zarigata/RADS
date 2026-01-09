@@ -483,6 +483,37 @@ xtreme blast fast_function() {
 }
 ```
 
+## Networking (HTTP server)
+
+- `net.http_server(host: str, port: int) -> server_handle`
+- `server.route(path: str, handler: function [, method: str])` — optional HTTP method filter
+- `server.static(prefix: str, dir: str)` — serve static files under prefix
+- Handlers now receive `(path, method, body, query)`
+- Handler return shapes:
+  - `string` → 200 OK, text/plain
+  - `[status:int, body:string, content_type:string?]` tuple
+  - Use `net.json_response(body_string)` for JSON replies
+- `server.serve()` — start event loop
+
+Example (see `examples/http_server.rads`):
+
+```rads
+import net;
+
+async blast handle_api(path, method, body, query) -> array {
+    turbo json = "{\"status\":\"ok\",\"method\":\"" + method + "\",\"query\":\"" + query + "\"}";
+    return net.json_response(json);
+}
+
+async blast main() {
+    turbo server = net.http_server("0.0.0.0", 8080);
+    server.route("/", handle_home);
+    server.route("/api", handle_api, "GET");
+    server.static("/static", "./examples/static");
+    await server.serve();
+}
+```
+
 ## Future Features (Roadmap)
 
 - [ ] JIT compilation for hot code paths
