@@ -331,8 +331,7 @@ static ASTNode* parse_variable(Parser* parser) {
 }
 
 // Parse function declaration
-static ASTNode* parse_function(Parser* parser) {
-    bool is_async = false;
+static ASTNode* parse_function(Parser* parser, bool is_async) {
     int line = parser->previous.line;
     int column = parser->previous.column;
     
@@ -363,8 +362,13 @@ static ASTNode* parse_function(Parser* parser) {
 
 // Parse declaration
 static ASTNode* parse_declaration(Parser* parser) {
+    if (match(parser, TOKEN_ASYNC)) {
+        consume(parser, TOKEN_BLAST, "Expected 'blast' after 'async'");
+        return parse_function(parser, true);
+    }
+
     if (match(parser, TOKEN_BLAST)) {
-        return parse_function(parser);
+        return parse_function(parser, false);
     }
     
     // Statements (including variable decls inside blocks, but here we are at top level?)

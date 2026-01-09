@@ -7,6 +7,8 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <time.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 extern uv_loop_t* global_event_loop;
 struct Interpreter;
@@ -108,6 +110,8 @@ typedef struct RouteNode {
     char* path;
     char* method;
     Value handler;
+    bool is_static;
+    char* static_dir;
     struct RouteNode* next;
 } RouteNode;
 
@@ -141,7 +145,9 @@ static void http_handle_request(uv_stream_t* client, const char* data, ssize_t l
 static RouteRegistry* route_registry_create(void);
 static void route_registry_free(RouteRegistry* reg);
 static bool route_registry_add(RouteRegistry* reg, const char* path, const char* method, Value handler);
+static bool route_registry_add_static(RouteRegistry* reg, const char* prefix, const char* dir);
 static RouteNode* route_registry_find(RouteRegistry* reg, const char* path, const char* method);
+static RouteNode* route_registry_find_static(RouteRegistry* reg, const char* path);
 static HttpClientRequest* http_client_request_create(const char* method, const char* url);
 static void http_client_request_free(HttpClientRequest* req);
 static void http_client_request_add_header(HttpClientRequest* req, const char* name, const char* value);
@@ -217,20 +223,28 @@ static const char* http_request_get_header(HttpRequest* req, const char* name) {
 
 static HttpRequest* http_request_parse(const char* data, ssize_t len) {
     if (!data || len <= 0) return NULL;
+    // Incoming libuv buffers are not null-terminated; operate on a safe copy.
+    char* buf = malloc((size_t)len + 1);
+    if (!buf) return NULL;
+    memcpy(buf, data, (size_t)len);
+    buf[len] = '\0';
+
     HttpRequest* req = http_request_create();
-    const char* end = data + len;
-    const char* line_end = strstr(data, "\r\n");
+    const char* end = buf + len;
+    const char* line_end = strstr(buf, "\r\n");
     if (!line_end) {
+        free(buf);
         http_request_free(req);
         return NULL;
     }
-    size_t line_len = (size_t)(line_end - data);
-    char* request_line = strndup(data, line_len);
+    size_t line_len = (size_t)(line_end - buf);
+    char* request_line = strndup(buf, line_len);
     char* saveptr;
     char* method = strtok_r(request_line, " ", &saveptr);
     char* path = strtok_r(NULL, " ", &saveptr);
     char* version = strtok_r(NULL, " ", &saveptr);
     if (!method || !path || !version) {
+        free(buf);
         free(request_line);
         http_request_free(req);
         return NULL;
@@ -249,6 +263,7 @@ static HttpRequest* http_request_parse(const char* data, ssize_t len) {
     const char* headers_start = line_end + 2;
     const char* headers_end = strstr(headers_start, "\r\n\r\n");
     if (!headers_end) {
+        free(buf);
         http_request_free(req);
         return NULL;
     }
@@ -292,6 +307,7 @@ static HttpRequest* http_request_parse(const char* data, ssize_t len) {
         req->body[remaining] = '\0';
     }
 
+    free(buf);
     return req;
 }
 
@@ -640,6 +656,7 @@ static void route_registry_free(RouteRegistry* reg) {
         RouteNode* next = cur->next;
         free(cur->path);
         free(cur->method);
+        free(cur->static_dir);
         value_free(&cur->handler);
         free(cur);
         cur = next;
@@ -662,6 +679,22 @@ static bool route_registry_add(RouteRegistry* reg, const char* path, const char*
     return true;
 }
 
+static bool route_registry_add_static(RouteRegistry* reg, const char* prefix, const char* dir) {
+    if (!reg || !prefix || !dir) return false;
+    RouteNode* node = calloc(1, sizeof(RouteNode));
+    node->path = strdup(prefix);
+    node->method = NULL;
+    node->is_static = true;
+    node->static_dir = strdup(dir);
+    node->next = reg->head;
+    reg->head = node;
+    reg->count++;
+#ifdef RADS_DEBUG_NET
+    fprintf(stderr, "[NET] Static route registered: %s -> %s\n", prefix, dir);
+#endif
+    return true;
+}
+
 static RouteNode* route_registry_find(RouteRegistry* reg, const char* path, const char* method) {
     if (!reg || !path) return NULL;
     RouteNode* wildcard = NULL;
@@ -674,6 +707,16 @@ static RouteNode* route_registry_find(RouteRegistry* reg, const char* path, cons
         }
     }
     return wildcard;
+}
+
+static RouteNode* route_registry_find_static(RouteRegistry* reg, const char* path) {
+    if (!reg || !path) return NULL;
+    for (RouteNode* cur = reg->head; cur; cur = cur->next) {
+        if (cur->is_static && strncmp(path, cur->path, strlen(cur->path)) == 0) {
+            return cur;
+        }
+    }
+    return NULL;
 }
 
 // Parse URL format: http://host:port/path or https://host:port/path
@@ -989,6 +1032,7 @@ static void http_client_response_free(HttpClientResponse* resp) {
 static TcpHandleCtx* register_tcp_ctx(struct Interpreter* interp, uv_tcp_t* handle, const char* prefix, bool is_listener, bool owns_handle, bool is_http, const char* explicit_id) {
     TcpHandleCtx* ctx = calloc(1, sizeof(TcpHandleCtx));
     ctx->handle = handle;
+    ctx->recv_queue = NULL;
     ctx->is_listener = is_listener;
     ctx->owns_handle = owns_handle;
     ctx->is_http = is_http;
@@ -1124,6 +1168,7 @@ static void http_send_response(uv_stream_t* client, HttpResponse* resp) {
 
 static void http_handle_request(uv_stream_t* client, const char* data, ssize_t len) {
     if (len <= 0 || !data) return;
+    fprintf(stderr, "[NET] http_handle_request len=%zd\n", len);
     HttpRequest* req = http_request_parse(data, len);
     HttpResponse* resp = NULL;
     if (!req) {
