@@ -1,0 +1,227 @@
+/* Frutiger Aero / Windows XP inspired theme for RADS */
+
+body {
+    font-family: "Segoe UI", "Tahoma", sans-serif;
+    background-color: #E6E9F2; /* Light blueish-gray background */
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    background: linear-gradient(to bottom, #72A8E2, #5289C4);
+    border-bottom: 1px solid #3E6B99;
+    padding: 10px 20px;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2em;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+header nav a {
+    color: white;
+    text-decoration: none;
+    margin-left: 20px;
+    font-size: 1.1em;
+    transition: text-shadow 0.2s;
+}
+
+header nav a:hover {
+    text-shadow: 0 0 5px rgba(255,255,255,0.8);
+}
+
+main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+#hero {
+    background: url('https://i.imgur.com/6v3pL2k.jpg') no-repeat center center; /* Bliss-like background */
+    background-size: cover;
+    text-align: center;
+    padding: 100px 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    color: white;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
+
+#hero h2 {
+    font-size: 3em;
+    margin: 0;
+}
+
+#hero p {
+    font-size: 1.5em;
+}
+
+.cta-button {
+    display: inline-block;
+    background: linear-gradient(to bottom, #8BC34A, #689F38);
+    color: white;
+    padding: 15px 30px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 1.2em;
+    font-weight: bold;
+    border: 1px solid #558B2F;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: all 0.2s;
+}
+
+.cta-button:hover {
+    background: linear-gradient(to bottom, #9CCC65, #7CB342);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    transform: translateY(-2px);
+}
+
+section {
+    margin-top: 40px;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+section h2 {
+    font-size: 2em;
+    color: #3E6B99;
+    border-bottom: 2px solid #72A8E2;
+    padding-bottom: 10px;
+    margin-top: 0;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: 40px;
+    color: #666;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.feature-card {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.feature-card h3 {
+    margin-top: 0;
+    color: #005A9E;
+}
+
+.feature-card p {
+    color: #333;
+}
+
+/* Comparison Table Styles */
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.comparison-table th, .comparison-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.comparison-table th {
+    background: linear-gradient(to bottom, #72A8E2, #5289C4);
+    color: white;
+    font-weight: bold;
+}
+
+.comparison-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+/* Demos Section Styles */
+.demos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.code-demo h3 {
+    color: #005A9E;
+    margin-top: 0;
+}
+
+.code-block {
+    background-color: #282c34;
+    color: #abb2bf;
+    padding: 15px;
+    border-radius: 8px;
+    font-family: "Fira Code", "Consolas", monospace;
+    font-size: 0.9em;
+    overflow-x: auto;
+}
+
+.code-block .keyword {
+    color: #c678dd;
+}
+
+.code-block .function {
+    color: #61afef;
+}
+
+.code-block .self {
+    color: #e5c07b;
+}
+
+/* Install Section Styles */
+.install-box {
+    background: rgba(255, 255, 255, 0.8);
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.cta-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.cta-button.secondary {
+    background: linear-gradient(to bottom, #B0BEC5, #90A4AE);
+}
+
+.muted {
+    color: #666;
+    font-size: 0.9em;
+}
