@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compare ⚖️ - RADS vs The World</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="bg-blur blur-1"></div>
+    <div class="bg-blur blur-2"></div>
+
+    <header>
+        <div class="header-inner">
+            <a href="index.html" class="logo-link">
+                <img src="assets/branding/logo.png" alt="RADS Logo" class="logo-img">
+            </a>
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="guide.html">Guide</a>
+                <a href="compare.html" class="active">Compare</a>
+                <a href="releases.html">Releases</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero-sub" style="padding: 4rem 1rem;">
+            <h1>RADS vs. The World</h1>
+            <p>See how RADS stacks up against some of the industry's most popular tools.</p>
+        </section>
+
+        <section id="code-compare">
+            <div class="glass-card">
+                <h2>Direct Code Comparison</h2>
+                <p>Task: Create a simple HTTP server that responds with "Hello World".</p>
+                <div class="compare-grid" style="margin-top: 2rem;">
+                    
+                    <!-- RADS Snippet -->
+                    <div class="code-window">
+                        <div class="window-header">
+                            <div class="window-dots"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+                            <span>RADS 🚀 (Clean & Async)</span>
+                        </div>
+                        <pre class="pre-container"><code><span style="color:#C678DD">import</span> net;
+
+<span style="color:#C678DD">async blast</span> <span style="color:#61AFEF">main</span>() {
+    <span style="color:#C678DD">turbo</span> srv = net.http_server(<span style="color:#98C379">"0.0.0.0"</span>, <span style="color:#D19A66">8080</span>);
+    
+    srv.route(<span style="color:#98C379">"/"</span>, req -> <span style="color:#98C379">"Hello RADS!"</span>);
+
+    <span style="color:#C678DD">await</span> srv.serve();
+}</code></pre>
+                    </div>
+
+                    <!-- Python Snippet -->
+                    <div class="code-window">
+                        <div class="window-header">
+                            <div class="window-dots"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+                            <span>Python 🐍 (Verbose StdLib)</span>
+                        </div>
+                        <pre class="pre-container"><code><span style="color:#C678DD">from</span> http.server <span style="color:#C678DD">import</span> HTTPServer, ...
+
+<span style="color:#C678DD">class</span> <span style="color:#E5C07B">Handler</span>(BaseHTTPRequestHandler):
+    <span style="color:#C678DD">def</span> <span style="color:#61AFEF">do_GET</span>(self):
+        self.send_response(<span style="color:#D19A66">200</span>)
+        self.end_headers()
+        self.wfile.write(<span style="color:#98C379">b"Hello Python!"</span>)
+
+HTTPServer((<span style="color:#98C379">""</span>,<span style="color:#D19A66">8080</span>), Handler).serve_forever()</code></pre>
+                    </div>
+
+                    <!-- Rust Snippet -->
+                    <div class="code-window">
+                        <div class="window-header">
+                            <div class="window-dots"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+                            <span>Rust 🦀 (Low-Level / Strict)</span>
+                        </div>
+                        <pre class="pre-container"><code><span style="color:#C678DD">use</span> axum::{routing::get, Router};
+
+<span style="color:#E06C75">#[tokio::main]</span>
+<span style="color:#C678DD">async fn</span> <span style="color:#61AFEF">main</span>() {
+    <span style="color:#C678DD">let</span> app = Router::new().route(<span style="color:#98C379">"/"</span>, get(|| <span style="color:#C678DD">async</span> { <span style="color:#98C379">"Hello Rust!"</span> }));
+
+    axum::Server::bind(&<span style="color:#98C379">"0.0.0.0:8080"</span>.parse().unwrap())
+        .serve(app.into_make_service()).<span style="color:#C678DD">await</span>.unwrap();
+}</code></pre>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <section id="metrics">
+            <div class="glass-card">
+                <h2>Feature Matrix</h2>
+                <div class="comparison-container">
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Capability</th>
+                                <th>RADS 🚀</th>
+                                <th>Rust 🦀</th>
+                                <th>Python 🐍</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Execution Speed</td>
+                                <td class="high-light">Turbo (C-Backplane)</td>
+                                <td class="high-light">Extreme (Native)</td>
+                                <td>Standard (VM)</td>
+                            </tr>
+                            <tr>
+                                <td>Memory Usage</td>
+                                <td class="high-light">Minimal (~1-2MB)</td>
+                                <td class="high-light">Zero-Cost</td>
+                                <td>Moderate (~20MB+)</td>
+                            </tr>
+                            <tr>
+                                <td>Async Syntax</td>
+                                <td class="high-light">Native / First-Class</td>
+                                <td>Library-based (Tokio)</td>
+                                <td>Native (Event Loop)</td>
+                            </tr>
+                            <tr>
+                                <td>System Control</td>
+                                <td class="high-light">Xtreme Mode</td>
+                                <td class="high-light">Unsafe Blocks</td>
+                                <td>Limited (via C-API)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <img src="assets/branding/emblem.png" alt="RADS Emblem" class="footer-emblem">
+        <p>&copy; 2026 RADS Dev Group. Crafted with precision and turbo speed.</p>
+    </footer>
+</body>
+</html>
