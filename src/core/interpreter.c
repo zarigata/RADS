@@ -11,6 +11,8 @@ static ExecResult exec_statement(ASTNode* node);
 static void exec_function(ASTNode* node);
 
 uv_loop_t* global_event_loop = NULL;
+static struct Interpreter global_interpreter_instance = {0};
+static struct Interpreter* global_interpreter = NULL;
 
 static void handle_sigint(int signo) {
     (void)signo;
@@ -22,6 +24,8 @@ static void handle_sigint(int signo) {
 uv_loop_t* interpreter_init_event_loop(void) {
     if (global_event_loop) return global_event_loop;
     global_event_loop = uv_default_loop();
+    global_interpreter_instance.event_loop = global_event_loop;
+    global_interpreter = &global_interpreter_instance;
 #ifdef RADS_PLATFORM_WINDOWS
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
@@ -293,7 +297,7 @@ static Value eval_call(ASTNode* node) {
                 for (int i = 0; i < argc; i++) {
                     args[i + 1] = eval_expression(node->call_expr.arguments->nodes[i]);
                 }
-                Value result = native(NULL, argc + 1, args);
+                Value result = native(global_interpreter, argc + 1, args);
                 for (int i = 0; i < argc + 1; i++) {
                     value_free(&args[i]);
                 }
@@ -321,13 +325,13 @@ static Value eval_call(ASTNode* node) {
         if (native) {
              int argc = node->call_expr.arguments ? (int)node->call_expr.arguments->count : 0;
             Value* args = malloc(sizeof(Value) * argc);
-            
+
             for (int i = 0; i < argc; i++) {
                 args[i] = eval_expression(node->call_expr.arguments->nodes[i]);
             }
-            
-            Value result = native(NULL, argc, args);
-            
+
+            Value result = native(global_interpreter, argc, args);
+
             // Cleanup args
             for (int i = 0; i < argc; i++) {
                 value_free(&args[i]);

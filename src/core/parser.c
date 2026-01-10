@@ -290,12 +290,12 @@ static ASTNode* parse_return_statement(Parser* parser) {
 
 // Parse await statement: await <expr>;
 static ASTNode* parse_await_statement(Parser* parser) {
-    int line = parser->previous.line;
-    int column = parser->previous.column;
+    (void)parser->previous; // unused for now
     ASTNode* value = parse_expression(parser);
     consume(parser, TOKEN_SEMICOLON, "Expected ';' after await expression");
-    // Reuse unary op node to represent await for now.
-    return ast_create_unary_op(OP_NOT, value, line, column); // placeholder op
+    // For now, await is a no-op; just evaluate the expression.
+    // In the future, we can add async/await semantics.
+    return value;
 }
 
 // Parse loop statement: loop (<condition>) <statement>

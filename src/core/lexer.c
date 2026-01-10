@@ -223,7 +223,7 @@ static TokenType identifier_type(Lexer* lexer) {
                                 case 'u': return check_keyword(lexer, 3, 3, "uct", TOKEN_STRUCT);
                             }
                         }
-                        return TOKEN_IDENTIFIER; // Moved here
+                        // Removed: return TOKEN_IDENTIFIER;
                         break;
                     case 'w': return check_keyword(lexer, 2, 4, "itch", TOKEN_SWITCH);
                 }

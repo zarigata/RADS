@@ -444,6 +444,7 @@ static ConnectionPool* connection_pool_create(int max_connections, int idle_time
     return pool;
 }
 
+__attribute__((unused))
 static void connection_pool_free(ConnectionPool* pool) {
     if (!pool) return;
     ConnectionPoolEntry* cur = pool->head;
@@ -584,6 +585,7 @@ static void on_http_client_timeout(uv_timer_t* timer) {
     uv_close((uv_handle_t*)timer, NULL);
 }
 
+__attribute__((unused))
 static HttpClientResponse* http_client_execute(HttpClientRequest* req) {
     if (!req) return NULL;
     if (!global_event_loop) interpreter_init_event_loop();
@@ -852,6 +854,7 @@ static RadsBufferNode* buffer_push(RadsBufferNode** head, const char* data, size
     return node;
 }
 
+__attribute__((unused))
 static HttpClientRequest* http_client_request_create(const char* method, const char* url) {
     if (!method || !url) return NULL;
     HttpClientRequest* req = calloc(1, sizeof(HttpClientRequest));
@@ -879,6 +882,7 @@ static void http_client_request_add_header(HttpClientRequest* req, const char* n
     req->header_count++;
 }
 
+__attribute__((unused))
 static void http_client_request_set_body(HttpClientRequest* req, const char* body) {
     if (!req) return;
     free(req->body);
@@ -1065,6 +1069,7 @@ static bool http_client_response_parse(HttpClientResponse* resp, const char* dat
     return false;
 }
 
+__attribute__((unused))
 static void http_client_response_free(HttpClientResponse* resp) {
     if (!resp) return;
     free(resp->status_text);
@@ -1416,6 +1421,7 @@ static Value make_response_tuple(int status, const char* body, const char* ctype
     return out;
 }
 
+__attribute__((unused))
 static Value make_json_response(const char* body) {
     return make_response_tuple(200, body ? body : "", "application/json");
 }
@@ -1446,6 +1452,7 @@ Value native_net_http_server(struct Interpreter* interp, int argc, Value* args) 
 
 // Register a dynamic route; optional 4th arg is method.
 Value native_net_route(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp; // Unused for now
     if (argc < 3 || args[1].type != VAL_STRING || args[2].type != VAL_FUNCTION) {
         fprintf(stderr, "⚠️ Net Error: Expected server, path, and handler function for route\n");
         return make_bool(false);
@@ -1504,7 +1511,8 @@ Value native_net_json_response(struct Interpreter* interp, int argc, Value* args
 
 // Run the event loop (server serve)
 Value native_net_serve(struct Interpreter* interp, int argc, Value* args) {
-    (void)args;
+    (void)args; // Unused for now
+    (void)argc; // Unused for now
     if (!interp) return make_bool(false);
     fprintf(stderr, "[NET] serve entering event loop\n");
     interpreter_run_event_loop();

@@ -9,6 +9,7 @@ static bool check_argc(int argc, int expected) {
     return argc == expected;
 }
 
+__attribute__((unused))
 static Value make_string(const char* s) {
     Value v;
     v.type = VAL_STRING;
