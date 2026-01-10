@@ -56,8 +56,11 @@ SOURCES = $(CORE_SOURCES) $(STDLIB_SOURCES)
 OBJECTS = $(patsubst $(SRC_CORE_DIR)/%.c,$(BUILD_DIR)/core/%.o,$(CORE_SOURCES)) \
           $(patsubst $(SRC_STDLIB_DIR)/%.c,$(BUILD_DIR)/stdlib/%.o,$(STDLIB_SOURCES))
 
+# Tools
+RSTAR = bin/rstar
+
 # Default target
-all: $(TARGET)
+all: $(TARGET) $(RSTAR)
 
 # Create build and bin directories
 $(BUILD_DIR):
@@ -76,26 +79,28 @@ $(TARGET): $(OBJECTS)
 	@ln -sf bin/$(TARGET) $(TARGET)
 	@echo "✅ RADS compiler built successfully in bin/$(TARGET)"
 
+# Build RADStar package manager
+$(RSTAR): tools/rstar/rstar.c | $(BUILD_DIR)
+	$(CC) -D_POSIX_C_SOURCE=200809L -Wall -Wextra -std=c11 -O2 -Isrc tools/rstar/rstar.c -o $(RSTAR)
+	@ln -sf bin/rstar rstar
+	@echo "✅ RADStar package manager built successfully in bin/rstar"
+
 # Debug build
 debug: CFLAGS += $(DEBUG_FLAGS)
 debug: clean $(TARGET)
 
 # Clean build artifacts
 clean:
-	rm -rf $(BUILD_DIR) $(BIN_DIR) $(TARGET)
+	rm -rf $(BUILD_DIR) $(BIN_DIR) $(TARGET) rstar
 	@echo "🧹 Cleaned build artifacts"
 
 # Install (copy to /usr/local/bin)
-install: $(TARGET)
+install: $(TARGET) $(RSTAR)
 	install -m 755 $(BIN_DIR)/$(TARGET) /usr/local/bin/$(TARGET)
+	install -m 755 $(RSTAR) /usr/local/bin/rstar
 	# Build rpm before install if it doesn't exist
 	gcc -D_POSIX_C_SOURCE=200809L -Isrc tools/rpm/rpm.c -o tools/rpm/rpm
 	install -m 755 tools/rpm/rpm /usr/local/bin/
-	# Build rstar (RADStar plugin manager skeleton)
-	gcc -D_POSIX_C_SOURCE=200809L -DRSTAR_TESTING -Isrc tools/rstar/rstar.c -o tools/rstar/rstar
-	# Build rstar tests (helper-level tests)
-	gcc -D_POSIX_C_SOURCE=200809L -DRSTAR_TESTING -Isrc tools/rstar/rstar_test.c -o tools/rstar/rstar_test
-	install -m 755 tools/rstar/rstar /usr/local/bin/
 	@echo "✅ RADS, RPM, and RStar installed to /usr/local/bin/"
 
 # Platform targets

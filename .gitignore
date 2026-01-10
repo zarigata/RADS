@@ -2,6 +2,7 @@
 build/
 bin/
 rads
+rstar
 rpm
 rads-convert
 *.o
