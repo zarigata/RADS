@@ -680,9 +680,26 @@ int interpret(ASTNode* program) {
             }
         }
     }
-    
-    
+
+
     env_free();
     interpreter_cleanup_event_loop();
     return 0;
+}
+
+// REPL-specific interpreter - executes single statement without clearing environment
+int interpret_repl_statement(ASTNode* stmt) {
+    if (!stmt) {
+        return 1;
+    }
+
+    // Execute the statement directly
+    // Environment persists across calls for REPL
+    exec_statement(stmt);
+    return 0;
+}
+
+// Clean up the global environment (call when exiting REPL)
+void interpreter_cleanup_environment(void) {
+    env_free();
 }

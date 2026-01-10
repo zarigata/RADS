@@ -50,6 +50,7 @@ typedef struct Interpreter {
 
 // Interpreter functions
 int interpret(ASTNode* program);
+int interpret_repl_statement(ASTNode* stmt);  // For REPL - executes single statement
 void value_print(Value* value);
 void value_free(Value* value);
 
@@ -66,6 +67,7 @@ typedef enum {
 void register_native(const char* name, NativeFn fn);
 uv_loop_t* interpreter_init_event_loop(void);
 void interpreter_cleanup_event_loop(void);
+void interpreter_cleanup_environment(void);  // Clean up global environment (for REPL exit)
 void interpreter_run_event_loop(void);
 Value interpreter_execute_callback(Value callback, int argc, Value* args);
 

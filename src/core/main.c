@@ -188,20 +188,17 @@ int run_repl() {
             continue;
         }
 
-        // Execute statement
-        // Create a minimal program node with just this statement
-        ASTList* declarations = ast_list_create();
-        ast_list_append(declarations, stmt);
-        ASTNode* program = ast_create_program(declarations);
+        // Execute statement in REPL context (preserves environment)
+        interpret_repl_statement(stmt);
 
-        interpret(program);
-
-        // Cleanup (but keep environment for next line)
-        ast_free(program);
+        // Cleanup AST (environment persists)
+        ast_free(stmt);
 
         line_num++;
     }
 
+    // Clean up environment and event loop on exit
+    interpreter_cleanup_environment();
     interpreter_cleanup_event_loop();
     return 0;
 }
