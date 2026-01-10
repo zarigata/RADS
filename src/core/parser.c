@@ -3,31 +3,145 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
-/* error_at
- * Why: Centralized, conversational parser diagnostics; guards against garbage
- *      line/col to keep errors readable even if upstream tokens are bad.
- * How to upgrade: Include token type/name and nearby source snippet once we
- *      track file offsets; keep clamping to avoid overwhelming users.
+// ANSI color codes for terminal output
+#define COLOR_RESET   "\033[0m"
+#define COLOR_RED     "\033[1;31m"
+#define COLOR_YELLOW  "\033[1;33m"
+#define COLOR_CYAN    "\033[1;36m"
+#define COLOR_GRAY    "\033[0;90m"
+#define COLOR_WHITE   "\033[1;37m"
+
+// Extract a specific line from source code
+static const char* get_source_line(const char* source, int target_line, int* line_length) {
+    const char* line_start = source;
+    int current_line = 1;
+
+    // Find the start of the target line
+    while (*line_start && current_line < target_line) {
+        if (*line_start == '\n') {
+            current_line++;
+            line_start++;
+        } else {
+            line_start++;
+        }
+    }
+
+    // Find the end of the line
+    const char* line_end = line_start;
+    while (*line_end && *line_end != '\n') {
+        line_end++;
+    }
+
+    *line_length = (int)(line_end - line_start);
+    return line_start;
+}
+
+// Suggest fixes for common typos
+static const char* suggest_fix(const char* token_str, size_t token_len) {
+    // Common keyword typos
+    struct { const char* typo; const char* fix; } suggestions[] = {
+        {"function", "blast"},
+        {"var", "turbo"},
+        {"let", "turbo"},
+        {"const", "turbo"},
+        {"print", "echo"},
+        {"println", "echo"},
+        {"while", "loop"},
+        {"for", "cruise"},
+        {"elif", "elif"},
+        {"elseif", "elif"},
+        {"else if", "elif"},
+        {NULL, NULL}
+    };
+
+    for (int i = 0; suggestions[i].typo != NULL; i++) {
+        if (strlen(suggestions[i].typo) == token_len &&
+            strncmp(token_str, suggestions[i].typo, token_len) == 0) {
+            return suggestions[i].fix;
+        }
+    }
+
+    return NULL;
+}
+
+/* error_at - Enhanced error reporting with colors and context
+ * Shows:
+ * - Colored error header with file location
+ * - Source code line with the error
+ * - Column pointer (^) indicating exact position
+ * - Helpful suggestions for common mistakes
  */
 static void error_at(Parser* parser, Token* token, const char* message) {
     if (parser->panic_mode) return;
     parser->panic_mode = true;
     parser->had_error = true;
-    
+
     int line = (token && token->line > 0) ? token->line : 1;
     int col = (token && token->column > 0) ? token->column : 1;
-    fprintf(stderr, "[Line %d, Col %d] Error", line, col);
-    
-    if (token->type == TOKEN_EOF) {
-        fprintf(stderr, " at end");
-    } else if (token->type == TOKEN_ERROR) {
-        // Nothing
-    } else {
-        fprintf(stderr, " at '%.*s'", (int)token->length, token->start);
+
+    // Error header with color
+    fprintf(stderr, "\n%sError:%s ", COLOR_RED, COLOR_RESET);
+    fprintf(stderr, "%s\n", message);
+
+    // Location info
+    fprintf(stderr, "%s  --> %sLine %d, Column %d%s\n",
+            COLOR_GRAY, COLOR_CYAN, line, col, COLOR_RESET);
+
+    // Show source code context if available
+    if (parser->lexer && parser->lexer->source) {
+        int line_length = 0;
+        const char* source_line = get_source_line(parser->lexer->source, line, &line_length);
+
+        if (line_length > 0) {
+            // Line number prefix
+            fprintf(stderr, "%s%4d |%s ", COLOR_GRAY, line, COLOR_RESET);
+
+            // Source line
+            fprintf(stderr, "%.*s\n", line_length, source_line);
+
+            // Column pointer
+            fprintf(stderr, "%s     |%s ", COLOR_GRAY, COLOR_RESET);
+            for (int i = 1; i < col; i++) {
+                fprintf(stderr, " ");
+            }
+            fprintf(stderr, "%s^%s", COLOR_RED, COLOR_RESET);
+
+            // Underline the token if it has length
+            if (token && token->length > 1) {
+                for (size_t i = 1; i < token->length && i < 20; i++) {
+                    fprintf(stderr, "%s~%s", COLOR_RED, COLOR_RESET);
+                }
+            }
+            fprintf(stderr, "\n");
+        }
     }
-    
-    fprintf(stderr, " (token=%s): %s\n", token_type_to_string(token->type), message);
+
+    // Show token info
+    if (token) {
+        if (token->type == TOKEN_EOF) {
+            fprintf(stderr, "%s     |%s at end of file\n", COLOR_GRAY, COLOR_RESET);
+        } else if (token->type != TOKEN_ERROR && token->length > 0) {
+            fprintf(stderr, "%s     |%s found: '%.*s' (type: %s)\n",
+                    COLOR_GRAY, COLOR_RESET,
+                    (int)token->length, token->start,
+                    token_type_to_string(token->type));
+
+            // Suggest fix for common typos
+            if (token->type == TOKEN_IDENTIFIER) {
+                const char* suggestion = suggest_fix(token->start, token->length);
+                if (suggestion) {
+                    fprintf(stderr, "%s     |%s\n", COLOR_GRAY, COLOR_RESET);
+                    fprintf(stderr, "%s     = help:%s Did you mean '%s%s%s'?\n",
+                            COLOR_GRAY, COLOR_RESET,
+                            COLOR_YELLOW, suggestion, COLOR_RESET);
+                }
+            }
+        }
+    }
+
+    fprintf(stderr, "\n");
 }
 
 static void error(Parser* parser, const char* message) {
