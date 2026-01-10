@@ -1,6 +1,7 @@
 # Build artifacts
 build/
 bin/
+release/
 rads
 rstar
 rpm
