@@ -1,6 +1,9 @@
 # Build artifacts
 build/
+bin/
 rads
+rpm
+rads-convert
 *.o
 *.rbc
 
@@ -12,6 +15,8 @@ output2.txt
 build_error.txt
 build2_error.txt
 build_and_test.sh
+tests/*.txt
+scripts/*.log
 
 # System files
 .DS_Store

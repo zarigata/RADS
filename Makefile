@@ -43,6 +43,7 @@ DEBUG_FLAGS = -g -DDEBUG
 SRC_CORE_DIR = src/core
 SRC_STDLIB_DIR = src/stdlib
 BUILD_DIR = build
+BIN_DIR = bin
 
 # VPATH for finding source files in different directories
 VPATH =
@@ -58,9 +59,9 @@ OBJECTS = $(patsubst $(SRC_CORE_DIR)/%.c,$(BUILD_DIR)/core/%.o,$(CORE_SOURCES)) 
 # Default target
 all: $(TARGET)
 
-# Create build directory
+# Create build and bin directories
 $(BUILD_DIR):
-	mkdir -p $(BUILD_DIR) $(BUILD_DIR)/core $(BUILD_DIR)/stdlib
+	mkdir -p $(BUILD_DIR) $(BUILD_DIR)/core $(BUILD_DIR)/stdlib $(BIN_DIR)
 
 # Compile object files from core and stdlib with explicit paths
 $(BUILD_DIR)/core/%.o: $(SRC_CORE_DIR)/%.c | $(BUILD_DIR)
@@ -71,8 +72,9 @@ $(BUILD_DIR)/stdlib/%.o: $(SRC_STDLIB_DIR)/%.c | $(BUILD_DIR)
 
 # Link executable
 $(TARGET): $(OBJECTS)
-	$(CC) $(CFLAGS) $(OBJECTS) $(LDFLAGS) $(LIBS) -o $(TARGET)
-	@echo "✅ RADS compiler built successfully!"
+	$(CC) $(CFLAGS) $(OBJECTS) $(LDFLAGS) $(LIBS) -o $(BIN_DIR)/$(TARGET)
+	@ln -sf bin/$(TARGET) $(TARGET)
+	@echo "✅ RADS compiler built successfully in bin/$(TARGET)"
 
 # Debug build
 debug: CFLAGS += $(DEBUG_FLAGS)
@@ -80,12 +82,12 @@ debug: clean $(TARGET)
 
 # Clean build artifacts
 clean:
-	rm -rf $(BUILD_DIR) $(TARGET)
+	rm -rf $(BUILD_DIR) $(BIN_DIR) $(TARGET)
 	@echo "🧹 Cleaned build artifacts"
 
 # Install (copy to /usr/local/bin)
 install: $(TARGET)
-	install -m 755 $(TARGET) /usr/local/bin/$(TARGET)
+	install -m 755 $(BIN_DIR)/$(TARGET) /usr/local/bin/$(TARGET)
 	# Build rpm before install if it doesn't exist
 	gcc -D_POSIX_C_SOURCE=200809L -Isrc tools/rpm/rpm.c -o tools/rpm/rpm
 	install -m 755 tools/rpm/rpm /usr/local/bin/
