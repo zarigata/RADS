@@ -1,0 +1,27 @@
+// 04_loops.rads
+// This example demonstrates how to use 'loop' (while) and 'cruise' (for) loops.
+
+blast main() {
+    echo("--- Loops ---");
+
+    // 'loop' (while loop)
+    echo("A 'loop' that counts from 0 to 4:");
+    turbo i32 i = 0;
+    loop (i < 5) {
+        echo("i = " + i);
+        i = i + 1;
+    }
+
+    // 'cruise' (for loop) over a range
+    echo("\nA 'cruise' loop from 0 to 4:");
+    cruise (j in 0..5) {
+        echo("j = " + j);
+    }
+
+    // 'cruise' (for loop) over an array
+    echo("\nA 'cruise' loop over an array of strings:");
+    array<str> names = ["Alice", "Bob", "Charlie"];
+    cruise (name in names) {
+        echo("Hello, " + name + "!");
+    }
+}

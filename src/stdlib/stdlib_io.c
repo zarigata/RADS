@@ -166,6 +166,47 @@ Value native_io_file_size(struct Interpreter* interp, int argc, Value* args) {
     return v;
 }
 
+Value native_io_read_line(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    
+    if (argc != 0) {
+        // For now, io.read_line takes no arguments.
+        // We could add a prompt string in the future.
+        Value v;
+        v.type = VAL_NULL;
+        return v;
+    }
+
+    char line[4096];
+    if (fgets(line, sizeof(line), stdin) == NULL) {
+        Value v;
+        v.type = VAL_NULL;
+        return v;
+    }
+
+    // Remove newline
+    size_t len = strlen(line);
+    if (len > 0 && line[len-1] == '\n') {
+        line[len-1] = '\0';
+        len--;
+    }
+
+    // Create a RADS string
+    char* buffer = malloc(len + 1);
+    if (!buffer) {
+        Value v;
+        v.type = VAL_NULL;
+        return v;
+    }
+    memcpy(buffer, line, len + 1);
+
+    Value v;
+    v.type = VAL_STRING;
+    v.string_val = buffer; // Ownership transferred to Value
+    return v;
+}
+
+
 // Registration
 void stdlib_io_register(void) {
     register_native("io.read_file", native_io_read_file);
@@ -174,4 +215,5 @@ void stdlib_io_register(void) {
     register_native("io.delete_file", native_io_delete_file);
     register_native("io.append_file", native_io_append_file);
     register_native("io.file_size", native_io_file_size);
+    register_native("io.read_line", native_io_read_line);
 }

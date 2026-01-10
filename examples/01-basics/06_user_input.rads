@@ -1,0 +1,22 @@
+// 06_user_input.rads
+// This example demonstrates how to get input from the user.
+import io;
+
+blast main() {
+    echo("--- User Input ---");
+
+    echo("What is your name?");
+    turbo str name = io.read_line();
+    echo("Hello, " + name + "!");
+
+    echo("\nHow old are you?");
+    turbo str age_str = io.read_line();
+    turbo i32 age = str.to_int(age_str);
+
+    if (age >= 18) {
+        echo("You are an adult.");
+    } else {
+        echo("You are a minor.");
+    }
+}
+

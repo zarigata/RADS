@@ -1,0 +1,40 @@
+// 05_functions.rads
+// This example demonstrates how to define and use functions.
+
+// A simple function that takes no arguments and returns nothing.
+blast say_hello() {
+    echo("Hello from a function!");
+}
+
+// A function that takes one argument.
+blast greet(str name) {
+    echo("Hello, " + name + "!");
+}
+
+// A function that returns a value.
+blast add(i32 a, i32 b) -> i32 {
+    return a + b;
+}
+
+// A function that returns multiple values.
+blast get_point() -> (i32, i32) {
+    return (10, 20);
+}
+
+blast main() {
+    echo("--- Functions ---");
+
+    // Calling a simple function.
+    say_hello();
+
+    // Calling a function with an argument.
+    greet("RADS");
+
+    // Calling a function and using its return value.
+    turbo i32 sum = add(5, 3);
+    echo("5 + 3 = " + sum);
+
+    // Calling a function with multiple return values.
+    turbo (i32 x, i32 y) = get_point();
+    echo("The point is at (" + x + ", " + y + ")");
+}

@@ -1,0 +1,37 @@
+// 07_structs.rads
+// This example demonstrates how to define and use structs.
+
+// Define a struct to represent a Player.
+struct Player {
+    str name;
+    i32 score;
+    bool is_active;
+}
+
+// A function that takes a Player struct as an argument.
+blast print_player(Player p) {
+    echo("Player Information:");
+    echo("  Name: " + p.name);
+    echo("  Score: " + p.score);
+    echo("  Active: " + p.is_active);
+}
+
+blast main() {
+    echo("--- Structs ---");
+
+    // Create an instance of the Player struct.
+    turbo Player p1 = Player {
+        name: "Xx_Rads_Gamer_xX",
+        score: 100,
+        is_active: true
+    };
+
+    // Access the fields of the struct.
+    echo("The player's name is: " + p1.name);
+
+    // Modify a field of the struct.
+    p1.score = p1.score + 50;
+
+    // Pass the struct to a function.
+    print_player(p1);
+}

@@ -1,0 +1,26 @@
+// 03_conditionals.rads
+// This example demonstrates how to use if, elif, and else statements.
+
+blast main() {
+    echo("--- Conditional Statements ---");
+
+    turbo i32 number = 7;
+    echo("The number is: " + number);
+
+    if (number > 10) {
+        echo("The number is greater than 10.");
+    } elif (number > 5) {
+        echo("The number is greater than 5 but not greater than 10.");
+    } else {
+        echo("The number is 5 or less.");
+    }
+
+    turbo str name = "RADS";
+    echo("The name is: " + name);
+
+    if (name == "RADS") {
+        echo("Hello, RADS!");
+    } else {
+        echo("You are not RADS.");
+    }
+}

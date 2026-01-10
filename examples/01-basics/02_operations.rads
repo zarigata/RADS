@@ -1,0 +1,29 @@
+// 02_operations.rads
+// This example demonstrates basic arithmetic, string, and boolean operations.
+
+blast main() {
+    echo("--- Basic Operations ---");
+
+    // Arithmetic Operations
+    turbo i32 a = 10;
+    turbo i32 b = 5;
+    echo("a = " + a + ", b = " + b);
+    echo("a + b = " + (a + b));
+    echo("a - b = " + (a - b));
+    echo("a * b = " + (a * b));
+    echo("a / b = " + (a / b));
+    echo("a % b = " + (a % b));
+
+    // String Concatenation
+    str first_name = "Rads";
+    str last_name = "User";
+    str full_name = first_name + " " + last_name;
+    echo("Full name: " + full_name);
+
+    // Boolean Operations
+    turbo bool t = true;
+    turbo bool f = false;
+    echo("t AND f is: " + (t and f));
+    echo("t OR f is: " + (t or f));
+    echo("NOT t is: " + (not t));
+}

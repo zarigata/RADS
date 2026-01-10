@@ -1,0 +1,38 @@
+// 01_variables.rads
+// This example demonstrates how to declare and use variables of different types.
+
+blast main() {
+    echo("--- Variables and Data Types ---");
+
+    // Numbers (integers and floats)
+    turbo i32 my_integer = 42;
+    turbo f64 my_float = 3.14159;
+    echo("My integer is: " + my_integer);
+    echo("My float is: " + my_float);
+
+    // Strings
+    str greeting = "Hello, RADS!";
+    echo("A string variable: " + greeting);
+
+    // Booleans
+    turbo bool is_rad = true;
+    turbo bool is_sad = false;
+    echo("Is RADS rad? " + is_rad);
+    echo("Is RADS sad? " + is_sad);
+
+    // Characters
+    turbo char initial = 'R';
+    echo("My initial is: " + initial);
+
+    // Arrays
+    array<i32> numbers = [10, 20, 30, 40, 50];
+    echo("The first number in the array is: " + numbers[0]);
+    echo("The third number in the array is: " + numbers[2]);
+
+    // Dynamic arrays
+    dynarray<str> names = dynarray();
+    names.push("Alice");
+    names.push("Bob");
+    echo("The first name in the dynamic array is: " + names[0]);
+    echo("The second name in the dynamic array is: " + names[1]);
+}
