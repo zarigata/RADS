@@ -70,7 +70,7 @@ static void consume(Parser* parser, TokenType type, const char* message) {
 
 // Forward declarations
 static ASTNode* parse_expression(Parser* parser);
-static ASTNode* parse_statement(Parser* parser);
+ASTNode* parse_statement(Parser* parser);  // Public for REPL
 static ASTNode* parse_declaration(Parser* parser);
 static ASTNode* parse_comparison(Parser* parser);
 
@@ -556,8 +556,8 @@ static ASTNode* parse_declaration(Parser* parser) {
     return parse_statement(parser);
 }
 
-// Parse statement
-static ASTNode* parse_statement(Parser* parser) {
+// Parse statement - Public for REPL
+ASTNode* parse_statement(Parser* parser) {
     if (match(parser, TOKEN_ECHO)) {
         return parse_echo_statement(parser);
     }

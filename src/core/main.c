@@ -15,11 +15,13 @@
 
 void print_usage() {
     printf("RADS Programming Language v0.1.0-alpha\n");
-    printf("Usage: rads [options] <file>\n\n");
+    printf("Usage: rads [options] [file]\n\n");
     printf("Options:\n");
     printf("  -h, --help     Show this help message\n");
     printf("  -v, --version  Show version information\n");
     printf("  -t, --tokens   Print tokens (lexer test mode)\n");
+    printf("  -i, --interactive  Enter interactive REPL mode\n");
+    printf("\nIf no file is provided, RADS will start in interactive REPL mode.\n");
     printf("\n");
 }
 
@@ -78,10 +80,136 @@ void test_lexer(const char* source) {
     printf("\n=== END LEXER OUTPUT ===\n");
 }
 
+void print_repl_welcome() {
+    printf("\n");
+    printf("  🚀 RADS Interactive REPL v0.1.0-alpha\n");
+    printf("  ═══════════════════════════════════════\n");
+    printf("  Rapid Asynchronous Data Server Language\n");
+    printf("\n");
+    printf("  Type .help for help, .exit to quit\n");
+    printf("\n");
+}
+
+void print_repl_help() {
+    printf("\nREPL Commands:\n");
+    printf("  .help     Show this help message\n");
+    printf("  .exit     Exit the REPL\n");
+    printf("  .clear    Clear the screen\n");
+    printf("  .version  Show version information\n");
+    printf("\nTry it out:\n");
+    printf("  echo(\"Hello RADS!\");\n");
+    printf("  turbo x = 42;\n");
+    printf("  echo(x);\n");
+    printf("\n");
+}
+
+int run_repl() {
+    print_repl_welcome();
+
+    // Initialize standard library
+    stdlib_io_register();
+    stdlib_media_register();
+    stdlib_net_register();
+    stdlib_ffi_register();
+    stdlib_string_register();
+    stdlib_math_register();
+    stdlib_fs_register();
+    stdlib_json_register();
+
+    // Initialize event loop for REPL
+    interpreter_init_event_loop();
+
+    char line[4096];
+    int line_num = 1;
+
+    while (1) {
+        // Print prompt
+        printf("rads[%d]> ", line_num);
+        fflush(stdout);
+
+        // Read line
+        if (fgets(line, sizeof(line), stdin) == NULL) {
+            printf("\n");
+            break;
+        }
+
+        // Remove newline
+        size_t len = strlen(line);
+        if (len > 0 && line[len-1] == '\n') {
+            line[len-1] = '\0';
+            len--;
+        }
+
+        // Skip empty lines
+        if (len == 0) continue;
+
+        // Handle REPL commands
+        if (line[0] == '.') {
+            if (strcmp(line, ".exit") == 0 || strcmp(line, ".quit") == 0) {
+                printf("👋 Goodbye!\n");
+                break;
+            } else if (strcmp(line, ".help") == 0) {
+                print_repl_help();
+                continue;
+            } else if (strcmp(line, ".clear") == 0) {
+                printf("\033[2J\033[H");  // Clear screen
+                print_repl_welcome();
+                continue;
+            } else if (strcmp(line, ".version") == 0) {
+                print_version();
+                continue;
+            } else {
+                printf("Unknown command: %s\n", line);
+                printf("Type .help for available commands\n");
+                continue;
+            }
+        }
+
+        // Add semicolon if missing
+        char source[4096 + 2];
+        if (len > 0 && line[len-1] != ';' && line[len-1] != '}') {
+            snprintf(source, sizeof(source), "%s;", line);
+        } else {
+            snprintf(source, sizeof(source), "%s", line);
+        }
+
+        // Tokenize
+        Lexer lexer;
+        lexer_init(&lexer, source);
+
+        // Parse
+        Parser parser;
+        parser_init(&parser, &lexer);
+        ASTNode* stmt = parse_statement(&parser);
+
+        if (stmt == NULL || parser.had_error) {
+            // Error already printed by parser
+            line_num++;
+            continue;
+        }
+
+        // Execute statement
+        // Create a minimal program node with just this statement
+        ASTList* declarations = ast_list_create();
+        ast_list_append(declarations, stmt);
+        ASTNode* program = ast_create_program(declarations);
+
+        interpret(program);
+
+        // Cleanup (but keep environment for next line)
+        ast_free(program);
+
+        line_num++;
+    }
+
+    interpreter_cleanup_event_loop();
+    return 0;
+}
+
 int main(int argc, char* argv[]) {
+    // If no arguments, start REPL
     if (argc < 2) {
-        print_usage();
-        return 1;
+        return run_repl();
     }
     
     bool token_mode = false;

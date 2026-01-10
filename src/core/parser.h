@@ -15,5 +15,6 @@ typedef struct {
 // Parser functions
 void parser_init(Parser* parser, Lexer* lexer);
 ASTNode* parser_parse(Parser* parser);
+ASTNode* parse_statement(Parser* parser);  // For REPL mode
 
 #endif // RADS_PARSER_H

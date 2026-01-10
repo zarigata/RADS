@@ -1,0 +1,24 @@
+# RADS REPL Demo
+# Run: ./rads
+# Then type these commands:
+
+echo("Welcome to RADS!")
+turbo x = 42
+echo("The answer is:")
+echo(x)
+turbo message = "RADS is awesome!"
+echo(message)
+
+# Try some math
+turbo result = x * 2
+echo(result)
+
+# String operations
+turbo name = "World"
+echo("Hello, " + name + "!")
+
+# Commands:
+.help      # Show help
+.version   # Show version
+.clear     # Clear screen
+.exit      # Exit REPL
