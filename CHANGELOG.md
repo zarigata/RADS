@@ -4,6 +4,31 @@ All notable changes to the RADS programming language will be documented in this 
 
 ---
 
+## [Unreleased]
+
+### 🎯 REPL Enhancements
+
+- **Readline Support**: Added GNU Readline library for professional line editing
+- **Arrow Key Navigation**: Use ⬆️⬇️ for command history, ⬅️➡️ for cursor movement
+- **Command History**: Recall and edit previous commands within session
+- **Line Number Fix**: REPL line numbers now increment correctly (rads[1], rads[2], etc.)
+- **Keyboard Shortcuts**: Full Emacs-style keybindings (Ctrl+A, Ctrl+E, Ctrl+U, etc.)
+- **Enhanced Input**: Backspace, Delete, Ctrl+C (cancel), Ctrl+D (exit) all work properly
+- **Numpad Support**: Full numeric keypad functionality
+
+**Files Changed:**
+- `src/core/main.c` - Replaced fgets with readline/history
+- `Makefile` - Added -lreadline linkage
+- `docs/REPL_FEATURES.md` - Complete REPL documentation
+- `docs/REPL_DEMO.md` - Feature demonstration
+
+**Impact:**
+- Professional terminal experience matching bash/python REPLs
+- Faster command editing and development workflow
+- Better user experience for interactive coding
+
+---
+
 ## [0.0.2] - 2026-01-11
 
 ### 🎉 Core Language Improvements
