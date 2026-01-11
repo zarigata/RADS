@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 #include "lexer.h"
 #include "parser.h"
 #include "interpreter.h"
@@ -119,59 +121,72 @@ int run_repl() {
     // Initialize event loop for REPL
     interpreter_init_event_loop();
 
-    char line[4096];
     int line_num = 1;
 
     while (1) {
-        // Print prompt
-        printf("rads[%d]> ", line_num);
-        fflush(stdout);
+        // Create prompt string
+        char prompt[32];
+        snprintf(prompt, sizeof(prompt), "rads[%d]> ", line_num);
 
-        // Read line
-        if (fgets(line, sizeof(line), stdin) == NULL) {
-            printf("\n");
+        // Read line with readline (supports arrow keys, history, editing)
+        char* line = readline(prompt);
+
+        // Check for EOF (Ctrl+D)
+        if (line == NULL) {
+            printf("\n👋 Goodbye!\n");
             break;
         }
 
-        // Remove newline
+        // Get line length
         size_t len = strlen(line);
-        if (len > 0 && line[len-1] == '\n') {
-            line[len-1] = '\0';
-            len--;
-        }
 
         // Skip empty lines
-        if (len == 0) continue;
+        if (len == 0) {
+            free(line);
+            continue;
+        }
+
+        // Add non-empty lines to history
+        add_history(line);
 
         // Handle REPL commands
         if (line[0] == '.') {
             if (strcmp(line, ".exit") == 0 || strcmp(line, ".quit") == 0) {
                 printf("👋 Goodbye!\n");
+                free(line);
                 break;
             } else if (strcmp(line, ".help") == 0) {
                 print_repl_help();
+                free(line);
                 continue;
             } else if (strcmp(line, ".clear") == 0) {
                 printf("\033[2J\033[H");  // Clear screen
                 print_repl_welcome();
+                free(line);
                 continue;
             } else if (strcmp(line, ".version") == 0) {
                 print_version();
+                free(line);
                 continue;
             } else {
                 printf("Unknown command: %s\n", line);
                 printf("Type .help for available commands\n");
+                free(line);
                 continue;
             }
         }
 
         // Add semicolon if missing
-        char source[4096 + 2];
+        char* source;
         if (len > 0 && line[len-1] != ';' && line[len-1] != '}') {
-            snprintf(source, sizeof(source), "%s;", line);
+            source = malloc(len + 2);
+            snprintf(source, len + 2, "%s;", line);
         } else {
-            snprintf(source, sizeof(source), "%s", line);
+            source = strdup(line);
         }
+
+        // Free the readline buffer
+        free(line);
 
         // Tokenize
         Lexer lexer;
@@ -184,6 +199,7 @@ int run_repl() {
 
         if (stmt == NULL || parser.had_error) {
             // Error already printed by parser
+            free(source);
             line_num++;
             continue;
         }
@@ -191,8 +207,9 @@ int run_repl() {
         // Execute statement in REPL context (preserves environment)
         interpret_repl_statement(stmt);
 
-        // Cleanup AST (environment persists)
+        // Cleanup AST and source (environment persists)
         ast_free(stmt);
+        free(source);
 
         line_num++;
     }
