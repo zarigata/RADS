@@ -1,0 +1,31 @@
+// Test negative number literals
+
+// Test 1: Direct negative literal
+turbo a = -42;
+echo("Test 1: a = " + string(a));
+
+// Test 2: Negative in expression
+turbo b = 10 + -5;
+echo("Test 2: b = " + string(b));
+
+// Test 3: Unary minus with variable
+turbo x = 10;
+turbo c = -x;
+echo("Test 3: c = " + string(c));
+
+// Test 4: Negative literal in function call
+blast abs(n) {
+    if (n < 0) {
+        return -n;
+    }
+    return n;
+}
+
+turbo result = abs(-15);
+echo("Test 4: abs(-15) = " + string(result));
+
+// Test 5: Negative float
+turbo d = -3.14;
+echo("Test 5: d = " + string(d));
+
+echo("All tests complete!");

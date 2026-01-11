@@ -1,0 +1,22 @@
+// tests/test_structs.rads
+
+struct Player {
+    str name;
+    i32 score;
+}
+
+blast main() {
+    echo("--- Struct Test ---");
+
+    turbo Player p1 = Player {
+        name: "Rads_Gamer",
+        score: 100
+    };
+
+    echo("Player name: " + p1.name);
+    echo("Player score: " + p1.score);
+
+    p1.score = p1.score + 50;
+
+    echo("Player new score: " + p1.score);
+}

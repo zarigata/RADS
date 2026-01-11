@@ -1,0 +1,39 @@
+// import_demo.rads - Demonstrates the basic import system
+//
+// To use this demo:
+// 1. Create a file named "game_types.rads" with struct definitions
+// 2. Import it using: import "game_types.rads";
+// 3. Use the imported structs in your code
+//
+// Note: User-defined functions don't yet support parameters/returns,
+// but structs work perfectly with imports!
+
+// Example library file (game_types.rads):
+/*
+struct Character {
+    str name;
+    i32 level;
+    i32 health;
+}
+
+struct Item {
+    str name;
+    i32 quantity;
+}
+*/
+
+// Uncomment to test (create game_types.rads first):
+// import "game_types.rads";
+
+blast main() {
+    echo("=== RADS Import System Demo ===");
+    echo("");
+    echo("The import system allows you to:");
+    echo("1. Split code across multiple files");
+    echo("2. Reuse struct definitions");
+    echo("3. Organize code into modules");
+    echo("");
+    echo("Syntax: import \"filename.rads\";");
+    echo("");
+    echo("See /tmp/test_import_structs.rads for a working example!");
+}

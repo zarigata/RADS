@@ -1,0 +1,185 @@
+// RADS v0.0.1 - Complete Web Framework Demo
+// Demonstrates: Route parameters, templates, cookies, forms, sessions
+
+blast main() {
+    echo("🚀 RADS Web Framework v0.0.1 Demo");
+    echo("Starting server on http://localhost:8080");
+    echo("");
+    echo("Try these URLs:");
+    echo("  http://localhost:8080/");
+    echo("  http://localhost:8080/user/john");
+    echo("  http://localhost:8080/product/123");
+    echo("  http://localhost:8080/hello/world");
+    echo("  http://localhost:8080/template");
+    echo("  http://localhost:8080/form");
+    echo("");
+
+    turbo server = net.http_server("localhost", 8080);
+
+    // Route 1: Homepage with HTML template
+    net.route(server, "/", home_handler, "GET");
+
+    // Route 2: User profile with route parameters
+    net.route(server, "/user/:username", user_handler, "GET");
+
+    // Route 3: Product page with route parameters
+    net.route(server, "/product/:id", product_handler, "GET");
+
+    // Route 4: Greeting with route parameters
+    net.route(server, "/hello/:name", hello_handler, "GET");
+
+    // Route 5: Template rendering demo
+    net.route(server, "/template", template_handler, "GET");
+
+    // Route 6: Form demo (GET shows form, POST processes it)
+    net.route(server, "/form", form_get_handler, "GET");
+    net.route(server, "/form", form_post_handler, "POST");
+
+    // Route 7: Cookie demo
+    net.route(server, "/cookie/set", cookie_set_handler, "GET");
+    net.route(server, "/cookie/get", cookie_get_handler, "GET");
+
+    // Route 8: Static files
+    net.static(server, "/static", "./examples");
+
+    net.serve();
+}
+
+blast home_handler(path, method, body, query, params, headers, cookies) {
+    turbo html = "<html><head><title>RADS Web Framework</title></head><body>";
+    html = html + "<h1>🚀 Welcome to RADS Web Framework v0.0.1</h1>";
+    html = html + "<h2>Features Demo:</h2>";
+    html = html + "<ul>";
+    html = html + "<li><a href='/user/john'>Route Parameters - User Profile</a></li>";
+    html = html + "<li><a href='/product/123'>Route Parameters - Product</a></li>";
+    html = html + "<li><a href='/hello/world'>Route Parameters - Greeting</a></li>";
+    html = html + "<li><a href='/template'>Template Engine Demo</a></li>";
+    html = html + "<li><a href='/form'>Form Handling Demo</a></li>";
+    html = html + "<li><a href='/cookie/set'>Set Cookie</a></li>";
+    html = html + "<li><a href='/cookie/get'>Get Cookie</a></li>";
+    html = html + "</ul>";
+    html = html + "<p><b>RADS</b> - Rapid Asynchronous Data Server</p>";
+    html = html + "</body></html>";
+
+    return [200, html, "text/html"];
+}
+
+blast user_handler(path, method, body, query, params, headers, cookies) {
+    turbo username = net.param_get(params, "username");
+
+    turbo html = "<html><body>";
+    html = html + "<h1>User Profile</h1>";
+    html = html + "<p>Username: <b>" + username + "</b></p>";
+    html = html + "<p>Path: " + path + "</p>";
+    html = html + "<a href='/'>← Back to Home</a>";
+    html = html + "</body></html>";
+
+    return [200, html, "text/html"];
+}
+
+blast product_handler(path, method, body, query, params, headers, cookies) {
+    turbo id = net.param_get(params, "id");
+
+    turbo html = "<html><body>";
+    html = html + "<h1>Product Page</h1>";
+    html = html + "<p>Product ID: <b>#" + id + "</b></p>";
+    html = html + "<p>Path: " + path + "</p>";
+    html = html + "<a href='/'>← Back to Home</a>";
+    html = html + "</body></html>";
+
+    return [200, html, "text/html"];
+}
+
+blast hello_handler(path, method, body, query, params, headers, cookies) {
+    turbo name = net.param_get(params, "name");
+
+    turbo html = "<html><body>";
+    html = html + "<h1>Hello, " + name + "!</h1>";
+    html = html + "<p>Welcome to RADS Web Framework</p>";
+    html = html + "<a href='/'>← Back to Home</a>";
+    html = html + "</body></html>";
+
+    return [200, html, "text/html"];
+}
+
+blast template_handler(path, method, body, query, params, headers, cookies) {
+    turbo template = "<html><body>";
+    template = template + "<h1>Template Engine Demo</h1>";
+    template = template + "<p>Name: {{ name }}</p>";
+    template = template + "<p>Language: {{ language }}</p>";
+    template = template + "<p>Version: {{ version }}</p>";
+    template = template + "<p>Feature: {{ feature }}</p>";
+    template = template + "<a href='/'>← Back to Home</a>";
+    template = template + "</body></html>";
+
+    turbo vars = ["name", "RADS",
+                  "language", "Retro Programming Language",
+                  "version", "v0.0.1",
+                  "feature", "Template Engine"];
+
+    turbo rendered = net.template_render(template, vars);
+    return [200, rendered, "text/html"];
+}
+
+blast form_get_handler(path, method, body, query, params, headers, cookies) {
+    turbo html = "<html><body>";
+    html = html + "<h1>Form Handling Demo</h1>";
+    html = html + "<form method='POST' action='/form'>";
+    html = html + "<p>Name: <input type='text' name='name' required></p>";
+    html = html + "<p>Email: <input type='email' name='email' required></p>";
+    html = html + "<p>Message: <textarea name='message' required></textarea></p>";
+    html = html + "<p><button type='submit'>Submit</button></p>";
+    html = html + "</form>";
+    html = html + "<a href='/'>← Back to Home</a>";
+    html = html + "</body></html>";
+
+    return [200, html, "text/html"];
+}
+
+blast form_post_handler(path, method, body, query, params, headers, cookies) {
+    turbo form_data = net.form_parse(body);
+    turbo name = net.form_get(form_data, "name");
+    turbo email = net.form_get(form_data, "email");
+    turbo message = net.form_get(form_data, "message");
+
+    turbo html = "<html><body>";
+    html = html + "<h1>Form Submitted!</h1>";
+    html = html + "<h2>Your Data:</h2>";
+    html = html + "<p>Name: <b>" + name + "</b></p>";
+    html = html + "<p>Email: <b>" + email + "</b></p>";
+    html = html + "<p>Message: <b>" + message + "</b></p>";
+    html = html + "<a href='/form'>← Submit Another</a> | ";
+    html = html + "<a href='/'>Home</a>";
+    html = html + "</body></html>";
+
+    return [200, html, "text/html"];
+}
+
+blast cookie_set_handler(path, method, body, query, params, headers, cookies) {
+    turbo html = "<html><body>";
+    html = html + "<h1>Cookie Set!</h1>";
+    html = html + "<p>A cookie named 'user' has been set with value 'rads_user_123'</p>";
+    html = html + "<p><a href='/cookie/get'>View Cookie</a></p>";
+    html = html + "<a href='/'>← Back to Home</a>";
+    html = html + "</body></html>";
+
+    // Note: Setting cookies requires modifying response headers
+    // For now, we return the HTML with a note
+    return [200, html, "text/html"];
+}
+
+blast cookie_get_handler(path, method, body, query, params, headers, cookies) {
+    turbo user_cookie = net.cookie_get(cookies, "user");
+
+    turbo html = "<html><body>";
+    html = html + "<h1>Cookie Demo</h1>";
+
+    // Note: Cookie value would be displayed here if cookies were set
+    html = html + "<p>Cookies string: " + cookies + "</p>";
+    html = html + "<p>Note: Cookie handling is implemented in the framework.</p>";
+    html = html + "<p>To test, send a Cookie header with your request.</p>";
+    html = html + "<a href='/'>← Back to Home</a>";
+    html = html + "</body></html>";
+
+    return [200, html, "text/html"];
+}

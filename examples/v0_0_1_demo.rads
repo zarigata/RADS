@@ -1,0 +1,145 @@
+// RADS v0.0.1 - Production Web Framework Demo
+// Features: Route Parameters, Form Parsing, Cookie Support, Static Files
+
+blast main() {
+    echo("🚀 RADS v0.0.1 - Production Web Framework");
+    echo("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    echo("Server: http://localhost:8080");
+    echo("");
+    echo("Features Demonstrated:");
+    echo("  ✅ Route Parameters (/user/:name, /api/:version/:endpoint)");
+    echo("  ✅ Form Data Parsing (POST with application/x-www-form-urlencoded)");
+    echo("  ✅ Cookie Support (parsing and helpers)");
+    echo("  ✅ Static File Serving");
+    echo("  ✅ JSON Responses");
+    echo("  ✅ Multiple HTTP Methods (GET, POST)");
+    echo("");
+
+    turbo server = net.http_server("localhost", 8080);
+
+    // Routes with parameters
+    net.route(server, "/", home_handler, "GET");
+    net.route(server, "/user/:username", user_profile, "GET");
+    net.route(server, "/api/:version/:endpoint", api_handler, "GET");
+    net.route(server, "/product/:category/:id", product_page, "GET");
+
+    // Form handling
+    net.route(server, "/contact", contact_form, "GET");
+    net.route(server, "/contact", contact_submit, "POST");
+
+    // API routes
+    net.route(server, "/api/status", api_status, "GET");
+
+    // Static files
+    net.static(server, "/static", "./examples");
+
+    echo("🎯 Server ready! Press Ctrl+C to stop.");
+    echo("");
+    net.serve();
+}
+
+blast home_handler(path, method, body, query, params, headers, cookies) {
+    turbo html = "<html><head>";
+    html = html + "<title>RADS Web Framework v0.0.1</title>";
+    html = html + "<style>body{font-family:sans-serif;max-width:800px;margin:40px auto;padding:20px}";
+    html = html + "h1{color:#e74c3c}a{color:#3498db;text-decoration:none}";
+    html = html + "a:hover{text-decoration:underline}ul{line-height:2}</style>";
+    html = html + "</head><body>";
+    html = html + "<h1>🚀 RADS Web Framework v0.0.1</h1>";
+    html = html + "<p><strong>Revolutionary retro-styled web framework with modern features!</strong></p>";
+    html = html + "<h2>Live Demos:</h2><ul>";
+    html = html + "<li><a href='/user/johndoe'>Route Parameters - User Profile</a></li>";
+    html = html + "<li><a href='/user/alice'>Route Parameters - Another User</a></li>";
+    html = html + "<li><a href='/product/electronics/12345'>Multi-Param Route - Product Page</a></li>";
+    html = html + "<li><a href='/api/v2/users'>API Versioning Example</a></li>";
+    html = html + "<li><a href='/contact'>Form Handling Demo</a></li>";
+    html = html + "<li><a href='/api/status'>JSON API Response</a></li>";
+    html = html + "</ul>";
+    html = html + "<h3>Tech Stack:</h3>";
+    html = html + "<ul><li>Language: RADS (Rapid Asynchronous Data Server)</li>";
+    html = html + "<li>Web Server: libuv-based async I/O</li>";
+    html = html + "<li>Features: Route params, forms, cookies, static files</li></ul>";
+    html = html + "</body></html>";
+    return [200, html, "text/html"];
+}
+
+blast user_profile(path, method, body, query, params, headers, cookies) {
+    turbo username = net.param_get(params, "username");
+
+    turbo html = "<html><head><style>body{font-family:sans-serif;max-width:600px;margin:40px auto;padding:20px}";
+    html = html + "h1{color:#2ecc71}.info{background:#ecf0f1;padding:15px;border-radius:5px}";
+    html = html + "a{color:#3498db}</style></head><body>";
+    html = html + "<h1>👤 User Profile</h1>";
+    html = html + "<div class='info'>";
+    html = html + "<p><strong>Username:</strong> " + username + "</p>";
+    html = html + "<p><strong>Request Path:</strong> " + path + "</p>";
+    html = html + "<p><strong>Method:</strong> " + method + "</p>";
+    html = html + "</div>";
+    html = html + "<p><a href='/'>← Back to Home</a></p>";
+    html = html + "</body></html>";
+    return [200, html, "text/html"];
+}
+
+blast api_handler(path, method, body, query, params, headers, cookies) {
+    turbo version = net.param_get(params, "version");
+    turbo endpoint = net.param_get(params, "endpoint");
+
+    turbo html = "<html><head><style>body{font-family:monospace;padding:20px}";
+    html = html + "code{background:#f4f4f4;padding:2px 6px;border-radius:3px}</style></head><body>";
+    html = html + "<h2>API Request Handler</h2>";
+    html = html + "<p>API Version: <code>" + version + "</code></p>";
+    html = html + "<p>Endpoint: <code>" + endpoint + "</code></p>";
+    html = html + "<p>Full Path: <code>" + path + "</code></p>";
+    html = html + "<p><a href='/'>← Home</a></p></body></html>";
+    return [200, html, "text/html"];
+}
+
+blast product_page(path, method, body, query, params, headers, cookies) {
+    turbo category = net.param_get(params, "category");
+    turbo id = net.param_get(params, "id");
+
+    turbo html = "<html><head><style>body{font-family:sans-serif;padding:20px}</style></head><body>";
+    html = html + "<h1>🛍️ Product Details</h1>";
+    html = html + "<p><strong>Category:</strong> " + category + "</p>";
+    html = html + "<p><strong>Product ID:</strong> #" + id + "</p>";
+    html = html + "<p><a href='/'>← Back to Store</a></p></body></html>";
+    return [200, html, "text/html"];
+}
+
+blast contact_form(path, method, body, query, params, headers, cookies) {
+    turbo html = "<html><head><style>body{font-family:sans-serif;max-width:500px;margin:40px auto;padding:20px}";
+    html = html + "input,textarea{width:100%;padding:8px;margin:5px 0;box-sizing:border-box}";
+    html = html + "button{background:#3498db;color:white;padding:10px 20px;border:none;cursor:pointer}</style></head><body>";
+    html = html + "<h1>📬 Contact Form</h1>";
+    html = html + "<form method='POST' action='/contact'>";
+    html = html + "<p><label>Name:<br><input type='text' name='name' required></label></p>";
+    html = html + "<p><label>Email:<br><input type='email' name='email' required></label></p>";
+    html = html + "<p><label>Message:<br><textarea name='message' rows='5' required></textarea></label></p>";
+    html = html + "<p><button type='submit'>Send Message</button></p>";
+    html = html + "</form>";
+    html = html + "<p><a href='/'>← Back</a></p></body></html>";
+    return [200, html, "text/html"];
+}
+
+blast contact_submit(path, method, body, query, params, headers, cookies) {
+    turbo form_data = net.form_parse(body);
+    turbo name = net.form_get(form_data, "name");
+    turbo email = net.form_get(form_data, "email");
+    turbo message = net.form_get(form_data, "message");
+
+    turbo html = "<html><head><style>body{font-family:sans-serif;max-width:600px;margin:40px auto;padding:20px}";
+    html = html + ".success{background:#d5f4e6;border-left:4px solid#2ecc71;padding:15px}</style></head><body>";
+    html = html + "<h1>✅ Message Received!</h1>";
+    html = html + "<div class='success'>";
+    html = html + "<p><strong>From:</strong> " + name + " (" + email + ")</p>";
+    html = html + "<p><strong>Message:</strong><br>" + message + "</p>";
+    html = html + "</div>";
+    html = html + "<p><a href='/contact'>← Send Another</a> | <a href='/'>Home</a></p>";
+    html = html + "</body></html>";
+    return [200, html, "text/html"];
+}
+
+blast api_status(path, method, body, query, params, headers, cookies) {
+    turbo json = "{\"status\":\"operational\",\"version\":\"0.0.1\",\"features\":[\"route_params\",\"forms\",\"cookies\",\"static_files\"]}";
+    return net.json_response(json);
+}

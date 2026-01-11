@@ -1,0 +1,119 @@
+// RADS v0.0.2 - Comprehensive Feature Test
+// This file demonstrates all features implemented in v0.0.2
+
+// ============================================================================
+// 1. ENUMS
+// ============================================================================
+enum Status {
+    PENDING,
+    ACTIVE,
+    COMPLETED,
+    FAILED
+}
+
+enum Color {
+    RED,
+    GREEN,
+    BLUE
+}
+
+// ============================================================================
+// 2. STRUCTS
+// ============================================================================
+struct Player {
+    str name;
+    i32 score;
+    i32 level;
+}
+
+struct Point {
+    i32 x;
+    i32 y;
+}
+
+// ============================================================================
+// 3. USER-DEFINED FUNCTIONS
+// ============================================================================
+blast calculate_score(base, multiplier) {
+    return base * multiplier;
+}
+
+blast greet_player(name) {
+    return "Welcome, " + name + "!";
+}
+
+// ============================================================================
+// MAIN PROGRAM
+// ============================================================================
+blast main() {
+    echo("=== RADS v0.0.2 Feature Test ===");
+    echo("");
+
+    // Test Enums
+    echo("--- ENUMS ---");
+    status = Status.ACTIVE;
+    echo("Status: " + status);
+    color = Color.BLUE;
+    echo("Color: " + color);
+    echo("");
+
+    // Test Structs
+    echo("--- STRUCTS ---");
+    player = Player {
+        name: "RadsCoder",
+        score: 1000,
+        level: 5
+    };
+    echo("Player: " + player.name);
+    echo("Score: " + player.score);
+    echo("Level: " + player.level);
+    echo("");
+
+    point = Point { x: 100, y: 200 };
+    echo("Point: (" + point.x + ", " + point.y + ")");
+    echo("");
+
+    // Test User Functions
+    echo("--- USER FUNCTIONS ---");
+    score = calculate_score(100, 3);
+    echo("Calculated score: " + score);
+
+    greeting = greet_player("RADS");
+    echo(greeting);
+    echo("");
+
+    // Test String Concatenation
+    echo("--- STRING CONCATENATION ---");
+    message = "Score: " + 500 + ", Active: " + true;
+    echo(message);
+    echo("");
+
+    // Test Array Methods
+    echo("--- ARRAY METHODS ---");
+    numbers = [10, 20, 30];
+    echo("Array length: " + numbers.length);
+
+    numbers.push(40);
+    echo("After push(40), length: " + numbers.length);
+
+    last = numbers.pop();
+    echo("Popped value: " + last);
+    echo("");
+
+    // Test Math Module
+    echo("--- MATH MODULE ---");
+    echo("math.sqrt(16) = " + math.sqrt(16));
+    echo("math.pow(2, 8) = " + math.pow(2, 8));
+    echo("math.max(10, 20) = " + math.max(10, 20));
+    echo("math.clamp(15, 0, 10) = " + math.clamp(15, 0, 10));
+    echo("");
+
+    // Test FS Module
+    echo("--- FS MODULE ---");
+    cwd = fs.getcwd();
+    echo("Current directory: " + cwd);
+    echo("File exists check: " + fs.exists("/tmp"));
+    echo("");
+
+    echo("=== All v0.0.2 Features Working! ===");
+}

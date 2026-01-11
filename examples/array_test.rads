@@ -1,0 +1,8 @@
+// Test arrays
+
+blast main() {
+    echo("Testing arrays...");
+    turbo test = ["a", "b", "c"];
+    echo("Array created");
+    echo(test);
+}

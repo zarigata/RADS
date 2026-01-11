@@ -1,0 +1,22 @@
+// Simple web test to debug crash
+
+blast main() {
+    echo("Starting simple web test...");
+    turbo server = net.http_server("localhost", 8080);
+    net.route(server, "/", home_handler, "GET");
+    net.route(server, "/test", test_handler, "GET");
+    echo("Server started on http://localhost:8080");
+    net.serve();
+}
+
+blast home_handler(path, method, body, query, params, headers, cookies) {
+    echo("Home handler called");
+    turbo html = "<h1>Home</h1>";
+    return [200, html, "text/html"];
+}
+
+blast test_handler(path, method, body, query, params, headers, cookies) {
+    echo("Test handler called");
+    turbo html = "<h1>Test</h1>";
+    return [200, html, "text/html"];
+}

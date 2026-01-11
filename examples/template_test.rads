@@ -1,0 +1,13 @@
+// Test template rendering
+
+blast main() {
+    echo("Testing template rendering...");
+
+    turbo template = "Hello {{ name }}, version {{ version }}!";
+    turbo vars = ["name", "RADS", "version", "0.0.1"];
+
+    turbo result = net.template_render(template, vars);
+    echo(result);
+
+    echo("Template test complete!");
+}
