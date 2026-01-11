@@ -24,3 +24,4 @@ scripts/*.log
 .DS_Store
 Thumbs.db
 .claude/
+*.db

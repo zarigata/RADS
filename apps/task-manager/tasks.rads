@@ -1,0 +1,180 @@
+// ============================================================================
+// RADS v0.0.3 "Butterfly" - Task Manager Application
+// ============================================================================
+//
+// A complete task management system with SQLite database
+//
+// Features:
+// - Add tasks with descriptions
+// - List all tasks (pending and completed)
+// - Mark tasks as done
+// - Delete tasks
+// - Persistent storage in tasks.db
+//
+// ============================================================================
+
+// ANSI Colors for beautiful output
+turbo COLOR_RESET = "\033[0m";
+turbo COLOR_GREEN = "\033[1;32m";
+turbo COLOR_YELLOW = "\033[1;33m";
+turbo COLOR_BLUE = "\033[1;34m";
+turbo COLOR_MAGENTA = "\033[1;35m";
+turbo COLOR_CYAN = "\033[1;36m";
+turbo COLOR_RED = "\033[1;31m";
+turbo COLOR_DIM = "\033[2m";
+
+// ============================================================================
+// Database Initialization
+// ============================================================================
+
+blast init_database() {
+    echo(COLOR_CYAN + "🦋 Initializing Task Manager Database..." + COLOR_RESET);
+
+    // Open database (creates file if it doesn't exist)
+    db.open("tasks.db");
+
+    // Create tasks table if it doesn't exist
+    db.execute("CREATE TABLE IF NOT EXISTS tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        description TEXT NOT NULL,
+        done INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    echo(COLOR_GREEN + "✓ Database ready!" + COLOR_RESET);
+    echo("");
+}
+
+// ============================================================================
+// Print Banner
+// ============================================================================
+
+blast print_banner() {
+    echo("");
+    echo(COLOR_CYAN + "  ╔════════════════════════════════════════════╗" + COLOR_RESET);
+    echo(COLOR_CYAN + "  ║  " + COLOR_MAGENTA + "📋 RADS Task Manager v1.0" + COLOR_CYAN + "           ║" + COLOR_RESET);
+    echo(COLOR_CYAN + "  ║  " + COLOR_DIM + "Keep it TURBO, keep it RADICAL!" + COLOR_CYAN + "  ║" + COLOR_RESET);
+    echo(COLOR_CYAN + "  ╚════════════════════════════════════════════╝" + COLOR_RESET);
+    echo("");
+}
+
+// ============================================================================
+// Add New Task
+// ============================================================================
+
+blast add_task(description) {
+    db.execute("INSERT INTO tasks (description) VALUES (?)", [description]);
+    echo(COLOR_GREEN + "✅ Added: " + COLOR_RESET + description);
+}
+
+// ============================================================================
+// List All Tasks
+// ============================================================================
+
+blast list_tasks() {
+    echo(COLOR_BLUE + "📋 Your Tasks:" + COLOR_RESET);
+    echo("");
+
+    // Query all tasks ordered by ID
+    db.query("SELECT id, description, done FROM tasks ORDER BY done ASC, id ASC");
+
+    echo("");
+}
+
+// ============================================================================
+// Mark Task as Done
+// ============================================================================
+
+blast mark_done(task_id) {
+    db.execute("UPDATE tasks SET done = 1 WHERE id = ?", [task_id]);
+    echo(COLOR_GREEN + "✓ Task " + task_id + " marked as complete!" + COLOR_RESET);
+}
+
+// ============================================================================
+// Delete Task
+// ============================================================================
+
+blast delete_task(task_id) {
+    db.execute("DELETE FROM tasks WHERE id = ?", [task_id]);
+    echo(COLOR_RED + "🗑️  Deleted task " + task_id + COLOR_RESET);
+}
+
+// ============================================================================
+// Show Help
+// ============================================================================
+
+blast show_help() {
+    echo(COLOR_YELLOW + "Commands:" + COLOR_RESET);
+    echo("  " + COLOR_CYAN + "list" + COLOR_RESET + "           - Show all tasks");
+    echo("  " + COLOR_CYAN + "add <text>" + COLOR_RESET + "    - Add a new task");
+    echo("  " + COLOR_CYAN + "done <id>" + COLOR_RESET + "     - Mark task as complete");
+    echo("  " + COLOR_CYAN + "delete <id>" + COLOR_RESET + "   - Delete a task");
+    echo("  " + COLOR_CYAN + "help" + COLOR_RESET + "          - Show this help");
+    echo("  " + COLOR_CYAN + "exit" + COLOR_RESET + "          - Exit the app");
+    echo("");
+}
+
+// ============================================================================
+// Main Application
+// ============================================================================
+
+print_banner();
+init_database();
+
+// Example usage - Add some demo tasks
+echo(COLOR_YELLOW + "Demo Mode - Adding sample tasks:" + COLOR_RESET);
+echo("");
+
+add_task("Build RADS v0.0.3 Butterfly");
+add_task("Implement SQLite database driver");
+add_task("Create task manager app");
+add_task("Test all features");
+add_task("Deploy to production");
+
+echo("");
+echo(COLOR_YELLOW + "Marking some tasks as complete:" + COLOR_RESET);
+echo("");
+
+mark_done(1);
+mark_done(2);
+mark_done(3);
+
+echo("");
+list_tasks();
+
+echo(COLOR_YELLOW + "Deleting completed tasks:" + COLOR_RESET);
+echo("");
+
+// In a real app, you'd query for done tasks first
+delete_task(1);
+delete_task(2);
+
+echo("");
+echo(COLOR_BLUE + "After cleanup:" + COLOR_RESET);
+echo("");
+
+list_tasks();
+
+// Transaction example - bulk operations
+echo(COLOR_YELLOW + "Transaction Example - Adding multiple tasks atomically:" + COLOR_RESET);
+echo("");
+
+db.begin();
+add_task("Write documentation");
+add_task("Create examples");
+add_task("Publish release");
+db.commit();
+
+echo("");
+echo(COLOR_GREEN + "✓ Transaction committed!" + COLOR_RESET);
+echo("");
+
+list_tasks();
+
+// Close database
+db.close();
+
+echo("");
+echo(COLOR_CYAN + "🦋 Task Manager Demo Complete!" + COLOR_RESET);
+echo(COLOR_DIM + "Database saved to: tasks.db" + COLOR_RESET);
+echo("");

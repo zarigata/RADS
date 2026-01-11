@@ -1,0 +1,14 @@
+echo("Test 1: Database operations");
+
+db.open(":memory:");
+
+db.execute("CREATE TABLE test (id INTEGER, name TEXT)");
+
+db.execute("INSERT INTO test VALUES (1, 'Alice')");
+db.execute("INSERT INTO test VALUES (2, 'Bob')");
+
+db.query("SELECT * FROM test");
+
+db.close();
+
+echo("Test complete");

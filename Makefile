@@ -3,7 +3,7 @@
 UNAME_S := $(shell uname -s)
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c11 -O2 -Isrc/core -Isrc/stdlib -D_GNU_SOURCE
-LIBS = -lm -lreadline
+LIBS = -lm -lreadline -lsqlite3
 LDFLAGS =
 TARGET = rads
 

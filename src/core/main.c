@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "lexer.h"
@@ -14,9 +15,40 @@
 #include "stdlib_math.h"
 #include "stdlib_fs.h"
 #include "stdlib_json.h"
+#include "stdlib_db.h"
+
+// ANSI Color Codes for Chroma Effects
+#define COLOR_RESET     "\033[0m"
+#define COLOR_BOLD      "\033[1m"
+#define COLOR_DIM       "\033[2m"
+
+// Fallout Blue/Cyan Theme
+#define COLOR_CYAN      "\033[36m"
+#define COLOR_BRIGHT_CYAN   "\033[96m"
+#define COLOR_BLUE      "\033[34m"
+#define COLOR_BRIGHT_BLUE   "\033[94m"
+
+// RGB Chroma Colors
+#define COLOR_RED       "\033[31m"
+#define COLOR_GREEN     "\033[32m"
+#define COLOR_YELLOW    "\033[33m"
+#define COLOR_MAGENTA   "\033[35m"
+#define COLOR_BRIGHT_RED     "\033[91m"
+#define COLOR_BRIGHT_GREEN   "\033[92m"
+#define COLOR_BRIGHT_YELLOW  "\033[93m"
+#define COLOR_BRIGHT_MAGENTA "\033[95m"
+#define COLOR_WHITE     "\033[97m"
+
+// Cursor Control (for RGB cursor effect)
+#define CURSOR_BLOCK_BLINK      "\033[1 q"  // Blinking block cursor
+#define CURSOR_BLOCK_STEADY     "\033[2 q"  // Steady block cursor
+#define CURSOR_UNDERLINE_BLINK  "\033[3 q"  // Blinking underline
+#define CURSOR_UNDERLINE_STEADY "\033[4 q"  // Steady underline
+#define CURSOR_BAR_BLINK        "\033[5 q"  // Blinking bar (I-beam)
+#define CURSOR_BAR_STEADY       "\033[6 q"  // Steady bar
 
 void print_usage() {
-    printf("RADS Programming Language v0.0.2\n");
+    printf("RADS Programming Language v0.0.3 \"Butterfly\"\n");
     printf("Usage: rads [options] [file]\n\n");
     printf("Options:\n");
     printf("  -h, --help     Show this help message\n");
@@ -28,9 +60,19 @@ void print_usage() {
 }
 
 void print_version() {
-    printf("RADS v0.0.2\n");
-    printf("Rapid Asynchronous Data Server Language\n");
-    printf("Built: %s %s\n", __DATE__, __TIME__);
+    printf("\n");
+    printf("%s┌────────────────────────────────────────┐%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s│ %sRADS v0.0.3 \"Butterfly\" 🦋%s          %s│%s\n",
+           COLOR_BRIGHT_CYAN, COLOR_BRIGHT_MAGENTA,
+           COLOR_WHITE, COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s│ %sRapid Asynchronous Data Server%s     %s│%s\n",
+           COLOR_BRIGHT_CYAN, COLOR_BRIGHT_BLUE,
+           COLOR_WHITE, COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s│ %sBuilt:%s %s %s                %s│%s\n",
+           COLOR_BRIGHT_CYAN, COLOR_BRIGHT_YELLOW, COLOR_WHITE,
+           __DATE__, __TIME__, COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s└────────────────────────────────────────┘%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("\n");
 }
 
 char* read_file(const char* path) {
@@ -84,24 +126,112 @@ void test_lexer(const char* source) {
 
 void print_repl_welcome() {
     printf("\n");
-    printf("  🚀 RADS Interactive REPL v0.0.2\n");
-    printf("  ═══════════════════════════════════════\n");
-    printf("  Rapid Asynchronous Data Server Language\n");
-    printf("\n");
-    printf("  Type .help for help, .exit to quit\n");
+
+    // Fallout-style RADS ASCII banner with blue/cyan gradient
+    printf(COLOR_BRIGHT_CYAN "  ╔═══════════════════════════════════════════════════════════╗\n" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "  ║ " COLOR_RESET);
+    printf(COLOR_BRIGHT_BLUE "██████╗  " COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "█████╗ " COLOR_RESET);
+    printf(COLOR_CYAN "██████╗ " COLOR_RESET);
+    printf(COLOR_BLUE "███████╗" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "                       ║\n" COLOR_RESET);
+
+    printf(COLOR_BRIGHT_CYAN "  ║ " COLOR_RESET);
+    printf(COLOR_BRIGHT_BLUE "██╔══██╗" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "██╔══██╗" COLOR_RESET);
+    printf(COLOR_CYAN "██╔══██╗" COLOR_RESET);
+    printf(COLOR_BLUE "██╔════╝" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "                       ║\n" COLOR_RESET);
+
+    printf(COLOR_BRIGHT_CYAN "  ║ " COLOR_RESET);
+    printf(COLOR_BRIGHT_BLUE "██████╔╝" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "███████║" COLOR_RESET);
+    printf(COLOR_CYAN "██║  ██║" COLOR_RESET);
+    printf(COLOR_BLUE "███████╗" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "                       ║\n" COLOR_RESET);
+
+    printf(COLOR_BRIGHT_CYAN "  ║ " COLOR_RESET);
+    printf(COLOR_BRIGHT_BLUE "██╔══██╗" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "██╔══██║" COLOR_RESET);
+    printf(COLOR_CYAN "██║  ██║" COLOR_RESET);
+    printf(COLOR_BLUE "╚════██║" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "                       ║\n" COLOR_RESET);
+
+    printf(COLOR_BRIGHT_CYAN "  ║ " COLOR_RESET);
+    printf(COLOR_BRIGHT_BLUE "██║  ██║" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "██║  ██║" COLOR_RESET);
+    printf(COLOR_CYAN "██████╔╝" COLOR_RESET);
+    printf(COLOR_BLUE "███████║" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "                       ║\n" COLOR_RESET);
+
+    printf(COLOR_BRIGHT_CYAN "  ║ " COLOR_RESET);
+    printf(COLOR_BRIGHT_BLUE "╚═╝  ╚═╝" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "╚═╝  ╚═╝" COLOR_RESET);
+    printf(COLOR_CYAN "╚═════╝ " COLOR_RESET);
+    printf(COLOR_BLUE "╚══════╝" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "                       ║\n" COLOR_RESET);
+
+    printf(COLOR_BRIGHT_CYAN "  ╠═══════════════════════════════════════════════════════════╣\n" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "  ║  " COLOR_RESET);
+    printf(COLOR_CYAN "🦋 Interactive REPL v0.0.3 Butterfly" COLOR_RESET);
+    printf(COLOR_DIM " - " COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "TURBO" COLOR_RESET);
+    printf(COLOR_DIM " & " COLOR_RESET);
+    printf(COLOR_BRIGHT_BLUE "RADICAL" COLOR_RESET);
+    printf(COLOR_DIM "! ✨" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN " ║\n" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "  ║  " COLOR_RESET);
+    printf(COLOR_BLUE "Rapid Asynchronous Data Server Language" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "               ║\n" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "  ╠═══════════════════════════════════════════════════════════╣\n" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "  ║  " COLOR_RESET);
+    printf(COLOR_BRIGHT_GREEN "✨ NEW:" COLOR_RESET);
+    printf(COLOR_WHITE " SQLite DB 💾  " COLOR_RESET);
+    printf(COLOR_BRIGHT_YELLOW "✨ Testing 🧪  " COLOR_RESET);
+    printf(COLOR_BRIGHT_MAGENTA "✨ RGB Chroma!" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "    ║\n" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "  ╠═══════════════════════════════════════════════════════════╣\n" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "  ║  " COLOR_RESET);
+    printf(COLOR_DIM "Type " COLOR_RESET);
+    printf(COLOR_BRIGHT_YELLOW ".help" COLOR_RESET);
+    printf(COLOR_DIM " for commands, " COLOR_RESET);
+    printf(COLOR_BRIGHT_RED ".exit" COLOR_RESET);
+    printf(COLOR_DIM " to quit" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "                      ║\n" COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "  ╚═══════════════════════════════════════════════════════════╝\n" COLOR_RESET);
     printf("\n");
 }
 
 void print_repl_help() {
-    printf("\nREPL Commands:\n");
-    printf("  .help     Show this help message\n");
-    printf("  .exit     Exit the REPL\n");
-    printf("  .clear    Clear the screen\n");
-    printf("  .version  Show version information\n");
-    printf("\nTry it out:\n");
-    printf("  echo(\"Hello RADS!\");\n");
-    printf("  turbo x = 42;\n");
-    printf("  echo(x);\n");
+    printf("\n");
+    printf("%s╔══════════════════════════════════════════╗%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s║         %sREPL Commands%s%s              ║%s\n",
+           COLOR_BRIGHT_CYAN, COLOR_BRIGHT_YELLOW, COLOR_BRIGHT_CYAN,
+           COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s╠══════════════════════════════════════════╣%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s║ %s.help%s     Show this help message      %s║%s\n",
+           COLOR_BRIGHT_CYAN, COLOR_BRIGHT_GREEN, COLOR_WHITE,
+           COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s║ %s.exit%s     Exit the REPL               %s║%s\n",
+           COLOR_BRIGHT_CYAN, COLOR_BRIGHT_RED, COLOR_WHITE,
+           COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s║ %s.clear%s    Clear the screen            %s║%s\n",
+           COLOR_BRIGHT_CYAN, COLOR_BRIGHT_BLUE, COLOR_WHITE,
+           COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s║ %s.version%s  Show version information    %s║%s\n",
+           COLOR_BRIGHT_CYAN, COLOR_BRIGHT_MAGENTA, COLOR_WHITE,
+           COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s╠══════════════════════════════════════════╣%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s║         %sTry it out:%s                  %s║%s\n",
+           COLOR_BRIGHT_CYAN, COLOR_BRIGHT_YELLOW, COLOR_BRIGHT_CYAN,
+           COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s║%s  echo(\"Hello RADS!\");              %s║%s\n",
+           COLOR_BRIGHT_CYAN, COLOR_WHITE, COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s║%s  turbo x = 42;                      %s║%s\n",
+           COLOR_BRIGHT_CYAN, COLOR_WHITE, COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s║%s  echo(x);                           %s║%s\n",
+           COLOR_BRIGHT_CYAN, COLOR_WHITE, COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s╚══════════════════════════════════════════╝%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
     printf("\n");
 }
 
@@ -117,23 +247,52 @@ int run_repl() {
     stdlib_math_register();
     stdlib_fs_register();
     stdlib_json_register();
+    stdlib_db_register();
 
     // Initialize event loop for REPL
     interpreter_init_event_loop();
 
     int line_num = 1;
 
+    // RGB Chroma color cycle for prompt (like RGB keyboard)
+    const char* chroma_colors[] = {
+        COLOR_BRIGHT_MAGENTA,
+        COLOR_BRIGHT_BLUE,
+        COLOR_BRIGHT_CYAN,
+        COLOR_BRIGHT_GREEN,
+        COLOR_BRIGHT_YELLOW,
+        COLOR_BRIGHT_RED
+    };
+    int chroma_cycle_size = 6;
+
+    // Set cursor to blinking block for better RGB visibility
+    printf(CURSOR_BLOCK_BLINK);
+    fflush(stdout);
+
     while (1) {
-        // Create prompt string
-        char prompt[32];
-        snprintf(prompt, sizeof(prompt), "rads[%d]> ", line_num);
+        // Create RGB Chroma prompt (cycles through rainbow)
+        const char* prompt_color = chroma_colors[line_num % chroma_cycle_size];
+
+        // Input text color cycles faster for RGB cursor effect
+        const char* input_color = chroma_colors[(line_num * 3) % chroma_cycle_size];
+
+        char prompt[128];
+        // Prompt in one color, input text (and cursor) in another cycling color
+        snprintf(prompt, sizeof(prompt), "%srads[%d]>%s %s",
+                 prompt_color, line_num, COLOR_RESET, input_color);
 
         // Read line with readline (supports arrow keys, history, editing)
         char* line = readline(prompt);
 
+        // Reset color after input
+        printf(COLOR_RESET);
+        fflush(stdout);
+
         // Check for EOF (Ctrl+D)
         if (line == NULL) {
-            printf("\n👋 Goodbye!\n");
+            printf("\n%s👋 Goodbye! Stay %sTURBO%s, stay %sRADICAL%s! 🚀%s\n",
+                   COLOR_BRIGHT_CYAN, COLOR_BRIGHT_YELLOW, COLOR_BRIGHT_CYAN,
+                   COLOR_BRIGHT_MAGENTA, COLOR_BRIGHT_CYAN, COLOR_RESET);
             break;
         }
 
@@ -152,7 +311,9 @@ int run_repl() {
         // Handle REPL commands
         if (line[0] == '.') {
             if (strcmp(line, ".exit") == 0 || strcmp(line, ".quit") == 0) {
-                printf("👋 Goodbye!\n");
+                printf("%s👋 Goodbye! Stay %sTURBO%s, stay %sRADICAL%s! 🚀%s\n",
+                       COLOR_BRIGHT_CYAN, COLOR_BRIGHT_YELLOW, COLOR_BRIGHT_CYAN,
+                       COLOR_BRIGHT_MAGENTA, COLOR_BRIGHT_CYAN, COLOR_RESET);
                 free(line);
                 break;
             } else if (strcmp(line, ".help") == 0) {
@@ -169,8 +330,9 @@ int run_repl() {
                 free(line);
                 continue;
             } else {
-                printf("Unknown command: %s\n", line);
-                printf("Type .help for available commands\n");
+                printf("%s⚠ Unknown command:%s %s\n", COLOR_BRIGHT_YELLOW, COLOR_RESET, line);
+                printf("%sType %s.help%s for available commands%s\n",
+                       COLOR_DIM, COLOR_BRIGHT_CYAN, COLOR_DIM, COLOR_RESET);
                 free(line);
                 continue;
             }
@@ -213,6 +375,11 @@ int run_repl() {
 
         line_num++;
     }
+
+    // Reset cursor to default on exit
+    printf(CURSOR_BAR_BLINK);  // Reset to normal I-beam cursor
+    printf(COLOR_RESET);
+    fflush(stdout);
 
     // Clean up environment and event loop on exit
     interpreter_cleanup_environment();
@@ -264,8 +431,10 @@ int main(int argc, char* argv[]) {
     }
     
     // Normal execution mode
-    printf("🚀 RADS v0.0.2\n");
-    printf("Executing: %s\n\n", filename);
+    printf("%s🦋 RADS v0.0.3 Butterfly%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%sExecuting:%s %s%s%s\n\n",
+           COLOR_BRIGHT_YELLOW, COLOR_RESET,
+           COLOR_BRIGHT_MAGENTA, filename, COLOR_RESET);
     
     // Initialize standard library
     stdlib_io_register();
@@ -276,7 +445,8 @@ int main(int argc, char* argv[]) {
     stdlib_math_register();
     stdlib_fs_register();
     stdlib_json_register();
-    
+    stdlib_db_register();
+
     // Tokenize
     Lexer lexer;
     lexer_init(&lexer, source);

@@ -1,0 +1,29 @@
+// ============================================================================
+// Simple Database Example - RADS v0.0.3 "Butterfly"
+// ============================================================================
+
+blast main() {
+    echo("Simple Database Example");
+    echo("");
+
+    // Open an in-memory database (no file created)
+    db.open(":memory:");
+
+    // Create a simple table
+    db.execute("CREATE TABLE users (id INTEGER, name TEXT)");
+
+    // Insert some data
+    db.execute("INSERT INTO users VALUES (1, 'Alice')");
+    db.execute("INSERT INTO users VALUES (2, 'Bob')");
+    db.execute("INSERT INTO users VALUES (3, 'Charlie')");
+
+    // Query and display
+    echo("All users:");
+    db.query("SELECT * FROM users");
+    echo("");
+
+    // Close database
+    db.close();
+
+    echo("Done!");
+}

@@ -6,6 +6,113 @@ All notable changes to the RADS programming language will be documented in this 
 
 ## [Unreleased]
 
+---
+
+## [0.0.3] - 2026-01-11 (In Progress)
+
+### 🦋 Codename: Butterfly
+
+**Theme:** Metamorphosis into production readiness - databases, testing, enhanced async.
+
+### 💾 Database Integration
+
+- **SQLite Driver**: Full SQLite3 integration via C library
+  - `db.open(path)` - Open database connection
+  - `db.query(sql, params)` - Execute SELECT queries
+  - `db.execute(sql, params)` - Execute INSERT/UPDATE/DELETE
+  - `db.begin()`, `db.commit()`, `db.rollback()` - Transaction support
+  - Prepared statement parameter binding
+  - Result set iteration
+  - Error handling for SQL errors
+
+**Files Added:**
+- `src/stdlib/stdlib_db.c` - SQLite bindings
+- `examples/database_demo.rads` - Database usage examples
+- `docs/DATABASE.md` - Complete database documentation
+
+**Impact:**
+- Build real applications with persistent storage
+- Full SQL support with safe parameter binding
+- Transaction support for data integrity
+- Simple, elegant API matching RADS philosophy
+
+### 🧪 Testing Framework
+
+- **Test Keyword**: First-class test support built into the language
+  - `test "name" { ... }` - Define test blocks
+  - Assertion functions: `assert()`, `assert_eq()`, `assert_true()`, etc.
+  - Test runner CLI: `rads test <file>`
+  - Colored pass/fail output
+  - Test statistics and timing
+
+**Files Added:**
+- `src/core/lexer.c` - Added TEST token
+- `src/core/parser.c` - Test block parsing
+- `src/stdlib/stdlib_test.c` - Assertion functions
+- `tools/rads-test/` - Test runner CLI
+- `tests/test_example.rads` - Example tests
+
+**Impact:**
+- Write tests as easily as writing code
+- Built-in quality assurance
+- Clear test output with statistics
+- Foundation for test-driven development
+
+### ⚡ Enhanced Async
+
+- **Promise Utilities**: JavaScript-style parallel async
+  - `Promise.all([...])` - Run promises in parallel
+  - `Promise.race([...])` - Race with timeout support
+  - `Promise.timeout(ms)` - Create timeout promises
+  - Better error propagation in async contexts
+
+**Files Modified:**
+- `src/stdlib/stdlib_async.c` - Promise utilities
+- `src/core/interpreter.c` - Promise type support
+
+**Impact:**
+- Parallel HTTP requests made easy
+- Timeout support for async operations
+- More expressive async code
+
+### 🎨 Version Update
+
+- Updated all version strings to v0.0.3 "Butterfly" 🦋
+- New REPL welcome banner with butterfly emoji
+- Updated help and version commands
+
+**Impact:**
+- Clear versioning across all tools
+- Beautiful butterfly theme
+
+---
+
+## [0.0.2] - 2026-01-11 (Released)
+
+### 🌈 RGB Chroma Effects - Visual Overhaul
+
+- **Fallout-Style Banner**: Beautiful blue/cyan gradient ASCII art welcome screen
+- **RGB Keyboard Chroma**: Prompt cycles through rainbow colors (magenta→blue→cyan→green→yellow→red)
+- **RGB Blinking Cursor**: Color-changing cursor that cycles through RGB spectrum like a gaming keyboard
+- **Cursor Styles**: 6 ANSI cursor types (blinking block, steady block, underline, I-beam)
+- **Colored Input Text**: Text input synchronized with cursor color for true RGB effect
+- **Colorful Command Boxes**: Enhanced .help and .version with vibrant color-coded borders
+- **Fun Feedback Messages**: Colorful goodbye messages with "Stay TURBO, stay RADICAL!"
+- **Enhanced UI**: All REPL output now features professional color-coding and visual hierarchy
+- **ANSI Color Palette**: 21 color definitions for Fallout blue theme and RGB spectrum
+- **Cursor Control Codes**: 6 ANSI escape sequences for cursor customization
+
+**Files Changed:**
+- `src/core/main.c` - Added RGB Chroma cycling, RGB cursor, colorful banners, enhanced messages (~179 lines)
+- `docs/CHROMA_EFFECTS.md` - Complete visual effects documentation with cursor reference
+
+**Impact:**
+- 10x more engaging and fun user interface
+- Distinctive RADS brand identity with Fallout aesthetic
+- True RGB keyboard-like experience with color-changing cursor
+- Professional polish matching modern developer tools
+- Gaming-inspired visual effects for maximum engagement
+
 ### 🎯 REPL Enhancements
 
 - **Readline Support**: Added GNU Readline library for professional line editing
@@ -21,6 +128,7 @@ All notable changes to the RADS programming language will be documented in this 
 - `Makefile` - Added -lreadline linkage
 - `docs/REPL_FEATURES.md` - Complete REPL documentation
 - `docs/REPL_DEMO.md` - Feature demonstration
+- `docs/REPL_IMPROVEMENTS_SUMMARY.md` - Technical summary
 
 **Impact:**
 - Professional terminal experience matching bash/python REPLs

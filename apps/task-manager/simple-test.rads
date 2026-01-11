@@ -1,0 +1,17 @@
+// Simple database test
+
+echo("Starting database test...");
+
+db.open("test.db");
+echo("Database opened");
+
+db.execute("CREATE TABLE IF NOT EXISTS simple (id INTEGER, name TEXT)");
+echo("Table created");
+
+db.execute("INSERT INTO simple VALUES (1, 'Alice')");
+echo("Row inserted");
+
+db.query("SELECT * FROM simple");
+
+db.close();
+echo("Database closed");
