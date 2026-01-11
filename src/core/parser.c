@@ -263,7 +263,37 @@ static ASTNode* parse_call(Parser* parser) {
     ASTNode* expr = parse_primary(parser);
     
     while (true) {
-        if (match(parser, TOKEN_LEFT_PAREN)) {
+        if (match(parser, TOKEN_LEFT_BRACE)) { // Struct literal
+            if (expr->type != AST_IDENTIFIER) {
+                error(parser, "Expected struct name before '{'");
+                return NULL;
+            }
+            char* struct_name = expr->identifier.name;
+            int line = parser->previous.line;
+            int column = parser->previous.column;
+
+            ASTList* fields = ast_list_create();
+            if (!check(parser, TOKEN_RIGHT_BRACE)) {
+                do {
+                    consume(parser, TOKEN_IDENTIFIER, "Expected field name in struct literal");
+                    char* field_name = malloc(parser->previous.length + 1);
+                    memcpy(field_name, parser->previous.start, parser->previous.length);
+                    field_name[parser->previous.length] = '\0';
+                    ASTNode* field_ident = ast_create_identifier(field_name, parser->previous.line, parser->previous.column);
+                    free(field_name);
+
+                    consume(parser, TOKEN_COLON, "Expected ':' after field name");
+
+                    ASTNode* value = parse_expression(parser);
+                    ASTNode* assign = ast_create_assign(field_ident, value, parser->previous.line, parser->previous.column);
+                    ast_list_append(fields, assign);
+                } while (match(parser, TOKEN_COMMA));
+            }
+            consume(parser, TOKEN_RIGHT_BRACE, "Expected '}' after struct literal");
+
+            expr = ast_create_struct_literal(struct_name, fields, line, column);
+
+        } else if (match(parser, TOKEN_LEFT_PAREN)) {
             ASTList* args = ast_list_create();
             
             if (!check(parser, TOKEN_RIGHT_PAREN)) {
@@ -294,19 +324,33 @@ static ASTNode* parse_call(Parser* parser) {
     return expr;
 }
 
+// Parse unary operators (!, -)
+static ASTNode* parse_unary(Parser* parser) {
+    if (match(parser, TOKEN_BANG) || match(parser, TOKEN_MINUS)) {
+        Token op = parser->previous;
+        int line = op.line;
+        int column = op.column;
+        ASTNode* right = parse_unary(parser);  // Right-associative
+        OperatorType op_type = (op.type == TOKEN_BANG) ? OP_NOT : OP_NEG;
+        return ast_create_unary_op(op_type, right, line, column);
+    }
+
+    return parse_call(parser);
+}
+
 static ASTNode* parse_factor(Parser* parser) {
-    ASTNode* expr = parse_call(parser);
-    
+    ASTNode* expr = parse_unary(parser);
+
     while (match(parser, TOKEN_STAR) || match(parser, TOKEN_SLASH) || match(parser, TOKEN_PERCENT)) {
         Token op = parser->previous;
-        ASTNode* right = parse_call(parser);
+        ASTNode* right = parse_unary(parser);
         OperatorType op_type;
         if (op.type == TOKEN_STAR) op_type = OP_MUL;
         else if (op.type == TOKEN_SLASH) op_type = OP_DIV;
         else op_type = OP_MOD;
         expr = ast_create_binary_op(op_type, expr, right, op.line, op.column);
     }
-    
+
     return expr;
 }
 
@@ -479,29 +523,64 @@ static ASTNode* parse_variable(Parser* parser) {
     // If turbo is used, we might still expect a type or inference
     // Simplified: turbo <type> <name> = <value>; OR <type> <name> = <value>;
     
+    char* name = NULL;
+
     if (is_turbo) {
         // Consume type
         if (match(parser, TOKEN_I32) || match(parser, TOKEN_STR) || match(parser, TOKEN_BOOL)) {
-             // Basic types
+             // Basic types: turbo i32 x = ...
              char* type_name = strdup(token_type_to_string(parser->previous.type));
              type = type_info_create(type_name, false, true);
              free(type_name);
+             // Variable name comes next
+             consume(parser, TOKEN_IDENTIFIER, "Expected variable name after type");
+             name = malloc(parser->previous.length + 1);
+             memcpy(name, parser->previous.start, parser->previous.length);
+             name[parser->previous.length] = '\0';
+        } else if (check(parser, TOKEN_IDENTIFIER)) {
+             // Could be either:
+             // 1. turbo TypeName varName = ...  (custom type)
+             // 2. turbo varName = ...           (type inference)
+             // Consume the identifier and check what's next
+             consume(parser, TOKEN_IDENTIFIER, "Expected type or variable name");
+             Token first_ident = parser->previous;
+
+             if (check(parser, TOKEN_IDENTIFIER)) {
+                 // Pattern: turbo TypeName varName
+                 // First identifier is the type
+                 char* type_name = malloc(first_ident.length + 1);
+                 memcpy(type_name, first_ident.start, first_ident.length);
+                 type_name[first_ident.length] = '\0';
+                 type = type_info_create(type_name, false, true);
+                 free(type_name);
+                 // Consume the variable name
+                 consume(parser, TOKEN_IDENTIFIER, "Expected variable name after type");
+                 name = malloc(parser->previous.length + 1);
+                 memcpy(name, parser->previous.start, parser->previous.length);
+                 name[parser->previous.length] = '\0';
+             } else {
+                 // Pattern: turbo varName = ... OR turbo varName;
+                 // First identifier is the variable name
+                 name = malloc(first_ident.length + 1);
+                 memcpy(name, first_ident.start, first_ident.length);
+                 name[first_ident.length] = '\0';
+                 type = NULL;  // Type inference
+             }
         } else {
-             // Implicit type or identifier type
-             // For now assume explicit type required
+             error(parser, "Expected type or variable name after 'turbo'");
+             return NULL;
         }
     } else {
-         // Non-turbo type (already consumed by caller?)
-         // We need to handle this in parse_declaration
+         // Non-turbo type (already consumed by caller)
          char* type_name = strdup(token_type_to_string(parser->previous.type));
          type = type_info_create(type_name, false, false);
          free(type_name);
+         // Variable name comes next
+         consume(parser, TOKEN_IDENTIFIER, "Expected variable name after type");
+         name = malloc(parser->previous.length + 1);
+         memcpy(name, parser->previous.start, parser->previous.length);
+         name[parser->previous.length] = '\0';
     }
-    
-    consume(parser, TOKEN_IDENTIFIER, "Expected variable name");
-    char* name = malloc(parser->previous.length + 1);
-    memcpy(name, parser->previous.start, parser->previous.length);
-    name[parser->previous.length] = '\0';
     
     ASTNode* initializer = NULL;
     if (match(parser, TOKEN_EQUAL)) {
@@ -631,22 +710,82 @@ static ASTNode* parse_struct_declaration(Parser* parser) {
     return struct_decl;
 }
 
+static ASTNode* parse_enum_declaration(Parser* parser) {
+    int line = parser->previous.line;
+    int column = parser->previous.column;
+
+    // The enum name is the token *after* 'enum'
+    consume(parser, TOKEN_IDENTIFIER, "Expected enum name");
+    char* name = malloc(parser->previous.length + 1);
+    memcpy(name, parser->previous.start, parser->previous.length);
+    name[parser->previous.length] = '\0';
+
+    consume(parser, TOKEN_LEFT_BRACE, "Expected '{' before enum body");
+
+    ASTList* values = ast_list_create();
+    while (!check(parser, TOKEN_RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
+        // Parse enum value name
+        consume(parser, TOKEN_IDENTIFIER, "Expected enum value name");
+        char* value_name = malloc(parser->previous.length + 1);
+        memcpy(value_name, parser->previous.start, parser->previous.length);
+        value_name[parser->previous.length] = '\0';
+
+        ASTNode* value = ast_create_identifier(value_name, parser->previous.line, parser->previous.column);
+        ast_list_append(values, value);
+        free(value_name);
+
+        // Allow optional comma between values
+        if (!check(parser, TOKEN_RIGHT_BRACE)) {
+            if (match(parser, TOKEN_COMMA)) {
+                // consumed
+            } else {
+                // No comma, that's ok if next is closing brace
+                if (!check(parser, TOKEN_RIGHT_BRACE)) {
+                    error_at_current(parser, "Expected ',' or '}' in enum");
+                    break;
+                }
+            }
+        }
+    }
+
+    consume(parser, TOKEN_RIGHT_BRACE, "Expected '}' after enum body");
+
+    // Enum declaration can optionally end with a semicolon
+    if (match(parser, TOKEN_SEMICOLON)) {
+        // consumed
+    }
+
+    ASTNode* enum_decl = ast_create_enum_decl(name, values, line, column);
+    free(name);
+    return enum_decl;
+}
+
 // Parse declaration
 static ASTNode* parse_declaration(Parser* parser) {
     fprintf(stderr, "[PARSE] decl start token=%s line=%d col=%d\n",
             token_type_to_string(parser->current.type),
             parser->current.line,
             parser->current.column);
-    // Lightweight import handling: current interpreter has no module system,
-    // so we parse and discard imports to keep scripts runnable.
+    // Import statement: import "filename.rads";
     if (match(parser, TOKEN_IMPORT)) {
-        consume(parser, TOKEN_IDENTIFIER, "Expected module name after 'import'");
+        int line = parser->previous.line;
+        int column = parser->previous.column;
+        consume(parser, TOKEN_STRING, "Expected filename string after 'import'");
+        char* filename = malloc(parser->previous.length - 1); // -2 for quotes, +1 for null
+        memcpy(filename, parser->previous.start + 1, parser->previous.length - 2);
+        filename[parser->previous.length - 2] = '\0';
         consume(parser, TOKEN_SEMICOLON, "Expected ';' after import");
-        return NULL;
+        ASTNode* import_node = ast_create_import(filename, line, column);
+        free(filename);
+        return import_node;
     }
 
     if (match(parser, TOKEN_STRUCT)) { // Match and consume the STRUCT token
         return parse_struct_declaration(parser);
+    }
+
+    if (match(parser, TOKEN_ENUM)) { // Match and consume the ENUM token
+        return parse_enum_declaration(parser);
     }
 
     // Function declarations: allow either 'async blast' or plain 'blast'.
@@ -717,9 +856,47 @@ ASTNode* parse_statement(Parser* parser) {
         consume(parser, TOKEN_RIGHT_PAREN, "Expected ')' after condition");
         ASTNode* then_branch = parse_statement(parser);
         ASTNode* else_branch = NULL;
-        if (match(parser, TOKEN_ELSE)) {
-            else_branch = parse_statement(parser);
+
+        // Handle elif chain - build nested if statements
+        while (match(parser, TOKEN_ELIF)) {
+            int elif_line = parser->previous.line;
+            int elif_column = parser->previous.column;
+            consume(parser, TOKEN_LEFT_PAREN, "Expected '(' after 'elif'");
+            ASTNode* elif_condition = parse_expression(parser);
+            consume(parser, TOKEN_RIGHT_PAREN, "Expected ')' after elif condition");
+            ASTNode* elif_then = parse_statement(parser);
+
+            // Create nested if for this elif
+            ASTNode* nested_if = ast_create_if(elif_condition, elif_then, NULL, elif_line, elif_column);
+
+            if (else_branch == NULL) {
+                // First elif becomes the else branch
+                else_branch = nested_if;
+            } else {
+                // Find the deepest if node and attach this elif to its else branch
+                ASTNode* current = else_branch;
+                while (current->type == AST_IF_STMT && current->if_stmt.else_branch != NULL) {
+                    current = current->if_stmt.else_branch;
+                }
+                current->if_stmt.else_branch = nested_if;
+            }
         }
+
+        // Handle final else
+        if (match(parser, TOKEN_ELSE)) {
+            ASTNode* final_else = parse_statement(parser);
+            if (else_branch == NULL) {
+                else_branch = final_else;
+            } else {
+                // Attach to the last elif's else branch
+                ASTNode* current = else_branch;
+                while (current->type == AST_IF_STMT && current->if_stmt.else_branch != NULL) {
+                    current = current->if_stmt.else_branch;
+                }
+                current->if_stmt.else_branch = final_else;
+            }
+        }
+
         return ast_create_if(condition, then_branch, else_branch, line, column);
     }
     
@@ -732,6 +909,42 @@ ASTNode* parse_statement(Parser* parser) {
     ASTNode* expr = parse_expression(parser);
     consume(parser, TOKEN_SEMICOLON, "Expected ';' after expression");
     return expr;
+}
+
+// Synchronize parser after error - skip to next statement boundary
+static void synchronize(Parser* parser) {
+    parser->panic_mode = false;
+
+    while (parser->current.type != TOKEN_EOF) {
+        // Semicolon marks end of statement
+        if (parser->previous.type == TOKEN_SEMICOLON) return;
+
+        // Right brace at top level (end of block/struct) - advance past it
+        if (parser->current.type == TOKEN_RIGHT_BRACE) {
+            advance(parser);
+            return;
+        }
+
+        // These tokens typically start new statements
+        switch (parser->current.type) {
+            case TOKEN_STRUCT:
+            case TOKEN_ENUM:
+            case TOKEN_BLAST:
+            case TOKEN_ASYNC:
+            case TOKEN_TURBO:
+            case TOKEN_IF:
+            case TOKEN_LOOP:
+            case TOKEN_CRUISE:
+            case TOKEN_RETURN:
+            case TOKEN_ECHO:
+            case TOKEN_IMPORT:
+                return;
+            default:
+                break;
+        }
+
+        advance(parser);
+    }
 }
 
 // Initialize parser
@@ -749,16 +962,21 @@ void parser_init(Parser* parser, Lexer* lexer) {
 // Main parse function
 ASTNode* parser_parse(Parser* parser) {
     ASTList* declarations = ast_list_create();
-    
+
     while (!match(parser, TOKEN_EOF)) {
         ASTNode* decl = parse_declaration(parser);
-        if (decl) ast_list_append(declarations, decl);
+        if (decl) {
+            ast_list_append(declarations, decl);
+        } else if (parser->panic_mode) {
+            // Parser is in panic mode - synchronize to recover
+            synchronize(parser);
+        }
     }
-    
+
     if (parser->had_error) {
         ast_list_free(declarations);
         return NULL;
     }
-    
+
     return ast_create_program(declarations);
 }

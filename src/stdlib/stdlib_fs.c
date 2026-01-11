@@ -156,6 +156,50 @@ Value native_fs_move(struct Interpreter* interp, int argc, Value* args) {
     return make_bool_val(ok);
 }
 
+Value native_fs_exists(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (!check_argc(argc, 1) || args[0].type != VAL_STRING) {
+        return make_bool_val(false);
+    }
+    return make_bool_val(access(args[0].string_val, F_OK) == 0);
+}
+
+Value native_fs_is_file(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (!check_argc(argc, 1) || args[0].type != VAL_STRING) {
+        return make_bool_val(false);
+    }
+    struct stat st;
+    if (stat(args[0].string_val, &st) != 0) {
+        return make_bool_val(false);
+    }
+    return make_bool_val(S_ISREG(st.st_mode));
+}
+
+Value native_fs_remove(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (!check_argc(argc, 1) || args[0].type != VAL_STRING) {
+        return make_bool_val(false);
+    }
+    return make_bool_val(remove(args[0].string_val) == 0);
+}
+
+Value native_fs_getcwd(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    (void)argc;
+    (void)args;
+
+    char buf[4096];
+    if (getcwd(buf, sizeof(buf)) == NULL) {
+        return make_null_val();
+    }
+
+    Value v;
+    v.type = VAL_STRING;
+    v.string_val = strdup(buf);
+    return v;
+}
+
 void stdlib_fs_register(void) {
     register_native("fs.list_dir", native_fs_list_dir);
     register_native("fs.mkdir", native_fs_mkdir);
@@ -164,4 +208,8 @@ void stdlib_fs_register(void) {
     register_native("fs.is_dir", native_fs_is_dir);
     register_native("fs.copy", native_fs_copy);
     register_native("fs.move", native_fs_move);
+    register_native("fs.exists", native_fs_exists);
+    register_native("fs.is_file", native_fs_is_file);
+    register_native("fs.remove", native_fs_remove);
+    register_native("fs.getcwd", native_fs_getcwd);
 }

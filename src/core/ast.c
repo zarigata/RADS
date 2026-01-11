@@ -158,6 +158,16 @@ ASTNode* ast_create_struct_decl(const char* name, ASTList* fields, int line, int
     return node;
 }
 
+ASTNode* ast_create_enum_decl(const char* name, ASTList* values, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_ENUM_DECL;
+    node->line = line;
+    node->column = column;
+    node->enum_decl.name = strdup(name);
+    node->enum_decl.values = values;
+    return node;
+}
+
 ASTNode* ast_create_return(ASTNode* value, int line, int column) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_RETURN_STMT;
@@ -194,6 +204,15 @@ ASTNode* ast_create_echo(ASTNode* expression, int line, int column) {
     node->line = line;
     node->column = column;
     node->echo_stmt.expression = expression;
+    return node;
+}
+
+ASTNode* ast_create_import(const char* filename, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_IMPORT_STMT;
+    node->line = line;
+    node->column = column;
+    node->import_stmt.filename = strdup(filename);
     return node;
 }
 
@@ -244,6 +263,16 @@ ASTNode* ast_create_member_expr(ASTNode* object, const char* member, int line, i
     node->column = column;
     node->member_expr.object = object;
     node->member_expr.member = strdup(member);
+    return node;
+}
+
+ASTNode* ast_create_struct_literal(const char* name, ASTList* fields, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_STRUCT_LITERAL;
+    node->line = line;
+    node->column = column;
+    node->struct_literal.name = strdup(name);
+    node->struct_literal.fields = fields;
     return node;
 }
 
@@ -323,6 +352,10 @@ void ast_free(ASTNode* node) {
         case AST_STRUCT_DECL:
             free(node->struct_decl.name);
             ast_list_free(node->struct_decl.fields);
+            break;
+        case AST_STRUCT_LITERAL:
+            free(node->struct_literal.name);
+            ast_list_free(node->struct_literal.fields);
             break;
         case AST_RETURN_STMT:
             ast_free(node->return_stmt.value);

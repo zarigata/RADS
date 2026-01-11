@@ -248,15 +248,15 @@ Value native_math_random(struct Interpreter* interp, int argc, Value* args) {
 
 Value native_math_random_int(struct Interpreter* interp, int argc, Value* args) {
     (void)interp;
-    
+
     if (!random_initialized) {
         srand(time(NULL));
         random_initialized = true;
     }
-    
+
     long long min = 0;
     long long max = 100;
-    
+
     if (argc >= 1 && args[0].type == VAL_INT) {
         max = args[0].int_val;
     }
@@ -264,16 +264,108 @@ Value native_math_random_int(struct Interpreter* interp, int argc, Value* args) 
         min = args[0].int_val;
         max = args[1].int_val;
     }
-    
+
     if (min > max) {
         long long temp = min;
         min = max;
         max = temp;
     }
-    
+
     Value v;
     v.type = VAL_INT;
     v.int_val = min + (rand() % (max - min + 1));
+    return v;
+}
+
+Value native_math_log(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+
+    if (!check_argc(argc, 1)) {
+        Value v;
+        v.type = VAL_NULL;
+        return v;
+    }
+
+    double val = value_to_double(&args[0]);
+
+    Value v;
+    v.type = VAL_FLOAT;
+    v.float_val = log(val);
+    return v;
+}
+
+Value native_math_log10(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+
+    if (!check_argc(argc, 1)) {
+        Value v;
+        v.type = VAL_NULL;
+        return v;
+    }
+
+    double val = value_to_double(&args[0]);
+
+    Value v;
+    v.type = VAL_FLOAT;
+    v.float_val = log10(val);
+    return v;
+}
+
+Value native_math_exp(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+
+    if (!check_argc(argc, 1)) {
+        Value v;
+        v.type = VAL_NULL;
+        return v;
+    }
+
+    double val = value_to_double(&args[0]);
+
+    Value v;
+    v.type = VAL_FLOAT;
+    v.float_val = exp(val);
+    return v;
+}
+
+Value native_math_clamp(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+
+    if (argc != 3) {
+        Value v;
+        v.type = VAL_NULL;
+        return v;
+    }
+
+    double val = value_to_double(&args[0]);
+    double min_val = value_to_double(&args[1]);
+    double max_val = value_to_double(&args[2]);
+
+    if (val < min_val) val = min_val;
+    if (val > max_val) val = max_val;
+
+    Value v;
+    v.type = VAL_FLOAT;
+    v.float_val = val;
+    return v;
+}
+
+Value native_math_lerp(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+
+    if (argc != 3) {
+        Value v;
+        v.type = VAL_NULL;
+        return v;
+    }
+
+    double a = value_to_double(&args[0]);
+    double b = value_to_double(&args[1]);
+    double t = value_to_double(&args[2]);
+
+    Value v;
+    v.type = VAL_FLOAT;
+    v.float_val = a + (b - a) * t;
     return v;
 }
 
@@ -291,4 +383,9 @@ void stdlib_math_register(void) {
     register_native("math.max", native_math_max);
     register_native("math.random", native_math_random);
     register_native("math.random_int", native_math_random_int);
+    register_native("math.log", native_math_log);
+    register_native("math.log10", native_math_log10);
+    register_native("math.exp", native_math_exp);
+    register_native("math.clamp", native_math_clamp);
+    register_native("math.lerp", native_math_lerp);
 }

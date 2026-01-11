@@ -14,7 +14,7 @@
 #include "stdlib_json.h"
 
 void print_usage() {
-    printf("RADS Programming Language v0.1.0-alpha\n");
+    printf("RADS Programming Language v0.0.2\n");
     printf("Usage: rads [options] [file]\n\n");
     printf("Options:\n");
     printf("  -h, --help     Show this help message\n");
@@ -26,7 +26,7 @@ void print_usage() {
 }
 
 void print_version() {
-    printf("RADS v0.1.0-alpha\n");
+    printf("RADS v0.0.2\n");
     printf("Rapid Asynchronous Data Server Language\n");
     printf("Built: %s %s\n", __DATE__, __TIME__);
 }
@@ -82,7 +82,7 @@ void test_lexer(const char* source) {
 
 void print_repl_welcome() {
     printf("\n");
-    printf("  🚀 RADS Interactive REPL v0.1.0-alpha\n");
+    printf("  🚀 RADS Interactive REPL v0.0.2\n");
     printf("  ═══════════════════════════════════════\n");
     printf("  Rapid Asynchronous Data Server Language\n");
     printf("\n");
@@ -247,7 +247,7 @@ int main(int argc, char* argv[]) {
     }
     
     // Normal execution mode
-    printf("🚀 RADS v0.1.0-alpha\n");
+    printf("🚀 RADS v0.0.2\n");
     printf("Executing: %s\n\n", filename);
     
     // Initialize standard library

@@ -20,7 +20,9 @@ typedef enum {
     VAL_FLOAT,
     VAL_STRING,
     VAL_FUNCTION,
-    VAL_ARRAY
+    VAL_ARRAY,
+    VAL_STRUCT_DEF,
+    VAL_STRUCT_INSTANCE
 } ValueType;
 
 struct Value; // Forward declaration
@@ -32,6 +34,22 @@ typedef struct Array {
     struct Value* items;
 } Array;
 
+typedef struct FieldValue {
+    char* name;
+    struct Value* value;
+    struct FieldValue* next;
+} FieldValue;
+
+typedef struct StructInstance {
+    struct StructDef* definition;
+    FieldValue* fields;
+} StructInstance;
+
+typedef struct StructDef {
+    char* name;
+    ASTNode* ast_node;
+} StructDef;
+
 typedef struct Value {
     ValueType type;
     union {
@@ -41,6 +59,8 @@ typedef struct Value {
         char* string_val;
         ASTNode* func_node;
         Array* array_val;
+        StructDef* struct_def;
+        StructInstance* struct_instance;
     };
 } Value;
 

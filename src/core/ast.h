@@ -31,6 +31,7 @@ typedef enum {
     AST_FUNCTION_DECL,
     AST_VARIABLE_DECL,
     AST_STRUCT_DECL,
+    AST_ENUM_DECL,
     AST_RETURN_STMT,
     AST_IF_STMT,
     AST_LOOP_STMT,
@@ -38,6 +39,7 @@ typedef enum {
     AST_BREAK_STMT,
     AST_CONTINUE_STMT,
     AST_ECHO_STMT,
+    AST_IMPORT_STMT,
     AST_BLOCK,
     
     // Expressions
@@ -46,6 +48,7 @@ typedef enum {
     AST_ARRAY_LITERAL,
     AST_INDEX_EXPR,
     AST_MEMBER_EXPR,
+    AST_STRUCT_LITERAL,
     
     // Types
     AST_TYPE,
@@ -156,7 +159,13 @@ struct ASTNode {
             char* name;
             ASTList* fields;
         } struct_decl;
-        
+
+        // Enum declaration
+        struct {
+            char* name;
+            ASTList* values;  // List of identifier nodes
+        } enum_decl;
+
         // Return statement
         struct {
             ASTNode* value;
@@ -186,7 +195,12 @@ struct ASTNode {
         struct {
             ASTNode* expression;
         } echo_stmt;
-        
+
+        // Import statement
+        struct {
+            char* filename;
+        } import_stmt;
+
         // Block
         struct {
             ASTList* statements;
@@ -220,6 +234,12 @@ struct ASTNode {
             ASTNode* object;
             char* member;
         } member_expr;
+
+        // Struct literal
+        struct {
+            char* name;
+            ASTList* fields;
+        } struct_literal;
         
         // Program
         struct {
@@ -240,13 +260,16 @@ ASTNode* ast_create_unary_op(OperatorType op, ASTNode* operand, int line, int co
 ASTNode* ast_create_function_decl(const char* name, ASTList* params, TypeInfo* return_type, ASTNode* body, bool is_async, int line, int column);
 ASTNode* ast_create_variable_decl(const char* name, TypeInfo* type, ASTNode* initializer, bool is_turbo, int line, int column);
 ASTNode* ast_create_struct_decl(const char* name, ASTList* fields, int line, int column);
+ASTNode* ast_create_enum_decl(const char* name, ASTList* values, int line, int column);
 ASTNode* ast_create_return(ASTNode* value, int line, int column);
 ASTNode* ast_create_if(ASTNode* condition, ASTNode* then_branch, ASTNode* else_branch, int line, int column);
 ASTNode* ast_create_loop(ASTNode* condition, ASTNode* body, int line, int column);
 ASTNode* ast_create_echo(ASTNode* expression, int line, int column);
+ASTNode* ast_create_import(const char* filename, int line, int column);
 ASTNode* ast_create_block(ASTList* statements, int line, int column);
 ASTNode* ast_create_call(ASTNode* callee, ASTList* arguments, int line, int column);
 ASTNode* ast_create_member_expr(ASTNode* object, const char* member, int line, int column);
+ASTNode* ast_create_struct_literal(const char* name, ASTList* fields, int line, int column);
 ASTNode* ast_create_array_literal(ASTList* elements, int line, int column);
 ASTNode* ast_create_index(ASTNode* array, ASTNode* index, int line, int column);
 ASTNode* ast_create_assign(ASTNode* target, ASTNode* value, int line, int column);

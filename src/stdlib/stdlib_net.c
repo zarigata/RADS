@@ -107,12 +107,19 @@ typedef struct ConnectionPool {
     int idle_timeout;
 } ConnectionPool;
 
+typedef struct RouteParams {
+    char** keys;
+    char** values;
+    int count;
+} RouteParams;
+
 typedef struct RouteNode {
     char* path;
     char* method;
     Value handler;
     bool is_static;
     char* static_dir;
+    bool has_params;  // true if path contains :param
     struct RouteNode* next;
 } RouteNode;
 
@@ -120,6 +127,31 @@ typedef struct RouteRegistry {
     RouteNode* head;
     int count;
 } RouteRegistry;
+
+typedef struct MiddlewareNode {
+    Value handler;
+    struct MiddlewareNode* next;
+} MiddlewareNode;
+
+typedef struct MiddlewareChain {
+    MiddlewareNode* head;
+    int count;
+} MiddlewareChain;
+
+typedef struct Session {
+    char* id;
+    char** keys;
+    char** values;
+    int count;
+    time_t created;
+    time_t last_accessed;
+    struct Session* next;
+} Session;
+
+typedef struct SessionStore {
+    Session* head;
+    int count;
+} SessionStore;
 
 static Value make_string(const char* s);
 static Value make_bool(bool v);
@@ -156,7 +188,29 @@ static bool route_registry_add(RouteRegistry* reg, const char* path, const char*
 static bool route_registry_add_static(RouteRegistry* reg, const char* prefix, const char* dir);
 static RouteNode* route_registry_find(RouteRegistry* reg, const char* path, const char* method);
 static RouteNode* route_registry_find_static(RouteRegistry* reg, const char* path);
+static RouteNode* route_registry_find_with_params(RouteRegistry* reg, const char* path, const char* method, RouteParams** params_out);
 static bool path_has_parent_ref(const char* path);
+static RouteParams* route_params_create(void);
+static void route_params_add(RouteParams* params, const char* key, const char* value);
+static void route_params_free(RouteParams* params);
+static bool route_match_with_params(const char* pattern, const char* path, RouteParams** params_out);
+static MiddlewareChain* middleware_chain_create(void);
+static void middleware_chain_add(MiddlewareChain* chain, Value handler);
+static void middleware_chain_free(MiddlewareChain* chain);
+static char* parse_cookies(const char* cookie_header);
+static char* cookie_get(const char* cookies, const char* name);
+static char* cookie_set(const char* name, const char* value, int max_age);
+static char* parse_form_data(const char* body);
+static char* form_get(const char* form_data, const char* key);
+static char* template_render(const char* template_str, RouteParams* vars);
+static SessionStore* session_store_create(void);
+static Session* session_create(const char* id);
+static Session* session_find(SessionStore* store, const char* id);
+static void session_set(Session* sess, const char* key, const char* value);
+static const char* session_get(Session* sess, const char* key);
+static void session_destroy(SessionStore* store, const char* id);
+static void session_store_free(SessionStore* store);
+static char* generate_session_id(void);
 static const char* guess_mime(const char* path);
 static HttpClientRequest* http_client_request_create(const char* method, const char* url);
 static void http_client_request_free(HttpClientRequest* req);
@@ -701,11 +755,12 @@ static bool route_registry_add(RouteRegistry* reg, const char* path, const char*
     node->path = strdup(path);
     node->method = method ? strdup(method) : NULL;
     node->handler = handler;
+    node->has_params = (strchr(path, ':') != NULL);  // Check if path has :param
     node->next = reg->head;
     reg->head = node;
     reg->count++;
 #ifdef RADS_DEBUG_NET
-    fprintf(stderr, "[NET] Route registered: %s %s\n", method ? method : "*", path);
+    fprintf(stderr, "[NET] Route registered: %s %s%s\n", method ? method : "*", path, node->has_params ? " (with params)" : "");
 #endif
     return true;
 }
@@ -753,6 +808,399 @@ static RouteNode* route_registry_find_static(RouteRegistry* reg, const char* pat
 static bool path_has_parent_ref(const char* path) {
     if (!path) return true;
     return strstr(path, "..") != NULL;
+}
+
+// Route Parameters Implementation
+static RouteParams* route_params_create(void) {
+    RouteParams* params = calloc(1, sizeof(RouteParams));
+    params->keys = NULL;
+    params->values = NULL;
+    params->count = 0;
+    return params;
+}
+
+static void route_params_add(RouteParams* params, const char* key, const char* value) {
+    if (!params || !key || !value) return;
+    params->keys = realloc(params->keys, sizeof(char*) * (params->count + 1));
+    params->values = realloc(params->values, sizeof(char*) * (params->count + 1));
+    params->keys[params->count] = strdup(key);
+    params->values[params->count] = strdup(value);
+    params->count++;
+}
+
+static void route_params_free(RouteParams* params) {
+    if (!params) return;
+    for (int i = 0; i < params->count; i++) {
+        free(params->keys[i]);
+        free(params->values[i]);
+    }
+    free(params->keys);
+    free(params->values);
+    free(params);
+}
+
+// Match route pattern with params: /user/:id matches /user/123
+static bool route_match_with_params(const char* pattern, const char* path, RouteParams** params_out) {
+    if (!pattern || !path) return false;
+
+    RouteParams* params = route_params_create();
+    const char* p = pattern;
+    const char* u = path;
+
+    while (*p && *u) {
+        if (*p == ':') {
+            // Found parameter
+            p++; // Skip ':'
+            const char* param_start = p;
+            while (*p && *p != '/') p++;
+
+            // Extract parameter name
+            size_t param_len = p - param_start;
+            char* param_name = malloc(param_len + 1);
+            memcpy(param_name, param_start, param_len);
+            param_name[param_len] = '\0';
+
+            // Extract parameter value from URL
+            const char* value_start = u;
+            while (*u && *u != '/') u++;
+            size_t value_len = u - value_start;
+            char* param_value = malloc(value_len + 1);
+            memcpy(param_value, value_start, value_len);
+            param_value[value_len] = '\0';
+
+            route_params_add(params, param_name, param_value);
+            free(param_name);
+            free(param_value);
+        } else if (*p == *u) {
+            p++;
+            u++;
+        } else {
+            route_params_free(params);
+            return false;
+        }
+    }
+
+    // Both must be at end (or at '/' which we treat as end)
+    bool match = (*p == '\0' || *p == '/') && (*u == '\0' || *u == '/');
+    if (match && params_out) {
+        *params_out = params;
+    } else {
+        route_params_free(params);
+    }
+    return match;
+}
+
+static RouteNode* route_registry_find_with_params(RouteRegistry* reg, const char* path, const char* method, RouteParams** params_out) {
+    if (!reg || !path) return NULL;
+
+    // First try exact match (faster)
+    for (RouteNode* cur = reg->head; cur; cur = cur->next) {
+        if (!cur->has_params && cur->method && method &&
+            strcasecmp(cur->method, method) == 0 && strcmp(cur->path, path) == 0) {
+            return cur;
+        }
+    }
+
+    // Try parameter matching
+    for (RouteNode* cur = reg->head; cur; cur = cur->next) {
+        if (cur->has_params && cur->method && method && strcasecmp(cur->method, method) == 0) {
+            if (route_match_with_params(cur->path, path, params_out)) {
+                return cur;
+            }
+        }
+    }
+
+    return NULL;
+}
+
+// Middleware Implementation
+static MiddlewareChain* middleware_chain_create(void) {
+    MiddlewareChain* chain = calloc(1, sizeof(MiddlewareChain));
+    chain->head = NULL;
+    chain->count = 0;
+    return chain;
+}
+
+static void middleware_chain_add(MiddlewareChain* chain, Value handler) {
+    if (!chain) return;
+    MiddlewareNode* node = calloc(1, sizeof(MiddlewareNode));
+    node->handler = clone_value(handler);
+    node->next = chain->head;
+    chain->head = node;
+    chain->count++;
+}
+
+static void middleware_chain_free(MiddlewareChain* chain) {
+    if (!chain) return;
+    MiddlewareNode* cur = chain->head;
+    while (cur) {
+        MiddlewareNode* next = cur->next;
+        value_free(&cur->handler);
+        free(cur);
+        cur = next;
+    }
+    free(chain);
+}
+
+// Cookie Implementation
+static char* parse_cookies(const char* cookie_header) {
+    // Simply return a copy for now; caller can use cookie_get to parse
+    return cookie_header ? strdup(cookie_header) : NULL;
+}
+
+static char* cookie_get(const char* cookies, const char* name) {
+    if (!cookies || !name) return NULL;
+
+    char search[256];
+    snprintf(search, sizeof(search), "%s=", name);
+    const char* start = strstr(cookies, search);
+    if (!start) return NULL;
+
+    start += strlen(search);
+
+    // Trim leading whitespace
+    while (*start && (*start == ' ' || *start == '\t')) start++;
+
+    const char* end = strchr(start, ';');
+    size_t len = end ? (size_t)(end - start) : strlen(start);
+
+    char* value = malloc(len + 1);
+    memcpy(value, start, len);
+    value[len] = '\0';
+
+    return value;
+}
+
+static char* cookie_set(const char* name, const char* value, int max_age) {
+    if (!name || !value) return NULL;
+
+    char* cookie = malloc(512);
+    if (max_age > 0) {
+        snprintf(cookie, 512, "Set-Cookie: %s=%s; Max-Age=%d; Path=/; HttpOnly",
+                 name, value, max_age);
+    } else {
+        snprintf(cookie, 512, "Set-Cookie: %s=%s; Path=/; HttpOnly", name, value);
+    }
+    return cookie;
+}
+
+// Form Data Parsing
+static char* url_decode(const char* str) {
+    if (!str) return NULL;
+    size_t len = strlen(str);
+    char* decoded = malloc(len + 1);
+    size_t j = 0;
+
+    for (size_t i = 0; i < len; i++) {
+        if (str[i] == '%' && i + 2 < len) {
+            char hex[3] = {str[i+1], str[i+2], '\0'};
+            decoded[j++] = (char)strtol(hex, NULL, 16);
+            i += 2;
+        } else if (str[i] == '+') {
+            decoded[j++] = ' ';
+        } else {
+            decoded[j++] = str[i];
+        }
+    }
+    decoded[j] = '\0';
+    return decoded;
+}
+
+static char* parse_form_data(const char* body) {
+    return body ? url_decode(body) : NULL;
+}
+
+static char* form_get(const char* form_data, const char* key) {
+    if (!form_data || !key) return NULL;
+
+    char search[256];
+    snprintf(search, sizeof(search), "%s=", key);
+    const char* start = strstr(form_data, search);
+    if (!start) return NULL;
+
+    start += strlen(search);
+    const char* end = strchr(start, '&');
+    size_t len = end ? (size_t)(end - start) : strlen(start);
+
+    char* value = malloc(len + 1);
+    memcpy(value, start, len);
+    value[len] = '\0';
+    return value;
+}
+
+// Template Engine: {{ var }}
+static char* template_render(const char* template_str, RouteParams* vars) {
+    if (!template_str) return NULL;
+    if (!vars || vars->count == 0) return strdup(template_str);
+
+    size_t result_size = strlen(template_str) * 2 + 1024;
+    char* result = malloc(result_size);
+    size_t result_len = 0;
+
+    const char* p = template_str;
+    while (*p) {
+        if (p[0] == '{' && p[1] == '{') {
+            // Found template variable
+            p += 2;
+            while (*p == ' ') p++; // Skip whitespace
+
+            const char* var_start = p;
+            while (*p && *p != '}') p++;
+            const char* var_end = p;
+            while (var_end > var_start && *(var_end-1) == ' ') var_end--;
+
+            size_t var_len = var_end - var_start;
+            char* var_name = malloc(var_len + 1);
+            memcpy(var_name, var_start, var_len);
+            var_name[var_len] = '\0';
+
+            // Find variable value
+            const char* value = NULL;
+            for (int i = 0; i < vars->count; i++) {
+                if (strcmp(vars->keys[i], var_name) == 0) {
+                    value = vars->values[i];
+                    break;
+                }
+            }
+
+            if (value) {
+                size_t value_len = strlen(value);
+                if (result_len + value_len >= result_size) {
+                    result_size *= 2;
+                    result = realloc(result, result_size);
+                }
+                memcpy(result + result_len, value, value_len);
+                result_len += value_len;
+            }
+
+            free(var_name);
+
+            // Skip closing }}
+            if (*p == '}') p++;
+            if (*p == '}') p++;
+        } else {
+            if (result_len >= result_size - 1) {
+                result_size *= 2;
+                result = realloc(result, result_size);
+            }
+            result[result_len++] = *p++;
+        }
+    }
+
+    result[result_len] = '\0';
+    return result;
+}
+
+// Session Management
+static SessionStore* session_store_create(void) {
+    SessionStore* store = calloc(1, sizeof(SessionStore));
+    store->head = NULL;
+    store->count = 0;
+    return store;
+}
+
+static char* generate_session_id(void) {
+    char* id = malloc(33);
+    srand((unsigned)time(NULL) + (unsigned)getpid());
+    for (int i = 0; i < 32; i++) {
+        int r = rand() % 16;
+        id[i] = "0123456789abcdef"[r];
+    }
+    id[32] = '\0';
+    return id;
+}
+
+static Session* session_create(const char* id) {
+    Session* sess = calloc(1, sizeof(Session));
+    sess->id = id ? strdup(id) : generate_session_id();
+    sess->keys = NULL;
+    sess->values = NULL;
+    sess->count = 0;
+    sess->created = time(NULL);
+    sess->last_accessed = time(NULL);
+    sess->next = NULL;
+    return sess;
+}
+
+static Session* session_find(SessionStore* store, const char* id) {
+    if (!store || !id) return NULL;
+    for (Session* sess = store->head; sess; sess = sess->next) {
+        if (strcmp(sess->id, id) == 0) {
+            sess->last_accessed = time(NULL);
+            return sess;
+        }
+    }
+    return NULL;
+}
+
+static void session_set(Session* sess, const char* key, const char* value) {
+    if (!sess || !key || !value) return;
+
+    // Check if key already exists
+    for (int i = 0; i < sess->count; i++) {
+        if (strcmp(sess->keys[i], key) == 0) {
+            free(sess->values[i]);
+            sess->values[i] = strdup(value);
+            return;
+        }
+    }
+
+    // Add new key-value pair
+    sess->keys = realloc(sess->keys, sizeof(char*) * (sess->count + 1));
+    sess->values = realloc(sess->values, sizeof(char*) * (sess->count + 1));
+    sess->keys[sess->count] = strdup(key);
+    sess->values[sess->count] = strdup(value);
+    sess->count++;
+}
+
+static const char* session_get(Session* sess, const char* key) {
+    if (!sess || !key) return NULL;
+    for (int i = 0; i < sess->count; i++) {
+        if (strcmp(sess->keys[i], key) == 0) {
+            return sess->values[i];
+        }
+    }
+    return NULL;
+}
+
+static void session_destroy(SessionStore* store, const char* id) {
+    if (!store || !id) return;
+    Session** cur = &store->head;
+    while (*cur) {
+        if (strcmp((*cur)->id, id) == 0) {
+            Session* to_free = *cur;
+            *cur = to_free->next;
+            for (int i = 0; i < to_free->count; i++) {
+                free(to_free->keys[i]);
+                free(to_free->values[i]);
+            }
+            free(to_free->keys);
+            free(to_free->values);
+            free(to_free->id);
+            free(to_free);
+            store->count--;
+            return;
+        }
+        cur = &(*cur)->next;
+    }
+}
+
+static void session_store_free(SessionStore* store) {
+    if (!store) return;
+    Session* cur = store->head;
+    while (cur) {
+        Session* next = cur->next;
+        for (int i = 0; i < cur->count; i++) {
+            free(cur->keys[i]);
+            free(cur->values[i]);
+        }
+        free(cur->keys);
+        free(cur->values);
+        free(cur->id);
+        free(cur);
+        cur = next;
+    }
+    free(store);
 }
 
 static const char* guess_mime(const char* path) {
@@ -1320,7 +1768,9 @@ static void http_handle_request(uv_stream_t* client, const char* data, ssize_t l
         return;
     }
 
-    RouteNode* route = route_registry_find(reg, req->path, req->method);
+    // Try to find route with parameter matching
+    RouteParams* params = NULL;
+    RouteNode* route = route_registry_find_with_params(reg, req->path, req->method, &params);
     if (!route) {
         resp = http_response_create(404, "Not Found");
         http_response_set_body(resp, "Not Found", "text/plain");
@@ -1330,11 +1780,42 @@ static void http_handle_request(uv_stream_t* client, const char* data, ssize_t l
         return;
     }
 
-    Value args[4];
+    // Build request object with path, method, body, query, params, headers, cookies
+    Value args[7];
     args[0] = make_string(req->path);
     args[1] = make_string(req->method ? req->method : "");
     args[2] = req->body ? make_string(req->body) : make_null();
     args[3] = req->query_string ? make_string(req->query_string) : make_null();
+
+    // args[4] = params object (as array of key-value pairs)
+    if (params && params->count > 0) {
+        Array* params_arr = array_create_local(params->count * 2);
+        for (int i = 0; i < params->count; i++) {
+            array_push_local(params_arr, make_string(params->keys[i]));
+            array_push_local(params_arr, make_string(params->values[i]));
+        }
+        args[4].type = VAL_ARRAY;
+        args[4].array_val = params_arr;
+    } else {
+        args[4] = make_null();
+    }
+
+    // args[5] = headers object (as array of key-value pairs)
+    if (req->header_count > 0) {
+        Array* headers_arr = array_create_local(req->header_count * 2);
+        for (int i = 0; i < req->header_count; i++) {
+            array_push_local(headers_arr, make_string(req->header_names[i]));
+            array_push_local(headers_arr, make_string(req->header_values[i]));
+        }
+        args[5].type = VAL_ARRAY;
+        args[5].array_val = headers_arr;
+    } else {
+        args[5] = make_null();
+    }
+
+    // args[6] = cookies (parse from Cookie header)
+    const char* cookie_header = http_request_get_header(req, "Cookie");
+    args[6] = cookie_header ? make_string(cookie_header) : make_null();
     if (route->handler.type != VAL_FUNCTION) {
         fprintf(stderr, "[NET] handler not function\n");
         resp = http_response_create(500, "Internal Server Error");
@@ -1344,9 +1825,11 @@ static void http_handle_request(uv_stream_t* client, const char* data, ssize_t l
         http_response_free(resp);
         return;
     }
-    fprintf(stderr, "[NET] executing handler path=%s method=%s\n", req->path, req->method ? req->method : "");
-    Value resp_val = interpreter_execute_callback(route->handler, 4, args);
-    for (int i = 0; i < 4; i++) value_free(&args[i]);
+    fprintf(stderr, "[NET] executing handler path=%s method=%s params=%d\n",
+            req->path, req->method ? req->method : "", params ? params->count : 0);
+    Value resp_val = interpreter_execute_callback(route->handler, 7, args);
+    for (int i = 0; i < 7; i++) value_free(&args[i]);
+    if (params) route_params_free(params);
 
     int status = 200;
     const char* status_text = "OK";
@@ -1668,6 +2151,113 @@ Value native_net_rest_post(struct Interpreter* interp, int argc, Value* args) {
     return make_bool(true);
 }
 
+// net.cookie_get(cookies_string, name) -> value or null
+Value native_net_cookie_get(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_STRING) {
+        return make_null();
+    }
+    char* value = cookie_get(args[0].string_val, args[1].string_val);
+    if (!value) return make_null();
+    Value v = make_string(value);
+    free(value);
+    return v;
+}
+
+// net.cookie_set(name, value, max_age) -> Set-Cookie header string
+Value native_net_cookie_set(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_STRING) {
+        return make_null();
+    }
+    int max_age = 0;
+    if (argc >= 3 && args[2].type == VAL_INT) {
+        max_age = (int)args[2].int_val;
+    }
+    char* cookie = cookie_set(args[0].string_val, args[1].string_val, max_age);
+    if (!cookie) return make_null();
+    Value v = make_string(cookie);
+    free(cookie);
+    return v;
+}
+
+// net.form_get(form_data_string, key) -> value or null
+Value native_net_form_get(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_STRING) {
+        return make_null();
+    }
+    char* value = form_get(args[0].string_val, args[1].string_val);
+    if (!value) return make_null();
+    Value v = make_string(value);
+    free(value);
+    return v;
+}
+
+// net.form_parse(body) -> parsed form data string (url decoded)
+Value native_net_form_parse(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1 || args[0].type != VAL_STRING) {
+        return make_null();
+    }
+    char* parsed = parse_form_data(args[0].string_val);
+    if (!parsed) return make_null();
+    Value v = make_string(parsed);
+    free(parsed);
+    return v;
+}
+
+// net.template_render(template_string, vars_array) -> rendered string
+// vars_array should be [key1, val1, key2, val2, ...]
+Value native_net_template_render(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1 || args[0].type != VAL_STRING) {
+        return make_string("");
+    }
+    if (argc < 2) {
+        return make_string(args[0].string_val);
+    }
+
+    RouteParams* vars = route_params_create();
+    if (args[1].type == VAL_ARRAY && args[1].array_val) {
+        Array* arr = args[1].array_val;
+        for (size_t i = 0; i + 1 < arr->count; i += 2) {
+            if (arr->items[i].type == VAL_STRING && arr->items[i+1].type == VAL_STRING) {
+                route_params_add(vars, arr->items[i].string_val, arr->items[i+1].string_val);
+            }
+        }
+    }
+
+    char* result = template_render(args[0].string_val, vars);
+    route_params_free(vars);
+
+    if (!result) return make_null();
+    Value v = make_string(result);
+    free(result);
+    return v;
+}
+
+// net.param_get(params_array, key) -> value or null
+// params_array is [key1, val1, key2, val2, ...]
+Value native_net_param_get(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 2 || args[0].type != VAL_ARRAY || args[1].type != VAL_STRING) {
+        return make_null();
+    }
+
+    Array* arr = args[0].array_val;
+    const char* search_key = args[1].string_val;
+
+    for (size_t i = 0; i + 1 < arr->count; i += 2) {
+        if (arr->items[i].type == VAL_STRING && strcmp(arr->items[i].string_val, search_key) == 0) {
+            if (arr->items[i+1].type == VAL_STRING) {
+                return make_string(arr->items[i+1].string_val);
+            }
+        }
+    }
+    return make_null();
+}
+
 
 void stdlib_net_register(void) {
     fprintf(stderr, "[NET] stdlib_net_register\n");
@@ -1683,4 +2273,12 @@ void stdlib_net_register(void) {
     register_native("net.recv", native_net_recv);
     register_native("net.rest_get", native_net_rest_get);
     register_native("net.rest_post", native_net_rest_post);
+
+    // Web framework features (v0.0.1)
+    register_native("net.cookie_get", native_net_cookie_get);
+    register_native("net.cookie_set", native_net_cookie_set);
+    register_native("net.form_get", native_net_form_get);
+    register_native("net.form_parse", native_net_form_parse);
+    register_native("net.template_render", native_net_template_render);
+    register_native("net.param_get", native_net_param_get);
 }

@@ -165,9 +165,14 @@ static TokenType identifier_type(Lexer* lexer) {
             if (lexer->current - lexer->start > 1) {
                 switch (lexer->start[1]) {
                     case 'c': return check_keyword(lexer, 2, 2, "ho", TOKEN_ECHO);
-                    case 'l': 
+                    case 'l':
                         if (lexer->current - lexer->start == 4) {
-                            return check_keyword(lexer, 2, 2, "if", TOKEN_ELIF);
+                            // Both "elif" and "else" are 4 chars - check which one
+                            if (lexer->start[2] == 'i') {
+                                return check_keyword(lexer, 2, 2, "if", TOKEN_ELIF);
+                            } else {
+                                return check_keyword(lexer, 2, 2, "se", TOKEN_ELSE);
+                            }
                         } else {
                             return check_keyword(lexer, 2, 2, "se", TOKEN_ELSE);
                         }
@@ -218,12 +223,13 @@ static TokenType identifier_type(Lexer* lexer) {
                             switch (lexer->start[2]) {
                                 case 'r':
                                     if (lexer->current - lexer->start == 3) return TOKEN_STR;
-                                    if (lexer->start[3] == 'e') return check_keyword(lexer, 4, 2, "am", TOKEN_STREAM);
-                                    break; // Removed return TOKEN_IDENTIFIER;
-                                case 'u': return check_keyword(lexer, 3, 3, "uct", TOKEN_STRUCT);
+                                    if (lexer->current - lexer->start > 3) {
+                                        if (lexer->start[3] == 'e') return check_keyword(lexer, 4, 2, "am", TOKEN_STREAM);
+                                        if (lexer->start[3] == 'u') return check_keyword(lexer, 4, 2, "ct", TOKEN_STRUCT);
+                                    }
+                                    break;
                             }
                         }
-                        // Removed: return TOKEN_IDENTIFIER;
                         break;
                     case 'w': return check_keyword(lexer, 2, 4, "itch", TOKEN_SWITCH);
                 }
