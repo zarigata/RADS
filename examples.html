@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examples 💡 - RADS Programming Language</title>
+    <link rel="icon" type="image/svg+xml" href="assets/branding/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="docs-style.css">
+</head>
+<body>
+    <div class="bg-blur blur-1"></div>
+    <div class="bg-blur blur-2"></div>
+
+    <header>
+        <div class="header-inner">
+            <a href="index.html" class="logo-link">
+                <img src="assets/branding/logo.png" alt="RADS Logo" class="logo-img">
+            </a>
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="guide.html">Guide</a>
+                <a href="documentation.html">Docs</a>
+                <a href="examples.html" class="active">Examples</a>
+                <a href="compare.html">Compare</a>
+                <a href="releases.html">Releases</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero-sub" style="padding: 4rem 1rem 2rem;">
+            <h1>💡 RADS Code Examples</h1>
+            <p>Learn by example - comprehensive code samples for every feature</p>
+        </section>
+
+        <section style="max-width: 1200px;">
+            <div class="glass-card">
+                <h2 style="text-align: center; margin-bottom: 3rem;">Complete Language Reference</h2>
+                <p style="text-align: center; color: var(--text-muted); margin-bottom: 3rem;">
+                    Explore comprehensive examples covering all RADS features. Each example is runnable and demonstrates real-world usage.
+                </p>
+
+                <div class="example-showcase">
+                    <div class="example-item">
+                        <div class="example-header">
+                            <h3>🚀 Hello World</h3>
+                            <p>Your first RADS program</p>
+                        </div>
+                        <div class="example-content">
+                            <div class="code-window">
+                                <div class="window-header">
+                                    <div class="window-dots">
+                                        <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                    </div>
+                                    <span>hello_world.rads</span>
+                                </div>
+                                <pre class="pre-container"><code>blast main() {
+    echo("Hello, RADS World! 🚀");
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="example-item">
+                        <div class="example-header">
+                            <h3>📦 Variables & Types</h3>
+                            <p>Working with different data types</p>
+                        </div>
+                        <div class="example-content">
+                            <div class="code-window">
+                                <div class="window-header">
+                                    <div class="window-dots">
+                                        <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                    </div>
+                                    <span>variables.rads</span>
+                                </div>
+                                <pre class="pre-container"><code>blast main() {
+    // Numbers
+    turbo i32 my_integer = 42;
+    turbo f64 my_float = 3.14159;
+    
+    // Strings
+    str greeting = "Hello, RADS!";
+    
+    // Booleans
+    turbo bool is_rad = true;
+    
+    // Arrays
+    array&lt;i32&gt; numbers = [10, 20, 30, 40, 50];
+    echo("First: " + numbers[0]);
+    
+    // Dynamic arrays
+    dynarray&lt;str&gt; names = dynarray();
+    names.push("Alice");
+    names.push("Bob");
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="example-item">
+                        <div class="example-header">
+                            <h3>⚡ Functions</h3>
+                            <p>Defining and calling functions</p>
+                        </div>
+                        <div class="example-content">
+                            <div class="code-window">
+                                <div class="window-header">
+                                    <div class="window-dots">
+                                        <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                    </div>
+                                    <span>functions.rads</span>
+                                </div>
+                                <pre class="pre-container"><code>// Function with parameters
+blast greet(str name) {
+    echo("Hello, " + name + "!");
+}
+
+// Function with return value
+blast add(i32 a, i32 b) -> i32 {
+    return a + b;
+}
+
+// Multiple return values
+blast divmod(i32 a, i32 b) -> (i32, i32) {
+    return (a / b, a % b);
+}
+
+blast main() {
+    greet("RADS");
+    
+    turbo i32 sum = add(5, 3);
+    echo("5 + 3 = " + sum);
+    
+    turbo (i32 q, i32 r) = divmod(10, 3);
+    echo("10 / 3 = " + q + " remainder " + r);
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="example-item">
+                        <div class="example-header">
+                            <h3>🔀 Control Flow</h3>
+                            <p>If-else and conditionals</p>
+                        </div>
+                        <div class="example-content">
+                            <div class="code-window">
+                                <div class="window-header">
+                                    <div class="window-dots">
+                                        <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                    </div>
+                                    <span>conditionals.rads</span>
+                                </div>
+                                <pre class="pre-container"><code>blast main() {
+    turbo i32 number = 7;
+    
+    if (number > 10) {
+        echo("Greater than 10");
+    } elif (number > 5) {
+        echo("Greater than 5 but not 10");
+    } else {
+        echo("5 or less");
+    }
+    
+    // String comparison
+    turbo str name = "RADS";
+    if (name == "RADS") {
+        echo("Hello, RADS!");
+    }
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="example-item">
+                        <div class="example-header">
+                            <h3>🔄 Loops</h3>
+                            <p>Loop and cruise iterations</p>
+                        </div>
+                        <div class="example-content">
+                            <div class="code-window">
+                                <div class="window-header">
+                                    <div class="window-dots">
+                                        <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                    </div>
+                                    <span>loops.rads</span>
+                                </div>
+                                <pre class="pre-container"><code>blast main() {
+    // Loop (while loop)
+    turbo i32 i = 0;
+    loop (i < 5) {
+        echo("i = " + i);
+        i = i + 1;
+    }
+    
+    // Cruise (for loop) over range
+    cruise (j in 0..5) {
+        echo("j = " + j);
+    }
+    
+    // Cruise over array
+    array&lt;str&gt; names = ["Alice", "Bob", "Charlie"];
+    cruise (name in names) {
+        echo("Hello, " + name + "!");
+    }
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="example-item">
+                        <div class="example-header">
+                            <h3>🏗️ Structs</h3>
+                            <p>Custom data types</p>
+                        </div>
+                        <div class="example-content">
+                            <div class="code-window">
+                                <div class="window-header">
+                                    <div class="window-dots">
+                                        <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                    </div>
+                                    <span>structs.rads</span>
+                                </div>
+                                <pre class="pre-container"><code>// Define a struct
+struct Player {
+    str name;
+    i32 score;
+    bool is_active;
+}
+
+blast print_player(Player p) {
+    echo("Player: " + p.name);
+    echo("Score: " + p.score);
+}
+
+blast main() {
+    // Create struct instance
+    turbo Player p1 = Player {
+        name: "Xx_Rads_Gamer_xX",
+        score: 100,
+        is_active: true
+    };
+    
+    // Modify fields
+    p1.score = p1.score + 50;
+    
+    print_player(p1);
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="example-item">
+                        <div class="example-header">
+                            <h3>🌐 HTTP Server</h3>
+                            <p>Building web servers with async/await</p>
+                        </div>
+                        <div class="example-content">
+                            <div class="code-window">
+                                <div class="window-header">
+                                    <div class="window-dots">
+                                        <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                    </div>
+                                    <span>http_server.rads</span>
+                                </div>
+                                <pre class="pre-container"><code>import net;
+
+async blast handle_home(stream req) {
+    return "&lt;h1&gt;Welcome to RADS! 🚀&lt;/h1&gt;"
+         + "&lt;p&gt;Blasting data at turbo speed!&lt;/p&gt;";
+}
+
+async blast handle_api(stream path, stream method, 
+                       stream body, stream query) {
+    turbo json = "{\"status\":\"radical\",\"speed\":9001}";
+    return net.json_response(json);
+}
+
+async blast main() {
+    turbo server = net.http_server("0.0.0.0", 8080);
+    
+    echo("🌐 Server running on http://localhost:8080");
+    
+    // Register routes
+    net.route(server, "/", handle_home);
+    net.route(server, "/api", handle_api, "GET");
+    net.static(server, "/static", "./public");
+    
+    // Start serving
+    await net.serve(server);
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="example-item">
+                        <div class="example-header">
+                            <h3>🎨 Web Engine</h3>
+                            <p>JavaScript execution and HTML/CSS parsing</p>
+                        </div>
+                        <div class="example-content">
+                            <div class="code-window">
+                                <div class="window-header">
+                                    <div class="window-dots">
+                                        <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                    </div>
+                                    <span>webengine_demo.rads</span>
+                                </div>
+                                <pre class="pre-container"><code>blast main() {
+    echo("🌐 RADS Web Engine Demo");
+    
+    // Initialize Web Engine
+    web_init();
+    
+    // Execute JavaScript
+    js_eval("console.log('Hello from JavaScript!')");
+    js_eval("console.log('RADS + JS = TURBO!')");
+    
+    // Parse HTML
+    turbo html = "&lt;html&gt;&lt;body&gt;&lt;h1&gt;Hello!&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;";
+    turbo doc = html_parse(html);
+    turbo element = html_querySelector(doc, "h1");
+    
+    // Parse CSS
+    turbo css = "body { color: purple; }";
+    turbo styles = css_parse(css);
+    
+    // Load plugins
+    turbo markdown = pkg_load("rads-plugin-markdown");
+    turbo template = pkg_load("rads-plugin-template");
+    
+    echo("✅ Web Engine Demo Complete!");
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box" style="margin-top: 3rem;">
+                    <h4>�� More Examples</h4>
+                    <p>Find more examples in the RADS repository:</p>
+                    <ul>
+                        <li><strong>01-basics/</strong> - Variables, loops, functions, structs</li>
+                        <li><strong>02-networking/</strong> - HTTP servers, clients, JSON APIs</li>
+                        <li><strong>03-media/</strong> - Audio/image processing</li>
+                        <li><strong>04-advanced/</strong> - FFI, plugins, advanced features</li>
+                    </ul>
+                    <p style="margin-top: 1rem;">Clone: <code>git clone https://github.com/zarigata/rads.git</code></p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <img src="assets/branding/emblem.png" alt="RADS Emblem" class="footer-emblem">
+        <p>&copy; 2026 RADS Dev Group. Crafted with precision and turbo speed.</p>
+    </footer>
+</body>
+</html>

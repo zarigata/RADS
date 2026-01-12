@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RADS 🚀 - High Performance Retro-Future Language</title>
+    <link rel="icon" type="image/svg+xml" href="assets/branding/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fira+Code&display=swap" rel="stylesheet">
@@ -21,6 +22,8 @@
             <nav class="nav-links">
                 <a href="index.html" class="active">Home</a>
                 <a href="guide.html">Guide</a>
+                <a href="documentation.html">Docs</a>
+                <a href="examples.html">Examples</a>
                 <a href="compare.html">Compare</a>
                 <a href="releases.html">Releases</a>
             </nav>
@@ -58,6 +61,134 @@
                         <span style="font-size: 3rem;">💎</span>
                         <h3>Glossy Syntax</h3>
                         <p>A syntax that's easy to read and beautiful to write. Inspired by the best of C, Python, and Rust.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="capabilities">
+            <div class="glass-card">
+                <h2 style="text-align: center; margin-bottom: 3rem;">🚀 Complete Feature Set</h2>
+                <div class="compare-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+                    <div class="feature-card">
+                        <span style="font-size: 2.5rem;">🌐</span>
+                        <h3>Built-in HTTP Server</h3>
+                        <p>Create web servers with async/await, routing, static file serving, and JSON APIs out of the box.</p>
+                    </div>
+                    <div class="feature-card">
+                        <span style="font-size: 2.5rem;">🎨</span>
+                        <h3>Web Engine</h3>
+                        <p>Execute JavaScript, parse HTML/CSS, and manipulate the DOM. Alternative to Node.js for web development.</p>
+                    </div>
+                    <div class="feature-card">
+                        <span style="font-size: 2.5rem;">🎵</span>
+                        <h3>Media Processing</h3>
+                        <p>Built-in audio (MP3, WAV, OGG, FLAC) and image (JPEG, PNG, GIF) processing. No external dependencies.</p>
+                    </div>
+                    <div class="feature-card">
+                        <span style="font-size: 2.5rem;">🔌</span>
+                        <h3>Plugin System (RPM)</h3>
+                        <p>Extend RADS with C plugins. Load and manage plugins at runtime for unlimited capabilities.</p>
+                    </div>
+                    <div class="feature-card">
+                        <span style="font-size: 2.5rem;">📦</span>
+                        <h3>Structs & Enums</h3>
+                        <p>Create custom data types with structs and enumerations. Type-safe and performant.</p>
+                    </div>
+                    <div class="feature-card">
+                        <span style="font-size: 2.5rem;">🔄</span>
+                        <h3>Modern Control Flow</h3>
+                        <p>Unique keywords: <code>blast</code> for functions, <code>loop</code> for while, <code>cruise</code> for iteration.</p>
+                    </div>
+                    <div class="feature-card">
+                        <span style="font-size: 2.5rem;">📁</span>
+                        <h3>File I/O & Streams</h3>
+                        <p>Read and write files with ease. Stream large files efficiently without loading everything into memory.</p>
+                    </div>
+                    <div class="feature-card">
+                        <span style="font-size: 2.5rem;">🧠</span>
+                        <h3>Smart Memory</h3>
+                        <p>Stack allocation with <code>turbo</code> keyword for speed. Optional manual memory management for control.</p>
+                    </div>
+                    <div class="feature-card">
+                        <span style="font-size: 2.5rem;">🎯</span>
+                        <h3>Multiple Return Values</h3>
+                        <p>Functions can return tuples. Clean syntax for complex return types without wrapper objects.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="code-sample">
+            <div class="glass-card">
+                <h2 style="text-align: center; margin-bottom: 2rem;">See It In Action</h2>
+                <p style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;">A complete HTTP server in just a few lines</p>
+                <div class="code-window">
+                    <div class="window-header">
+                        <div class="window-dots">
+                            <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                        </div>
+                        <span>server.rads</span>
+                    </div>
+                    <pre class="pre-container"><code><span style="color:#C678DD">import</span> net;
+
+<span style="color:#C678DD">async blast</span> <span style="color:#61AFEF">handle_home</span>(<span style="color:#C678DD">stream</span> req) {
+    <span style="color:#C678DD">return</span> <span style="color:#98C379">"&lt;h1&gt;Welcome to RADS! 🚀&lt;/h1&gt;"</span>;
+}
+
+<span style="color:#C678DD">async blast</span> <span style="color:#61AFEF">handle_api</span>(<span style="color:#C678DD">stream</span> path, <span style="color:#C678DD">stream</span> method, 
+                        <span style="color:#C678DD">stream</span> body, <span style="color:#C678DD">stream</span> query) {
+    <span style="color:#C678DD">turbo</span> json = <span style="color:#98C379">"{\"status\":\"radical\",\"speed\":9001}"</span>;
+    <span style="color:#C678DD">return</span> net.<span style="color:#61AFEF">json_response</span>(json);
+}
+
+<span style="color:#C678DD">async blast</span> <span style="color:#61AFEF">main</span>() {
+    <span style="color:#C678DD">turbo</span> server = net.<span style="color:#61AFEF">http_server</span>(<span style="color:#98C379">"0.0.0.0"</span>, <span style="color:#D19A66">8080</span>);
+    net.<span style="color:#61AFEF">route</span>(server, <span style="color:#98C379">"/"</span>, handle_home);
+    net.<span style="color:#61AFEF">route</span>(server, <span style="color:#98C379">"/api"</span>, handle_api, <span style="color:#98C379">"GET"</span>);
+    <span style="color:#C678DD">await</span> net.<span style="color:#61AFEF">serve</span>(server);
+}</code></pre>
+                </div>
+                <div style="margin-top: 2rem; text-align: center;">
+                    <a href="examples.html" class="cta-button">View More Examples</a>
+                    <a href="documentation.html" class="cta-button secondary" style="margin-left: 1rem;">Read Documentation</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="use-cases">
+            <div class="glass-card" style="background: linear-gradient(135deg, rgba(0,120,215,0.1), rgba(0,242,255,0.05)); border-color: rgba(0,120,215,0.2);">
+                <h2 style="text-align: center; margin-bottom: 3rem;">Perfect For</h2>
+                <div class="compare-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                    <div style="text-align: center; padding: 1.5rem;">
+                        <span style="font-size: 3rem;">🖥️</span>
+                        <h3>Microservers</h3>
+                        <p>Lightweight HTTP servers for Raspberry Pi, embedded systems, and IoT devices</p>
+                    </div>
+                    <div style="text-align: center; padding: 1.5rem;">
+                        <span style="font-size: 3rem;">⚡</span>
+                        <h3>High-Speed APIs</h3>
+                        <p>Build blazing-fast REST APIs with async/await and JSON support</p>
+                    </div>
+                    <div style="text-align: center; padding: 1.5rem;">
+                        <span style="font-size: 3rem;">🎮</span>
+                        <h3>Game Servers</h3>
+                        <p>Low-latency multiplayer game backends with real-time communication</p>
+                    </div>
+                    <div style="text-align: center; padding: 1.5rem;">
+                        <span style="font-size: 3rem;">🔧</span>
+                        <h3>System Tools</h3>
+                        <p>CLI utilities, automation scripts, and system administration tools</p>
+                    </div>
+                    <div style="text-align: center; padding: 1.5rem;">
+                        <span style="font-size: 3rem;">📊</span>
+                        <h3>Data Processing</h3>
+                        <p>Parse, transform, and analyze data at turbo speed</p>
+                    </div>
+                    <div style="text-align: center; padding: 1.5rem;">
+                        <span style="font-size: 3rem;">🌐</span>
+                        <h3>Web Automation</h3>
+                        <p>Execute JavaScript, parse HTML/CSS, and automate web tasks</p>
                     </div>
                 </div>
             </div>
