@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Standard Library - RADS Documentation</title>
+    <link rel="icon" type="image/svg+xml" href="assets/branding/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="docs-style.css">
+</head>
+<body>
+    <div class="bg-blur blur-1"></div>
+    <div class="bg-blur blur-2"></div>
+    <header>
+        <div class="header-inner">
+            <a href="index.html" class="logo-link">
+                <img src="assets/branding/logo.png" alt="RADS Logo" class="logo-img">
+            </a>
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="guide.html">Guide</a>
+                <a href="documentation.html">Docs</a>
+                <a href="examples.html">Examples</a>
+                <a href="compare.html">Compare</a>
+                <a href="releases.html">Releases</a>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <section class="hero-sub" style="padding: 4rem 1rem 2rem;">
+            <h1>📚 Standard Library</h1>
+            <p>Complete reference for built-in modules and functions</p>
+        </section>
+        <section style="max-width: 1400px;">
+            <div class="two-column">
+                <aside class="doc-nav">
+                    <h3>Documentation</h3>
+                    <ul>
+                        <li><a href="docs-intro.html">Introduction</a></li>
+                        <li><a href="docs-syntax.html">Syntax Basics</a></li>
+                        <li><a href="docs-types.html">Data Types</a></li>
+                        <li><a href="docs-functions.html">Functions</a></li>
+                        <li><a href="docs-control.html">Control Flow</a></li>
+                        <li><a href="docs-structs.html">Structs & Enums</a></li>
+                        <li><a href="docs-async.html">Async/Await</a></li>
+                        <li><a href="docs-networking.html">Networking</a></li>
+                        <li><a href="docs-media.html">Media Processing</a></li>
+                        <li><a href="docs-stdlib.html" class="active">Standard Library</a></li>
+                    </ul>
+                </aside>
+                <div class="glass-card">
+                    <div class="doc-section">
+                        <h2>Built-in Functions</h2>
+                        <table class="api-table">
+                            <thead>
+                                <tr><th>Function</th><th>Description</th><th>Example</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td><code>echo(value)</code></td><td>Print to stdout</td><td><code>echo("Hello")</code></td></tr>
+                                <tr><td><code>to_string(value)</code></td><td>Convert to string</td><td><code>to_string(42)</code></td></tr>
+                                <tr><td><code>to_int(value)</code></td><td>Convert to integer</td><td><code>to_int("123")</code></td></tr>
+                                <tr><td><code>to_float(value)</code></td><td>Convert to float</td><td><code>to_float("3.14")</code></td></tr>
+                            </tbody>
+                        </table>
+                        <h2>Module: net</h2>
+                        <p>Networking and HTTP functionality.</p>
+                        <h3>Functions</h3>
+                        <ul>
+                            <li><code>http_server(host, port)</code> - Create HTTP server</li>
+                            <li><code>route(server, path, handler)</code> - Register route</li>
+                            <li><code>static(server, prefix, dir)</code> - Serve static files</li>
+                            <li><code>serve(server)</code> - Start server</li>
+                            <li><code>http_get(url)</code> - HTTP GET request</li>
+                            <li><code>http_post(url, body)</code> - HTTP POST request</li>
+                            <li><code>json_response(json)</code> - Create JSON response</li>
+                        </ul>
+                        <h2>Module: io</h2>
+                        <p>File I/O and stream processing.</p>
+                        <h3>Functions</h3>
+                        <ul>
+                            <li><code>read_file(path)</code> - Read entire file</li>
+                            <li><code>write_file(path, content)</code> - Write to file</li>
+                            <li><code>open(path, mode)</code> - Open file stream</li>
+                            <li><code>close(stream)</code> - Close stream</li>
+                            <li><code>read_line(stream)</code> - Read line from stream</li>
+                        </ul>
+                        <h2>Module: media</h2>
+                        <p>Audio and image processing.</p>
+                        <h3>Functions</h3>
+                        <ul>
+                            <li><code>load_audio(path)</code> - Load audio file</li>
+                            <li><code>load_image(path)</code> - Load image file</li>
+                            <li><code>convert(output, format, bitrate)</code> - Convert audio</li>
+                            <li><code>resize(width, height)</code> - Resize image</li>
+                            <li><code>apply_filter(name)</code> - Apply image filter</li>
+                        </ul>
+                        <h2>Module: sys</h2>
+                        <p>System operations and environment.</p>
+                        <h3>Functions</h3>
+                        <ul>
+                            <li><code>getenv(name)</code> - Get environment variable</li>
+                            <li><code>setenv(name, value)</code> - Set environment variable</li>
+                            <li><code>exec(command)</code> - Execute command</li>
+                            <li><code>exit(code)</code> - Exit program</li>
+                        </ul>
+                        <h2>Web Engine Functions</h2>
+                        <table class="api-table">
+                            <thead>
+                                <tr><th>Function</th><th>Description</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td><code>web_init()</code></td><td>Initialize web engine</td></tr>
+                                <tr><td><code>js_eval(code)</code></td><td>Execute JavaScript</td></tr>
+                                <tr><td><code>js_evalFile(path)</code></td><td>Run JS file</td></tr>
+                                <tr><td><code>html_parse(html)</code></td><td>Parse HTML</td></tr>
+                                <tr><td><code>html_querySelector(doc, selector)</code></td><td>Query DOM</td></tr>
+                                <tr><td><code>css_parse(css)</code></td><td>Parse CSS</td></tr>
+                                <tr><td><code>pkg_load(name)</code></td><td>Load plugin</td></tr>
+                                <tr><td><code>pkg_list()</code></td><td>List plugins</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <img src="assets/branding/emblem.png" alt="RADS Emblem" class="footer-emblem">
+        <p>&copy; 2026 RADS Dev Group. Crafted with precision and turbo speed.</p>
+    </footer>
+</body>
+</html>

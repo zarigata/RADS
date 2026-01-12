@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syntax Basics - RADS Documentation</title>
+    <link rel="icon" type="image/svg+xml" href="assets/branding/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="docs-style.css">
+</head>
+<body>
+    <div class="bg-blur blur-1"></div>
+    <div class="bg-blur blur-2"></div>
+    <header>
+        <div class="header-inner">
+            <a href="index.html" class="logo-link">
+                <img src="assets/branding/logo.png" alt="RADS Logo" class="logo-img">
+            </a>
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="guide.html">Guide</a>
+                <a href="documentation.html">Docs</a>
+                <a href="examples.html">Examples</a>
+                <a href="compare.html">Compare</a>
+                <a href="releases.html">Releases</a>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <section class="hero-sub" style="padding: 4rem 1rem 2rem;">
+            <h1>📝 Syntax Basics</h1>
+            <p>Learn the fundamental syntax of RADS</p>
+        </section>
+        <section style="max-width: 1400px;">
+            <div class="two-column">
+                <aside class="doc-nav">
+                    <h3>Documentation</h3>
+                    <ul>
+                        <li><a href="docs-intro.html">Introduction</a></li>
+                        <li><a href="docs-syntax.html" class="active">Syntax Basics</a></li>
+                        <li><a href="docs-types.html">Data Types</a></li>
+                        <li><a href="docs-functions.html">Functions</a></li>
+                        <li><a href="docs-control.html">Control Flow</a></li>
+                        <li><a href="docs-structs.html">Structs & Enums</a></li>
+                        <li><a href="docs-async.html">Async/Await</a></li>
+                        <li><a href="docs-networking.html">Networking</a></li>
+                        <li><a href="docs-media.html">Media Processing</a></li>
+                        <li><a href="docs-stdlib.html">Standard Library</a></li>
+                    </ul>
+                </aside>
+                <div class="glass-card">
+                    <div class="doc-section">
+                        <h2>Comments</h2>
+                        <p>RADS supports both single-line and multi-line comments.</p>
+                        <h3>Single-Line Comments</h3>
+                        <div class="code-window">
+                            <div class="window-header">
+                                <div class="window-dots">
+                                    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                </div>
+                                <span>comments.rads</span>
+                            </div>
+                            <pre class="pre-container"><code>// This is a single-line comment
+blast main() {
+    // Comments can explain code
+    echo("Hello!"); // Inline comments work too
+}</code></pre>
+                        </div>
+                        <h3>Multi-Line Comments</h3>
+                        <div class="code-window">
+                            <div class="window-header">
+                                <div class="window-dots">
+                                    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                </div>
+                                <span>multiline.rads</span>
+                            </div>
+                            <pre class="pre-container"><code>/*
+   This is a multi-line comment
+   It can span multiple lines
+   Useful for documentation
+*/
+blast main() {
+    echo("Code here");
+}</code></pre>
+                        </div>
+                        <h2>Statements and Semicolons</h2>
+                        <p>Statements in RADS end with semicolons (<code>;</code>).</p>
+                        <h2>Blocks and Braces</h2>
+                        <p>Code blocks are enclosed in curly braces <code>{}</code>.</p>
+                        <h2>Keywords</h2>
+                        <p>Reserved keywords: <code>blast</code>, <code>turbo</code>, <code>if</code>, <code>else</code>, <code>elif</code>, <code>loop</code>, <code>cruise</code>, <code>break</code>, <code>continue</code>, <code>return</code>, <code>struct</code>, <code>enum</code>, <code>async</code>, <code>await</code>, <code>import</code>, <code>echo</code></p>
+                        <h2>Operators</h2>
+                        <h3>Arithmetic: <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>%</code></h3>
+                        <h3>Comparison: <code>==</code>, <code>!=</code>, <code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&lt;=</code></h3>
+                        <h3>Logical: <code>&&</code>, <code>||</code>, <code>!</code></h3>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <img src="assets/branding/emblem.png" alt="RADS Emblem" class="footer-emblem">
+        <p>&copy; 2026 RADS Dev Group. Crafted with precision and turbo speed.</p>
+    </footer>
+</body>
+</html>

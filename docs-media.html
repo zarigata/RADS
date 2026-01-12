@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Processing - RADS Documentation</title>
+    <link rel="icon" type="image/svg+xml" href="assets/branding/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="docs-style.css">
+</head>
+<body>
+    <div class="bg-blur blur-1"></div>
+    <div class="bg-blur blur-2"></div>
+    <header>
+        <div class="header-inner">
+            <a href="index.html" class="logo-link">
+                <img src="assets/branding/logo.png" alt="RADS Logo" class="logo-img">
+            </a>
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="guide.html">Guide</a>
+                <a href="documentation.html">Docs</a>
+                <a href="examples.html">Examples</a>
+                <a href="compare.html">Compare</a>
+                <a href="releases.html">Releases</a>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <section class="hero-sub" style="padding: 4rem 1rem 2rem;">
+            <h1>🎨 Media Processing</h1>
+            <p>Audio and image manipulation</p>
+        </section>
+        <section style="max-width: 1400px;">
+            <div class="two-column">
+                <aside class="doc-nav">
+                    <h3>Documentation</h3>
+                    <ul>
+                        <li><a href="docs-intro.html">Introduction</a></li>
+                        <li><a href="docs-syntax.html">Syntax Basics</a></li>
+                        <li><a href="docs-types.html">Data Types</a></li>
+                        <li><a href="docs-functions.html">Functions</a></li>
+                        <li><a href="docs-control.html">Control Flow</a></li>
+                        <li><a href="docs-structs.html">Structs & Enums</a></li>
+                        <li><a href="docs-async.html">Async/Await</a></li>
+                        <li><a href="docs-networking.html">Networking</a></li>
+                        <li><a href="docs-media.html" class="active">Media Processing</a></li>
+                        <li><a href="docs-stdlib.html">Standard Library</a></li>
+                    </ul>
+                </aside>
+                <div class="glass-card">
+                    <div class="doc-section">
+                        <h2>Audio Processing</h2>
+                        <p>Support for MP3, WAV, OGG, FLAC formats.</p>
+                        <div class="code-window">
+                            <div class="window-header">
+                                <div class="window-dots">
+                                    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                </div>
+                                <span>audio.rads</span>
+                            </div>
+                            <pre class="pre-container"><code>import media;
+
+blast main() {
+    turbo audio = media.load_audio("input.mp3");
+    audio.convert("output.wav", format: "wav", bitrate: 320);
+    
+    echo("Duration: " + audio.duration());
+    echo("Sample rate: " + audio.sample_rate());
+}</code></pre>
+                        </div>
+                        <h2>Image Processing</h2>
+                        <p>Support for JPEG, PNG, GIF formats.</p>
+                        <div class="code-window">
+                            <div class="window-header">
+                                <div class="window-dots">
+                                    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                </div>
+                                <span>image.rads</span>
+                            </div>
+                            <pre class="pre-container"><code>import media;
+
+blast main() {
+    turbo img = media.load_image("photo.jpg");
+    img.resize(800, 600);
+    img.apply_filter("vintage");
+    img.save("output.png");
+}</code></pre>
+                        </div>
+                        <h2>Media Functions</h2>
+                        <h3>Audio</h3>
+                        <ul>
+                            <li><code>load_audio(path)</code> - Load audio file</li>
+                            <li><code>convert(output, format, bitrate)</code> - Convert format</li>
+                            <li><code>duration()</code> - Get duration</li>
+                            <li><code>sample_rate()</code> - Get sample rate</li>
+                        </ul>
+                        <h3>Image</h3>
+                        <ul>
+                            <li><code>load_image(path)</code> - Load image file</li>
+                            <li><code>resize(width, height)</code> - Resize image</li>
+                            <li><code>apply_filter(name)</code> - Apply filter</li>
+                            <li><code>save(path)</code> - Save image</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <img src="assets/branding/emblem.png" alt="RADS Emblem" class="footer-emblem">
+        <p>&copy; 2026 RADS Dev Group. Crafted with precision and turbo speed.</p>
+    </footer>
+</body>
+</html>
