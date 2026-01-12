@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Flow - RADS Documentation</title>
+    <link rel="icon" type="image/svg+xml" href="assets/branding/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="docs-style.css">
+</head>
+<body>
+    <div class="bg-blur blur-1"></div>
+    <div class="bg-blur blur-2"></div>
+
+    <header>
+        <div class="header-inner">
+            <a href="index.html" class="logo-link">
+                <img src="assets/branding/logo.png" alt="RADS Logo" class="logo-img">
+            </a>
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="guide.html">Guide</a>
+                <a href="documentation.html">Docs</a>
+                <a href="examples.html">Examples</a>
+                <a href="compare.html">Compare</a>
+                <a href="releases.html">Releases</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero-sub" style="padding: 4rem 1rem 2rem;">
+            <h1>🔀 Control Flow</h1>
+            <p>Conditionals, loops, and flow control in RADS</p>
+        </section>
+
+        <section style="max-width: 1400px;">
+            <div class="two-column">
+                <aside class="doc-nav">
+                    <h3>Documentation</h3>
+                    <ul>
+                        <li><a href="docs-intro.html">Introduction</a></li>
+                        <li><a href="docs-syntax.html">Syntax Basics</a></li>
+                        <li><a href="docs-types.html">Data Types</a></li>
+                        <li><a href="docs-functions.html">Functions</a></li>
+                        <li><a href="docs-control.html" class="active">Control Flow</a></li>
+                        <li><a href="docs-structs.html">Structs & Enums</a></li>
+                        <li><a href="docs-async.html">Async/Await</a></li>
+                        <li><a href="docs-networking.html">Networking</a></li>
+                        <li><a href="docs-media.html">Media Processing</a></li>
+                        <li><a href="docs-stdlib.html">Standard Library</a></li>
+                    </ul>
+                </aside>
+
+                <div class="glass-card">
+                    <div class="doc-section">
+                        <h2>If-Else Statements</h2>
+                        <p>RADS uses <code>if</code>, <code>elif</code>, and <code>else</code> for conditional execution.</p>
+
+                        <h3>Basic If Statement</h3>
+                        <div class="code-window">
+                            <div class="window-header">
+                                <div class="window-dots">
+                                    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                </div>
+                                <span>if_basic.rads</span>
+                            </div>
+                            <pre class="pre-container"><code><span style="color:#C678DD">blast</span> <span style="color:#61AFEF">main</span>() {
+    <span style="color:#C678DD">turbo</span> <span style="color:#E5C07B">i32</span> age = <span style="color:#D19A66">25</span>;
+    
+    <span style="color:#C678DD">if</span> (age >= <span style="color:#D19A66">18</span>) {
+        <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Adult"</span>);
+    }
+}</code></pre>
+                        </div>
+
+                        <h3>If-Else</h3>
+                        <div class="code-window">
+                            <div class="window-header">
+                                <div class="window-dots">
+                                    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                </div>
+                                <span>if_else.rads</span>
+                            </div>
+                            <pre class="pre-container"><code><span style="color:#C678DD">blast</span> <span style="color:#61AFEF">main</span>() {
+    <span style="color:#C678DD">turbo</span> <span style="color:#E5C07B">i32</span> score = <span style="color:#D19A66">85</span>;
+    
+    <span style="color:#C678DD">if</span> (score >= <span style="color:#D19A66">90</span>) {
+        <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Grade: A"</span>);
+    } <span style="color:#C678DD">else</span> {
+        <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Grade: B or lower"</span>);
+    }
+}</code></pre>
+                        </div>
+
+                        <h3>If-Elif-Else Chain</h3>
+                        <div class="code-window">
+                            <div class="window-header">
+                                <div class="window-dots">
+                                    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                </div>
+                                <span>if_elif_else.rads</span>
+                            </div>
+                            <pre class="pre-container"><code><span style="color:#C678DD">blast</span> <span style="color:#61AFEF">main</span>() {
+    <span style="color:#C678DD">turbo</span> <span style="color:#E5C07B">i32</span> speed = <span style="color:#D19A66">9500</span>;
+    
+    <span style="color:#C678DD">if</span> (speed > <span style="color:#D19A66">9000</span>) {
+        <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"It's over 9000!"</span>);
+    } <span style="color:#C678DD">elif</span> (speed > <span style="color:#D19A66">5000</span>) {
+        <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Pretty fast!"</span>);
+    } <span style="color:#C678DD">elif</span> (speed > <span style="color:#D19A66">1000</span>) {
+        <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Moderate speed"</span>);
+    } <span style="color:#C678DD">else</span> {
+        <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Needs more turbo!"</span>);
+    }
+}</code></pre>
+                        </div>
+
+                        <h3>Comparison Operators</h3>
+                        <table class="api-table">
+                            <thead>
+                                <tr>
+                                    <th>Operator</th>
+                                    <th>Description</th>
+                                    <th>Example</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>==</code></td>
+                                    <td>Equal to</td>
+                                    <td><code>if (x == 5)</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>!=</code></td>
+                                    <td>Not equal to</td>
+                                    <td><code>if (x != 0)</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>&gt;</code></td>
+                                    <td>Greater than</td>
+                                    <td><code>if (x &gt; 10)</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>&lt;</code></td>
+                                    <td>Less than</td>
+                                    <td><code>if (x &lt; 100)</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>&gt;=</code></td>
+                                    <td>Greater than or equal</td>
+                                    <td><code>if (x &gt;= 18)</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>&lt;=</code></td>
+                                    <td>Less than or equal</td>
+                                    <td><code>if (x &lt;= 99)</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3>Logical Operators</h3>
+                        <table class="api-table">
+                            <thead>
+                                <tr>
+                                    <th>Operator</th>
+                                    <th>Description</th>
+                                    <th>Example</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>&&</code></td>
+                                    <td>Logical AND</td>
+                                    <td><code>if (x > 0 && x < 100)</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>||</code></td>
+                                    <td>Logical OR</td>
+                                    <td><code>if (x == 0 || x == 1)</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>!</code></td>
+                                    <td>Logical NOT</td>
+                                    <td><code>if (!is_valid)</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="code-window">
+                            <div class="window-header">
+                                <div class="window-dots">
+                                    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                </div>
+                                <span>logical_ops.rads</span>
+                            </div>
+                            <pre class="pre-container"><code><span style="color:#C678DD">blast</span> <span style="color:#61AFEF">main</span>() {
+    <span style="color:#C678DD">turbo</span> <span style="color:#E5C07B">i32</span> age = <span style="color:#D19A66">25</span>;
+    <span style="color:#C678DD">turbo</span> <span style="color:#E5C07B">bool</span> has_license = <span style="color:#D19A66">true</span>;
+    
+    <span style="color:#5C6370">// AND operator</span>
+    <span style="color:#C678DD">if</span> (age >= <span style="color:#D19A66">18</span> && has_license) {
+        <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Can drive"</span>);
+    }
+    
+    <span style="color:#5C6370">// OR operator</span>
+    <span style="color:#C678DD">if</span> (age < <span style="color:#D19A66">13</span> || age > <span style="color:#D19A66">65</span>) {
+        <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Discounted ticket"</span>);
+    }
+    
+    <span style="color:#5C6370">// NOT operator</span>
+    <span style="color:#C678DD">if</span> (!has_license) {
+        <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Need to get a license"</span>);
+    }
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="doc-section">
+                        <h2>Loop (While Loop)</h2>
+                        <p>The <code>loop</code> keyword creates a while loop that continues as long as the condition is true.</p>
+
+                        <h3>Basic Loop</h3>
+                        <div class="code-window">
+                            <div class="window-header">
+                                <div class="window-dots">
+                                    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                </div>
+                                <span>loop_basic.rads</span>
+                            </div>
+                            <pre class="pre-container"><code><span style="color:#C678DD">blast</span> <span style="color:#61AFEF">main</span>() {
+    <span style="color:#C678DD">turbo</span> <span style="color:#E5C07B">i32</span> i = <span style="color:#D19A66">0</span>;
+    
+    <span style="color:#C678DD">loop</span> (i < <span style="color:#D19A66">5</span>) {
+        <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Count: "</span> + i);
+        i = i + <span style="color:#D19A66">1</span>;
+    }
+}</code></pre>
+                        </div>
+
+                        <h3>Infinite Loop with Break</h3>
+                        <div class="code-window">
+                            <div class="window-header">
+                                <div class="window-dots">
+                                    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                </div>
+                                <span>loop_infinite.rads</span>
+                            </div>
+                            <pre class="pre-container"><code><span style="color:#C678DD">blast</span> <span style="color:#61AFEF">main</span>() {
+    <span style="color:#C678DD">turbo</span> <span style="color:#E5C07B">i32</span> count = <span style="color:#D19A66">0</span>;
+    
+    <span style="color:#C678DD">loop</span> (<span style="color:#D19A66">true</span>) {
+        <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Iteration: "</span> + count);
+        count = count + <span style="color:#D19A66">1</span>;
+        
+        <span style="color:#C678DD">if</span> (count >= <span style="color:#D19A66">10</span>) {
+            <span style="color:#C678DD">break</span>;
+        }
+    }
+}</code></pre>
+                        </div>
+
+                        <h3>Loop with Continue</h3>
+                        <div class="code-window">
+                            <div class="window-header">
+                                <div class="window-dots">
+                                    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                </div>
+                                <span>loop_continue.rads</span>
+                            </div>
+                            <pre class="pre-container"><code><span style="color:#C678DD">blast</span> <span style="color:#61AFEF">main</span>() {
+    <span style="color:#C678DD">turbo</span> <span style="color:#E5C07B">i32</span> i = <span style="color:#D19A66">0</span>;
+    
+    <span style="color:#C678DD">loop</span> (i < <span style="color:#D19A66">10</span>) {
+        i = i + <span style="color:#D19A66">1</span>;
+        
+        <span style="color:#5C6370">// Skip even numbers</span>
+        <span style="color:#C678DD">if</span> (i % <span style="color:#D19A66">2</span> == <span style="color:#D19A66">0</span>) {
+            <span style="color:#C678DD">continue</span>;
+        }
+        
+        <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Odd number: "</span> + i);
+    }
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="doc-section">
+                        <h2>Cruise (For Loop)</h2>
+                        <p>The <code>cruise</code> keyword creates a for loop that iterates over ranges or collections.</p>
+
+                        <h3>Cruise Over Range</h3>
+                        <div class="code-window">
+                            <div class="window-header">
+                                <div class="window-dots">
+                                    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                </div>
+                                <span>cruise_range.rads</span>
+                            </div>
+                            <pre class="pre-container"><code><span style="color:#C678DD">blast</span> <span style="color:#61AFEF">main</span>() {
+    <span style="color:#5C6370">// Cruise from 0 to 4 (exclusive end)</span>
+    <span style="color:#C678DD">cruise</span> (i <span style="color:#C678DD">in</span> <span style="color:#D19A66">0</span>..<span style="color:#D19A66">5</span>) {
+        <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"i = "</span> + i);
+    }
+    
+    <span style="color:#5C6370">// Cruise from 10 to 20</span>
+    <span style="color:#C678DD">cruise</span> (n <span style="color:#C678DD">in</span> <span style="color:#D19A66">10</span>..<span style="color:#D19A66">21</span>) {
+        <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"n = "</span> + n);
+    }
+}</code></pre>
+                        </div>
+
+                        <h3>Cruise Over Array</h3>
+                        <div class="code-window">
+                            <div class="window-header">
+                                <div class="window-dots">
+                                    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                </div>
+                                <span>cruise_array.rads</span>
+                            </div>
+                            <pre class="pre-container"><code><span style="color:#C678DD">blast</span> <span style="color:#61AFEF">main</span>() {
+    <span style="color:#C678DD">array</span>&lt;<span style="color:#E5C07B">str</span>&gt; names = [<span style="color:#98C379">"Alice"</span>, <span style="color:#98C379">"Bob"</span>, <span style="color:#98C379">"Charlie"</span>];
+    
+    <span style="color:#C678DD">cruise</span> (name <span style="color:#C678DD">in</span> names) {
+        <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Hello, "</span> + name + <span style="color:#98C379">"!"</span>);
+    }
+    
+    <span style="color:#5C6370">// Cruise over numbers</span>
+    <span style="color:#C678DD">array</span>&lt;<span style="color:#E5C07B">i32</span>&gt; scores = [<span style="color:#D19A66">95</span>, <span style="color:#D19A66">87</span>, <span style="color:#D19A66">92</span>, <span style="color:#D19A66">78</span>];
+    <span style="color:#C678DD">cruise</span> (score <span style="color:#C678DD">in</span> scores) {
+        <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Score: "</span> + score);
+    }
+}</code></pre>
+                        </div>
+
+                        <h3>Cruise with Break and Continue</h3>
+                        <div class="code-window">
+                            <div class="window-header">
+                                <div class="window-dots">
+                                    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                </div>
+                                <span>cruise_control.rads</span>
+                            </div>
+                            <pre class="pre-container"><code><span style="color:#C678DD">blast</span> <span style="color:#61AFEF">main</span>() {
+    <span style="color:#C678DD">array</span>&lt;<span style="color:#E5C07B">i32</span>&gt; numbers = [<span style="color:#D19A66">1</span>, <span style="color:#D19A66">2</span>, <span style="color:#D19A66">3</span>, <span style="color:#D19A66">4</span>, <span style="color:#D19A66">5</span>, <span style="color:#D19A66">6</span>, <span style="color:#D19A66">7</span>, <span style="color:#D19A66">8</span>, <span style="color:#D19A66">9</span>, <span style="color:#D19A66">10</span>];
+    
+    <span style="color:#C678DD">cruise</span> (num <span style="color:#C678DD">in</span> numbers) {
+        <span style="color:#5C6370">// Stop at 6</span>
+        <span style="color:#C678DD">if</span> (num > <span style="color:#D19A66">6</span>) {
+            <span style="color:#C678DD">break</span>;
+        }
+        
+        <span style="color:#5C6370">// Skip 3</span>
+        <span style="color:#C678DD">if</span> (num == <span style="color:#D19A66">3</span>) {
+            <span style="color:#C678DD">continue</span>;
+        }
+        
+        <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Number: "</span> + num);
+    }
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="doc-section">
+                        <h2>Switch Statements</h2>
+                        <p>Switch statements provide multi-way branching based on a value.</p>
+
+                        <h3>Basic Switch</h3>
+                        <div class="code-window">
+                            <div class="window-header">
+                                <div class="window-dots">
+                                    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                </div>
+                                <span>switch_basic.rads</span>
+                            </div>
+                            <pre class="pre-container"><code><span style="color:#C678DD">blast</span> <span style="color:#61AFEF">main</span>() {
+    <span style="color:#C678DD">turbo</span> <span style="color:#E5C07B">i32</span> day = <span style="color:#D19A66">3</span>;
+    
+    <span style="color:#C678DD">switch</span> (day) {
+        <span style="color:#C678DD">case</span> <span style="color:#D19A66">1</span>:
+            <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Monday"</span>);
+            <span style="color:#C678DD">break</span>;
+        <span style="color:#C678DD">case</span> <span style="color:#D19A66">2</span>:
+            <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Tuesday"</span>);
+            <span style="color:#C678DD">break</span>;
+        <span style="color:#C678DD">case</span> <span style="color:#D19A66">3</span>:
+            <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Wednesday"</span>);
+            <span style="color:#C678DD">break</span>;
+        <span style="color:#C678DD">case</span> <span style="color:#D19A66">4</span>:
+            <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Thursday"</span>);
+            <span style="color:#C678DD">break</span>;
+        <span style="color:#C678DD">case</span> <span style="color:#D19A66">5</span>:
+            <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Friday"</span>);
+            <span style="color:#C678DD">break</span>;
+        <span style="color:#C678DD">default</span>:
+            <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Weekend"</span>);
+    }
+}</code></pre>
+                        </div>
+
+                        <h3>Switch with Multiple Cases</h3>
+                        <div class="code-window">
+                            <div class="window-header">
+                                <div class="window-dots">
+                                    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                </div>
+                                <span>switch_multi.rads</span>
+                            </div>
+                            <pre class="pre-container"><code><span style="color:#C678DD">blast</span> <span style="color:#61AFEF">main</span>() {
+    <span style="color:#C678DD">turbo</span> <span style="color:#E5C07B">char</span> grade = <span style="color:#98C379">'B'</span>;
+    
+    <span style="color:#C678DD">switch</span> (grade) {
+        <span style="color:#C678DD">case</span> <span style="color:#98C379">'A'</span>:
+            <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Excellent!"</span>);
+            <span style="color:#C678DD">break</span>;
+        <span style="color:#C678DD">case</span> <span style="color:#98C379">'B'</span>:
+            <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Good job!"</span>);
+            <span style="color:#C678DD">break</span>;
+        <span style="color:#C678DD">case</span> <span style="color:#98C379">'C'</span>:
+            <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Satisfactory"</span>);
+            <span style="color:#C678DD">break</span>;
+        <span style="color:#C678DD">case</span> <span style="color:#98C379">'D'</span>:
+            <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Needs improvement"</span>);
+            <span style="color:#C678DD">break</span>;
+        <span style="color:#C678DD">case</span> <span style="color:#98C379">'F'</span>:
+            <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Failed"</span>);
+            <span style="color:#C678DD">break</span>;
+        <span style="color:#C678DD">default</span>:
+            <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Invalid grade"</span>);
+    }
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="doc-section">
+                        <h2>Control Flow Keywords</h2>
+                        <table class="api-table">
+                            <thead>
+                                <tr>
+                                    <th>Keyword</th>
+                                    <th>Description</th>
+                                    <th>Usage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>if</code></td>
+                                    <td>Conditional execution</td>
+                                    <td><code>if (condition) { ... }</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>elif</code></td>
+                                    <td>Else-if condition</td>
+                                    <td><code>elif (condition) { ... }</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>else</code></td>
+                                    <td>Default branch</td>
+                                    <td><code>else { ... }</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>loop</code></td>
+                                    <td>While loop</td>
+                                    <td><code>loop (condition) { ... }</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>cruise</code></td>
+                                    <td>For loop</td>
+                                    <td><code>cruise (item in collection) { ... }</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>switch</code></td>
+                                    <td>Multi-way branch</td>
+                                    <td><code>switch (value) { ... }</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>case</code></td>
+                                    <td>Switch case</td>
+                                    <td><code>case value: ...</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>default</code></td>
+                                    <td>Default switch case</td>
+                                    <td><code>default: ...</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>break</code></td>
+                                    <td>Exit loop/switch</td>
+                                    <td><code>break;</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>continue</code></td>
+                                    <td>Skip to next iteration</td>
+                                    <td><code>continue;</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>return</code></td>
+                                    <td>Return from function</td>
+                                    <td><code>return value;</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="info-box">
+                        <h4>💡 Best Practices</h4>
+                        <ul>
+                            <li>Always use <code>break</code> in switch statements to prevent fall-through</li>
+                            <li>Prefer <code>cruise</code> over <code>loop</code> when iterating over collections</li>
+                            <li>Use <code>elif</code> chains instead of nested if statements for readability</li>
+                            <li>Avoid infinite loops without a clear exit condition</li>
+                            <li>Use meaningful variable names in cruise loops (e.g., <code>cruise (user in users)</code>)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <img src="assets/branding/emblem.png" alt="RADS Emblem" class="footer-emblem">
+        <p>&copy; 2026 RADS Dev Group. Crafted with precision and turbo speed.</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introduction - RADS Documentation</title>
+    <link rel="icon" type="image/svg+xml" href="assets/branding/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="docs-style.css">
+</head>
+<body>
+    <div class="bg-blur blur-1"></div>
+    <div class="bg-blur blur-2"></div>
+
+    <header>
+        <div class="header-inner">
+            <a href="index.html" class="logo-link">
+                <img src="assets/branding/logo.png" alt="RADS Logo" class="logo-img">
+            </a>
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="guide.html">Guide</a>
+                <a href="documentation.html">Docs</a>
+                <a href="examples.html">Examples</a>
+                <a href="compare.html">Compare</a>
+                <a href="releases.html">Releases</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero-sub" style="padding: 4rem 1rem 2rem;">
+            <h1>🚀 Introduction to RADS</h1>
+            <p>Rapid Asynchronous Data Server Language</p>
+        </section>
+
+        <section style="max-width: 1400px;">
+            <div class="two-column">
+                <aside class="doc-nav">
+                    <h3>Documentation</h3>
+                    <ul>
+                        <li><a href="docs-intro.html" class="active">Introduction</a></li>
+                        <li><a href="docs-syntax.html">Syntax Basics</a></li>
+                        <li><a href="docs-types.html">Data Types</a></li>
+                        <li><a href="docs-functions.html">Functions</a></li>
+                        <li><a href="docs-control.html">Control Flow</a></li>
+                        <li><a href="docs-structs.html">Structs & Enums</a></li>
+                        <li><a href="docs-async.html">Async/Await</a></li>
+                        <li><a href="docs-networking.html">Networking</a></li>
+                        <li><a href="docs-media.html">Media Processing</a></li>
+                        <li><a href="docs-stdlib.html">Standard Library</a></li>
+                    </ul>
+                </aside>
+
+                <div class="glass-card">
+                    <div class="doc-section">
+                        <h2>What is RADS?</h2>
+                        <p><strong>RADS</strong> (Rapid Asynchronous Data Server) is a high-performance programming language designed for microservers, IoT devices, and high-speed data processing. It combines the raw performance of C with modern language features like async/await, built-in networking, and media processing.</p>
+
+                        <h3>Philosophy: The "VW Fusca" Approach</h3>
+                        <p>RADS follows the <strong>"VW Fusca" (Volkswagen Beetle) philosophy</strong>:</p>
+                        <ul>
+                            <li><strong>Lightweight</strong> - Minimal dependencies, small binary sizes, runs on anything</li>
+                            <li><strong>Fast</strong> - Near-C performance with optimized execution paths</li>
+                            <li><strong>Reliable</strong> - Built to last decades with simple, maintainable code</li>
+                        </ul>
+                        <p>Like the iconic Beetle, RADS is designed to be easy to understand, easy to fix, and built to work for generations.</p>
+
+                        <h3>Key Design Goals</h3>
+                        <div class="keyword-list">
+                            <div class="keyword-item">
+                                <code>Performance</code>
+                                <p>Execution speeds that rival native C code</p>
+                            </div>
+                            <div class="keyword-item">
+                                <code>Simplicity</code>
+                                <p>Clean syntax that's easy to learn and read</p>
+                            </div>
+                            <div class="keyword-item">
+                                <code>Power</code>
+                                <p>Built-in async I/O, networking, media processing</p>
+                            </div>
+                            <div class="keyword-item">
+                                <code>Extensibility</code>
+                                <p>Plugin system (RPM) for unlimited capabilities</p>
+                            </div>
+                            <div class="keyword-item">
+                                <code>Aesthetic</code>
+                                <p>90s/2000s retro-futuristic vibes</p>
+                            </div>
+                        </div>
+
+                        <h3>Hello World</h3>
+                        <p>Every journey starts with a single line:</p>
+                        <div class="code-window">
+                            <div class="window-header">
+                                <div class="window-dots">
+                                    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                </div>
+                                <span>hello.rads</span>
+                            </div>
+                            <pre class="pre-container"><code><span style="color:#C678DD">blast</span> <span style="color:#61AFEF">main</span>() {
+    <span style="color:#61AFEF">echo</span>(<span style="color:#98C379">"Hello, RADS World! 🚀"</span>);
+}</code></pre>
+                        </div>
+
+                        <h3>Why Choose RADS?</h3>
+                        
+                        <h4>🚀 Built for Speed</h4>
+                        <p>RADS is compiled to efficient bytecode and runs on a VM written in C11. Performance characteristics:</p>
+                        <ul>
+                            <li><strong>Startup time:</strong> &lt; 10ms for bytecode</li>
+                            <li><strong>Memory overhead:</strong> Minimal, close to C</li>
+                            <li><strong>Execution speed:</strong> 2-5x slower than C, 10-50x faster than Python</li>
+                            <li><strong>Binary size:</strong> Small (&lt; 1MB for simple programs)</li>
+                        </ul>
+
+                        <h4>🌐 Async by Default</h4>
+                        <p>Non-blocking I/O is baked into the language. Keywords like <code>async</code>, <code>await</code>, and <code>spawn</code> are first-class citizens, making concurrent programming natural and intuitive.</p>
+
+                        <h4>🔌 Batteries Included</h4>
+                        <p>RADS comes with powerful built-in capabilities:</p>
+                        <ul>
+                            <li><strong>HTTP Server/Client</strong> - Build web servers and APIs</li>
+                            <li><strong>Web Engine</strong> - Execute JavaScript, parse HTML/CSS</li>
+                            <li><strong>Media Processing</strong> - Audio (MP3, WAV, OGG, FLAC) and image (JPEG, PNG, GIF)</li>
+                            <li><strong>File I/O</strong> - Stream processing for large files</li>
+                            <li><strong>Plugin System</strong> - Extend with C plugins (RPM)</li>
+                        </ul>
+
+                        <h4>💎 Beautiful Syntax</h4>
+                        <p>RADS syntax is inspired by the best features of C, Python, and Rust, with unique keywords that reflect its retro-futuristic aesthetic:</p>
+                        <ul>
+                            <li><code>blast</code> - Function declaration (blast off!)</li>
+                            <li><code>turbo</code> - Fast/optimized variable</li>
+                            <li><code>loop</code> - While loop</li>
+                            <li><code>cruise</code> - For loop (cruise through iterations)</li>
+                            <li><code>echo</code> - Print to stdout</li>
+                        </ul>
+
+                        <h3>Perfect Use Cases</h3>
+                        <table class="api-table">
+                            <thead>
+                                <tr>
+                                    <th>Use Case</th>
+                                    <th>Why RADS?</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Microservers</strong></td>
+                                    <td>Lightweight HTTP servers for Raspberry Pi, embedded systems, IoT devices</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>High-Speed APIs</strong></td>
+                                    <td>Blazing-fast REST APIs with async/await and JSON support</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Game Servers</strong></td>
+                                    <td>Low-latency multiplayer backends with real-time communication</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>System Tools</strong></td>
+                                    <td>CLI utilities, automation scripts, system administration</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Data Processing</strong></td>
+                                    <td>Parse, transform, and analyze data at turbo speed</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Web Automation</strong></td>
+                                    <td>Execute JavaScript, parse HTML/CSS, automate web tasks</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3>Getting Started</h3>
+                        <p>Ready to dive in? Here's how to get RADS running on your system:</p>
+                        
+                        <div class="info-box">
+                            <h4>Installation</h4>
+                            <p>Install RADS with a single command:</p>
+                            <pre style="background: rgba(0,0,0,0.8); color: #fff; padding: 1rem; border-radius: 8px; overflow-x: auto;"><code>curl -fsSL https://raw.githubusercontent.com/zarigata/rads/main/install.sh | bash</code></pre>
+                            <p style="margin-top: 1rem;"><strong>User Install (no root):</strong></p>
+                            <pre style="background: rgba(0,0,0,0.8); color: #fff; padding: 1rem; border-radius: 8px; overflow-x: auto;"><code>USE_SUDO=no RADS_PREFIX=$HOME/.local curl -fsSL https://raw.githubusercontent.com/zarigata/rads/main/install.sh | bash</code></pre>
+                        </div>
+
+                        <h3>Next Steps</h3>
+                        <div class="doc-grid">
+                            <a href="docs-syntax.html" class="doc-card">
+                                <h3>📝 Syntax Basics</h3>
+                                <p>Learn the fundamentals of RADS syntax</p>
+                            </a>
+                            <a href="docs-types.html" class="doc-card">
+                                <h3>🔢 Data Types</h3>
+                                <p>Explore all available data types</p>
+                            </a>
+                            <a href="examples.html" class="doc-card">
+                                <h3>💡 Examples</h3>
+                                <p>See RADS in action with code samples</p>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <img src="assets/branding/emblem.png" alt="RADS Emblem" class="footer-emblem">
+        <p>&copy; 2026 RADS Dev Group. Crafted with precision and turbo speed.</p>
+    </footer>
+</body>
+</html>

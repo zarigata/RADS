@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Structs & Enums - RADS Documentation</title>
+    <link rel="icon" type="image/svg+xml" href="assets/branding/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="docs-style.css">
+</head>
+<body>
+    <div class="bg-blur blur-1"></div>
+    <div class="bg-blur blur-2"></div>
+    <header>
+        <div class="header-inner">
+            <a href="index.html" class="logo-link">
+                <img src="assets/branding/logo.png" alt="RADS Logo" class="logo-img">
+            </a>
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="guide.html">Guide</a>
+                <a href="documentation.html">Docs</a>
+                <a href="examples.html">Examples</a>
+                <a href="compare.html">Compare</a>
+                <a href="releases.html">Releases</a>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <section class="hero-sub" style="padding: 4rem 1rem 2rem;">
+            <h1>🏗️ Structs & Enums</h1>
+            <p>Custom data types and enumerations</p>
+        </section>
+        <section style="max-width: 1400px;">
+            <div class="two-column">
+                <aside class="doc-nav">
+                    <h3>Documentation</h3>
+                    <ul>
+                        <li><a href="docs-intro.html">Introduction</a></li>
+                        <li><a href="docs-syntax.html">Syntax Basics</a></li>
+                        <li><a href="docs-types.html">Data Types</a></li>
+                        <li><a href="docs-functions.html">Functions</a></li>
+                        <li><a href="docs-control.html">Control Flow</a></li>
+                        <li><a href="docs-structs.html" class="active">Structs & Enums</a></li>
+                        <li><a href="docs-async.html">Async/Await</a></li>
+                        <li><a href="docs-networking.html">Networking</a></li>
+                        <li><a href="docs-media.html">Media Processing</a></li>
+                        <li><a href="docs-stdlib.html">Standard Library</a></li>
+                    </ul>
+                </aside>
+                <div class="glass-card">
+                    <div class="doc-section">
+                        <h2>Structs</h2>
+                        <p>Custom data types with named fields.</p>
+                        <div class="code-window">
+                            <div class="window-header">
+                                <div class="window-dots">
+                                    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                </div>
+                                <span>structs.rads</span>
+                            </div>
+                            <pre class="pre-container"><code>struct Player {
+    str name;
+    i32 score;
+    bool is_active;
+}
+
+blast main() {
+    turbo Player p = Player {
+        name: "Alice",
+        score: 100,
+        is_active: true
+    };
+    
+    echo("Player: " + p.name);
+    p.score = p.score + 50;
+}</code></pre>
+                        </div>
+                        <h2>Enums</h2>
+                        <p>Enumerations define a type with fixed values.</p>
+                        <div class="code-window">
+                            <div class="window-header">
+                                <div class="window-dots">
+                                    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                </div>
+                                <span>enums.rads</span>
+                            </div>
+                            <pre class="pre-container"><code>enum GameState {
+    MENU,
+    PLAYING,
+    PAUSED,
+    GAME_OVER
+}
+
+blast main() {
+    turbo GameState state = GameState.MENU;
+    
+    if (state == GameState.MENU) {
+        echo("In menu");
+    }
+}</code></pre>
+                        </div>
+                        <h2>Struct Methods</h2>
+                        <p>Functions can take structs as parameters.</p>
+                        <div class="code-window">
+                            <div class="window-header">
+                                <div class="window-dots">
+                                    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+                                </div>
+                                <span>methods.rads</span>
+                            </div>
+                            <pre class="pre-container"><code>struct Point {
+    i32 x;
+    i32 y;
+}
+
+blast print_point(Point p) {
+    echo("(" + p.x + ", " + p.y + ")");
+}
+
+blast main() {
+    turbo Point p = Point { x: 10, y: 20 };
+    print_point(p);
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <img src="assets/branding/emblem.png" alt="RADS Emblem" class="footer-emblem">
+        <p>&copy; 2026 RADS Dev Group. Crafted with precision and turbo speed.</p>
+    </footer>
+</body>
+</html>
