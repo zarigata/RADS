@@ -16,6 +16,7 @@
 #include "stdlib_fs.h"
 #include "stdlib_json.h"
 #include "stdlib_db.h"
+#include "stdlib_webengine.h"
 
 // ANSI Color Codes for Chroma Effects
 #define COLOR_RESET     "\033[0m"
@@ -248,6 +249,7 @@ int run_repl() {
     stdlib_fs_register();
     stdlib_json_register();
     stdlib_db_register();
+    stdlib_webengine_register();
 
     // Initialize event loop for REPL
     interpreter_init_event_loop();
@@ -446,6 +448,7 @@ int main(int argc, char* argv[]) {
     stdlib_fs_register();
     stdlib_json_register();
     stdlib_db_register();
+    stdlib_webengine_register();
 
     // Tokenize
     Lexer lexer;

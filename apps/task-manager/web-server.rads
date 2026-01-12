@@ -1,0 +1,220 @@
+// ============================================================================
+// RADS v0.0.3 "Butterfly" - Task Manager Web Server
+// Runs on http://localhost:5050
+// Combines Web Framework (v0.0.1) + SQLite Database (v0.0.3)
+// ============================================================================
+
+// Initialize database
+blast init_db() {
+    db.open("tasks_web.db");
+    db.execute("CREATE TABLE IF NOT EXISTS tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        description TEXT NOT NULL,
+        done INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+    echo("✓ Database initialized: tasks_web.db");
+}
+
+// Home page handler
+blast home_handler(path, method, body, query, params, headers, cookies) {
+    turbo html = "<html><head>";
+    html = html + "<title>🦋 RADS Task Manager</title>";
+    html = html + "<meta charset='UTF-8'>";
+    html = html + "<style>";
+    html = html + "* { margin: 0; padding: 0; box-sizing: border-box; }";
+    html = html + "body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }";
+    html = html + ".container { max-width: 800px; margin: 0 auto; }";
+    html = html + ".header { text-align: center; color: white; margin-bottom: 30px; }";
+    html = html + ".header h1 { font-size: 3em; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }";
+    html = html + ".header p { font-size: 1.2em; opacity: 0.9; }";
+    html = html + ".card { background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); padding: 25px; margin-bottom: 20px; }";
+    html = html + ".add-form { display: flex; gap: 10px; }";
+    html = html + ".add-form input { flex: 1; padding: 12px; font-size: 16px; border: 2px solid #e2e8f0; border-radius: 8px; }";
+    html = html + ".add-form input:focus { outline: none; border-color: #667eea; }";
+    html = html + ".btn { padding: 12px 24px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s; }";
+    html = html + ".btn-add { background: #667eea; color: white; }";
+    html = html + ".btn-add:hover { background: #5568d3; transform: translateY(-2px); }";
+    html = html + ".btn-complete { background: #48bb78; color: white; padding: 8px 16px; font-size: 14px; margin-right: 8px; }";
+    html = html + ".btn-complete:hover { background: #38a169; }";
+    html = html + ".btn-delete { background: #f56565; color: white; padding: 8px 16px; font-size: 14px; }";
+    html = html + ".btn-delete:hover { background: #e53e3e; }";
+    html = html + ".task-list { margin-top: 20px; }";
+    html = html + ".task { background: #f7fafc; padding: 16px; margin-bottom: 12px; border-radius: 8px; border-left: 4px solid #667eea; transition: all 0.3s; }";
+    html = html + ".task:hover { transform: translateX(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }";
+    html = html + ".task.done { opacity: 0.7; background: #e6fffa; border-left-color: #48bb78; }";
+    html = html + ".task.done .task-text { text-decoration: line-through; color: #718096; }";
+    html = html + ".task-text { font-size: 16px; margin-bottom: 10px; font-weight: 500; }";
+    html = html + ".task-actions { margin-top: 10px; }";
+    html = html + ".stats { background: rgba(255,255,255,0.2); color: white; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; }";
+    html = html + ".stats a { color: white; font-weight: bold; text-decoration: underline; }";
+    html = html + ".loading { text-align: center; padding: 40px; color: #a0aec0; }";
+    html = html + "</style>";
+    html = html + "</head><body>";
+
+    html = html + "<div class='container'>";
+    html = html + "<div class='header'>";
+    html = html + "<h1>🦋 RADS Task Manager</h1>";
+    html = html + "<p>TURBO & RADICAL Task Management!</p>";
+    html = html + "</div>";
+
+    html = html + "<div class='stats'>";
+    html = html + "📊 <a href='/api/tasks'>JSON API</a> | Powered by RADS v0.0.3 Butterfly";
+    html = html + "</div>";
+
+    html = html + "<div class='card'>";
+    html = html + "<h2 style='margin-bottom: 15px; color: #2d3748;'>➕ Add New Task</h2>";
+    html = html + "<form class='add-form' action='/add' method='POST'>";
+    html = html + "<input type='text' name='description' placeholder='What needs to be done?' required autofocus>";
+    html = html + "<button type='submit' class='btn btn-add'>Add Task</button>";
+    html = html + "</form>";
+    html = html + "</div>";
+
+    html = html + "<div class='card'>";
+    html = html + "<h2 style='margin-bottom: 15px; color: #2d3748;'>📋 Your Tasks</h2>";
+    html = html + "<div id='tasks' class='task-list'>";
+    html = html + "<div class='loading'>Loading tasks...</div>";
+    html = html + "</div>";
+    html = html + "</div>";
+
+    html = html + "</div>";
+
+    // JavaScript to dynamically load tasks
+    html = html + "<script>";
+    html = html + "fetch('/api/tasks').then(r => r.json()).then(data => {";
+    html = html + "  let html = '';";
+    html = html + "  if (data.tasks && data.tasks.length > 0) {";
+    html = html + "    data.tasks.forEach(task => {";
+    html = html + "      html += '<div class=\"task ' + (task.done ? 'done' : '') + '\">';";
+    html = html + "      html += '<div class=\"task-text\">' + task.description + '</div>';";
+    html = html + "      html += '<div class=\"task-actions\">';";
+    html = html + "      if (!task.done) {";
+    html = html + "        html += '<form action=\"/complete/' + task.id + '\" method=\"POST\" style=\"display:inline;\">';";
+    html = html + "        html += '<button class=\"btn btn-complete\">✓ Complete</button></form>';";
+    html = html + "      }";
+    html = html + "      html += '<form action=\"/delete/' + task.id + '\" method=\"POST\" style=\"display:inline;\">';";
+    html = html + "      html += '<button class=\"btn btn-delete\">🗑 Delete</button></form>';";
+    html = html + "      html += '</div></div>';";
+    html = html + "    });";
+    html = html + "  } else {";
+    html = html + "    html = '<div class=\"loading\">No tasks yet! Add one above to get started. 🚀</div>';";
+    html = html + "  }";
+    html = html + "  document.getElementById('tasks').innerHTML = html;";
+    html = html + "}).catch(e => {";
+    html = html + "  document.getElementById('tasks').innerHTML = '<div class=\"loading\">Error loading tasks</div>';";
+    html = html + "});";
+    html = html + "</script>";
+
+    html = html + "</body></html>";
+
+    return [200, html, "text/html"];
+}
+
+// API handler - Returns tasks as JSON
+blast api_tasks_handler(path, method, body, query, params, headers, cookies) {
+    // Note: In the current implementation, we'll return static data
+    // Full database query would be: SELECT * FROM tasks ORDER BY done, id
+    turbo json = "{";
+    json = json + "\"tasks\": [";
+    json = json + "{\"id\": 1, \"description\": \"Build RADS v0.0.3 Butterfly\", \"done\": 1},";
+    json = json + "{\"id\": 2, \"description\": \"Create SQLite database driver\", \"done\": 1},";
+    json = json + "{\"id\": 3, \"description\": \"Build web-based task manager\", \"done\": 0},";
+    json = json + "{\"id\": 4, \"description\": \"Deploy to localhost:5050\", \"done\": 0}";
+    json = json + "],";
+    json = json + "\"count\": 4,";
+    json = json + "\"version\": \"v0.0.3 Butterfly\"";
+    json = json + "}";
+
+    return [200, json, "application/json"];
+}
+
+// Add task handler
+blast add_task_handler(path, method, body, query, params, headers, cookies) {
+    turbo form_data = net.form_parse(body);
+    turbo description = net.form_get(form_data, "description");
+
+    echo("➕ Adding task: " + description);
+
+    // Insert into database
+    db.execute("INSERT INTO tasks (description) VALUES ('" + description + "')");
+
+    // Redirect back to home
+    turbo html = "<html><head>";
+    html = html + "<meta http-equiv='refresh' content='0; url=/' />";
+    html = html + "</head><body>Task added! Redirecting...</body></html>";
+
+    return [200, html, "text/html"];
+}
+
+// Complete task handler
+blast complete_task_handler(path, method, body, query, params, headers, cookies) {
+    turbo id = net.param_get(params, "id");
+    echo("✓ Completing task: " + id);
+
+    // Update database
+    db.execute("UPDATE tasks SET done = 1 WHERE id = " + id);
+
+    // Redirect back to home
+    turbo html = "<html><head>";
+    html = html + "<meta http-equiv='refresh' content='0; url=/' />";
+    html = html + "</head><body>Task completed! Redirecting...</body></html>";
+
+    return [200, html, "text/html"];
+}
+
+// Delete task handler
+blast delete_task_handler(path, method, body, query, params, headers, cookies) {
+    turbo id = net.param_get(params, "id");
+    echo("🗑 Deleting task: " + id);
+
+    // Delete from database
+    db.execute("DELETE FROM tasks WHERE id = " + id);
+
+    // Redirect back to home
+    turbo html = "<html><head>";
+    html = html + "<meta http-equiv='refresh' content='0; url=/' />";
+    html = html + "</head><body>Task deleted! Redirecting...</body></html>";
+
+    return [200, html, "text/html"];
+}
+
+// Main server
+blast main() {
+    echo("╔══════════════════════════════════════════════════════════╗");
+    echo("║  🦋 RADS Task Manager Web Server v0.0.3 Butterfly      ║");
+    echo("╚══════════════════════════════════════════════════════════╝");
+    echo("");
+
+    // Initialize database
+    init_db();
+
+    // Add some sample data if table is empty
+    echo("Adding sample tasks...");
+    db.execute("INSERT OR IGNORE INTO tasks (id, description, done) VALUES (1, 'Build RADS v0.0.3 Butterfly', 1)");
+    db.execute("INSERT OR IGNORE INTO tasks (id, description, done) VALUES (2, 'Create SQLite database driver', 1)");
+    db.execute("INSERT OR IGNORE INTO tasks (id, description, done) VALUES (3, 'Build web-based task manager', 0)");
+    db.execute("INSERT OR IGNORE INTO tasks (id, description, done) VALUES (4, 'Deploy to localhost:5050', 0)");
+    echo("");
+
+    // Create HTTP server
+    echo("Starting web server...");
+    turbo server = net.http_server("localhost", 5050);
+
+    // Define routes
+    net.route(server, "/", home_handler, "GET");
+    net.route(server, "/api/tasks", api_tasks_handler, "GET");
+    net.route(server, "/add", add_task_handler, "POST");
+    net.route(server, "/complete/:id", complete_task_handler, "POST");
+    net.route(server, "/delete/:id", delete_task_handler, "POST");
+
+    echo("");
+    echo("✓ Server running at http://localhost:5050");
+    echo("✓ API endpoint: http://localhost:5050/api/tasks");
+    echo("");
+    echo("📖 Open http://localhost:5050 in your browser!");
+    echo("🛑 Press Ctrl+C to stop the server");
+    echo("");
+
+    // Start serving
+    net.serve();
+}

@@ -1,0 +1,121 @@
+// ============================================================================
+// RADS v0.0.3 "Butterfly" - Web Engine Demo
+// Demonstrates JavaScript execution, HTML parsing, and plugin system
+// Alternative to Node.js and Python for web development!
+// ============================================================================
+
+blast main() {
+    echo("╔════════════════════════════════════════════════════════╗");
+    echo("║  🌐 RADS Web Engine Demo v0.0.3 Butterfly            ║");
+    echo("╚════════════════════════════════════════════════════════╝");
+    echo("");
+
+    // ========================================================================
+    // 1. INITIALIZE WEB ENGINE
+    // ========================================================================
+    echo("1️⃣  Initializing Web Engine...");
+    web_init();
+    echo("");
+
+    // ========================================================================
+    // 2. JAVASCRIPT EXECUTION
+    // ========================================================================
+    echo("2️⃣  Testing JavaScript Execution:");
+    echo("");
+
+    // Simple console.log
+    js_eval("console.log('Hello from JavaScript!')");
+
+    // Another example
+    js_eval("console.log('RADS + JavaScript = TURBO!')");
+
+    // Math expression
+    js_eval("console.log('2026 is the year of RADS!')");
+    echo("");
+
+    // ========================================================================
+    // 3. HTML PARSING
+    // ========================================================================
+    echo("3️⃣  Testing HTML Parser:");
+    echo("");
+
+    turbo html = "<html><body><h1>Hello RADS!</h1><p>Web Engine</p></body></html>";
+    echo("Parsing HTML document...");
+
+    turbo doc = html_parse(html);
+    echo("Document created: " + doc);
+
+    turbo element = html_querySelector(doc, "h1");
+    echo("Found element: " + element);
+    echo("");
+
+    // ========================================================================
+    // 4. CSS PARSING
+    // ========================================================================
+    echo("4️⃣  Testing CSS Parser:");
+    echo("");
+
+    turbo css = "body { color: purple; background: gradient; }";
+    echo("Parsing CSS stylesheet...");
+
+    turbo styles = css_parse(css);
+    echo("Stylesheet created: " + styles);
+    echo("");
+
+    // ========================================================================
+    // 5. PLUGIN SYSTEM
+    // ========================================================================
+    echo("5️⃣  Testing Plugin System:");
+    echo("");
+
+    // Load some plugins
+    turbo markdown_pkg = pkg_load("rads-plugin-markdown");
+    echo("Loaded: " + markdown_pkg);
+
+    turbo template_pkg = pkg_load("rads-plugin-template");
+    echo("Loaded: " + template_pkg);
+
+    turbo validator_pkg = pkg_load("rads-plugin-validator");
+    echo("Loaded: " + validator_pkg);
+
+    turbo crypto_pkg = pkg_load("rads-plugin-crypto");
+    echo("Loaded: " + crypto_pkg);
+    echo("");
+
+    // List all plugins
+    echo("📦 Installed Plugins:");
+    turbo pkg_count = pkg_list();
+    echo("Total: " + pkg_count + " plugins");
+    echo("");
+
+    // ========================================================================
+    // SUMMARY
+    // ========================================================================
+    echo("╔════════════════════════════════════════════════════════╗");
+    echo("║  ✅ Web Engine Demo Complete!                        ║");
+    echo("╚════════════════════════════════════════════════════════╝");
+    echo("");
+    echo("🎯 Features Demonstrated:");
+    echo("  ✓ JavaScript execution (console.log)");
+    echo("  ✓ HTML parsing and DOM queries");
+    echo("  ✓ CSS parsing and stylesheets");
+    echo("  ✓ Plugin loading and management");
+    echo("");
+    echo("🚀 RADS Web Engine API:");
+    echo("  • web_init() - Initialize engine");
+    echo("  • js_eval(code) - Execute JavaScript");
+    echo("  • js_evalFile(path) - Run JS file");
+    echo("  • html_parse(html) - Parse HTML");
+    echo("  • html_querySelector(doc, selector) - Query DOM");
+    echo("  • css_parse(css) - Parse CSS");
+    echo("  • pkg_load(name) - Load plugin");
+    echo("  • pkg_list() - List plugins");
+    echo("");
+    echo("💡 RADS is now a complete web development platform!");
+    echo("   Use it instead of Node.js or Python for:");
+    echo("   → Web applications");
+    echo("   → API servers");
+    echo("   → Browser automation");
+    echo("   → Plugin-based architectures");
+    echo("");
+}
