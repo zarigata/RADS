@@ -31,9 +31,23 @@
     </header>
 
     <main>
-        <section class="hero-sub" style="padding: 4rem 1rem;">
+        <section class="hero-sub" style="padding: 4rem 1rem 2rem;">
             <h1>Getting Started</h1>
-            <p>Ready to blast through your first project? Follow the guide below.</p>
+            <p style="font-size: 1.2rem; max-width: 700px; margin: 0 auto;">Ready to blast through your first project? Follow this comprehensive guide to get RADS running on your system in minutes.</p>
+            <div style="display: flex; gap: 2rem; justify-content: center; margin-top: 2rem; flex-wrap: wrap;">
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; color: var(--primary-blue);">📦</div>
+                    <div style="font-weight: 600; margin-top: 0.5rem;">Easy Install</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; color: var(--secondary-green);">⚡</div>
+                    <div style="font-weight: 600; margin-top: 0.5rem;">Fast Setup</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; color: var(--accent-cyan);">🚀</div>
+                    <div style="font-weight: 600; margin-top: 0.5rem;">Quick Start</div>
+                </div>
+            </div>
         </section>
 
         <section id="install">
@@ -72,10 +86,69 @@
             </div>
         </section>
 
+        <section id="platform-install">
+            <div class="glass-card">
+                <h2>Platform-Specific Installation</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem;">
+                    <div style="padding: 1.5rem; background: rgba(0,120,215,0.05); border-radius: 12px; border: 1px solid rgba(0,120,215,0.2);">
+                        <h3 style="color: var(--primary-blue); margin-top: 0;">🐧 Linux</h3>
+                        <p style="font-size: 0.9rem; color: var(--text-muted);">Ubuntu, Debian, Arch, Fedora</p>
+                        <code style="display: block; margin-top: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.8); color: #0F0; border-radius: 4px; font-size: 0.85rem;">sudo apt install build-essential<br>curl -fsSL ... | bash</code>
+                    </div>
+                    <div style="padding: 1.5rem; background: rgba(76,175,80,0.05); border-radius: 12px; border: 1px solid rgba(76,175,80,0.2);">
+                        <h3 style="color: var(--secondary-green); margin-top: 0;">🍎 macOS</h3>
+                        <p style="font-size: 0.9rem; color: var(--text-muted);">Intel & Apple Silicon</p>
+                        <code style="display: block; margin-top: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.8); color: #0F0; border-radius: 4px; font-size: 0.85rem;">brew install gcc<br>curl -fsSL ... | bash</code>
+                    </div>
+                    <div style="padding: 1.5rem; background: rgba(0,242,255,0.05); border-radius: 12px; border: 1px solid rgba(0,242,255,0.2);">
+                        <h3 style="color: var(--accent-cyan); margin-top: 0;">🪟 Windows</h3>
+                        <p style="font-size: 0.9rem; color: var(--text-muted);">WSL2 or MinGW</p>
+                        <code style="display: block; margin-top: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.8); color: #0F0; border-radius: 4px; font-size: 0.85rem;">wsl --install<br>curl -fsSL ... | bash</code>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="troubleshooting">
+            <div class="glass-card">
+                <h2>🔧 Troubleshooting</h2>
+                <div style="margin-top: 2rem;">
+                    <details style="margin-bottom: 1rem; padding: 1rem; background: rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer;">
+                        <summary style="font-weight: 600; color: var(--primary-blue);">Installation fails with permission error</summary>
+                        <p style="margin-top: 1rem; padding-left: 1rem;">Use the user install method: <code>USE_SUDO=no RADS_PREFIX=$HOME/.local curl -fsSL ... | bash</code></p>
+                    </details>
+                    <details style="margin-bottom: 1rem; padding: 1rem; background: rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer;">
+                        <summary style="font-weight: 600; color: var(--primary-blue);">Command 'rads' not found after installation</summary>
+                        <p style="margin-top: 1rem; padding-left: 1rem;">Add RADS to your PATH: <code>export PATH="$HOME/.local/bin:$PATH"</code> or restart your terminal.</p>
+                    </details>
+                    <details style="margin-bottom: 1rem; padding: 1rem; background: rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer;">
+                        <summary style="font-weight: 600; color: var(--primary-blue);">Compilation errors on first run</summary>
+                        <p style="margin-top: 1rem; padding-left: 1rem;">Ensure you have GCC 9+ or Clang 10+ installed. Run <code>gcc --version</code> to check.</p>
+                    </details>
+                </div>
+            </div>
+        </section>
+
         <section id="next-steps">
             <div class="glass-card" style="background: linear-gradient(135deg, rgba(0,120,215,0.1), rgba(0,242,255,0.05)); border-color: rgba(0,120,215,0.2);">
                 <h2>3. Next Steps</h2>
-                <p>Explore the <a href="compare.html" style="color: var(--primary-blue); font-weight: 600;">Comparison Page</a> to see how RADS matches up against other tools, or check out the official examples in the GitHub repository.</p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 2rem;">
+                    <a href="examples.html" style="text-decoration: none; padding: 1.5rem; background: rgba(255,255,255,0.5); border-radius: 12px; border: 2px solid transparent; transition: all 0.3s;" onmouseover="this.style.borderColor='var(--primary-blue)'; this.style.transform='translateY(-5px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">💡</div>
+                        <h3 style="color: var(--primary-blue); margin: 0.5rem 0;">View Examples</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">Explore comprehensive code samples</p>
+                    </a>
+                    <a href="documentation.html" style="text-decoration: none; padding: 1.5rem; background: rgba(255,255,255,0.5); border-radius: 12px; border: 2px solid transparent; transition: all 0.3s;" onmouseover="this.style.borderColor='var(--secondary-green)'; this.style.transform='translateY(-5px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📚</div>
+                        <h3 style="color: var(--secondary-green); margin: 0.5rem 0;">Read Docs</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">Complete language reference</p>
+                    </a>
+                    <a href="compare.html" style="text-decoration: none; padding: 1.5rem; background: rgba(255,255,255,0.5); border-radius: 12px; border: 2px solid transparent; transition: all 0.3s;" onmouseover="this.style.borderColor='var(--accent-cyan)'; this.style.transform='translateY(-5px)'" onmouseout="this.style.borderColor='transparent'; this.style.transform='translateY(0)'">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">⚖️</div>
+                        <h3 style="color: var(--accent-cyan); margin: 0.5rem 0;">Compare</h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">See how RADS stacks up</p>
+                    </a>
+                </div>
             </div>
         </section>
     </main>

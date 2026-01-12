@@ -8,11 +8,15 @@
     --primary-hover: #005A9E;
     --secondary-green: #4CAF50;
     --accent-cyan: #00F2FF;
+    --accent-purple: #9D4EDD;
+    --accent-pink: #FF006E;
     --glass-bg: rgba(255, 255, 255, 0.45);
     --glass-border: rgba(255, 255, 255, 0.5);
     --text-main: #1A1A1A;
     --text-muted: #444;
     --shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    --shadow-hover: 0 12px 48px 0 rgba(31, 38, 135, 0.25);
+    --shadow-glow: 0 0 30px rgba(0, 242, 255, 0.3);
     --animation-speed: 0.6s;
 }
 
@@ -63,7 +67,8 @@ main {
     right: -10%;
     width: 40%;
     height: 40%;
-    background: var(--accent-cyan);
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+    animation: float 20s ease-in-out infinite;
 }
 
 .blur-2 {
@@ -71,7 +76,15 @@ main {
     left: -10%;
     width: 30%;
     height: 30%;
-    background: var(--primary-blue);
+    background: linear-gradient(135deg, var(--primary-blue), var(--secondary-green));
+    animation: float 15s ease-in-out infinite reverse;
+}
+
+@keyframes float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(20px, -20px) scale(1.05); }
+    50% { transform: translate(-10px, 10px) scale(0.95); }
+    75% { transform: translate(-20px, -10px) scale(1.02); }
 }
 
 /* Navigation */
@@ -167,11 +180,13 @@ section {
     border-radius: 20px;
     padding: 3rem;
     box-shadow: var(--shadow-soft);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 12px 40px rgba(31, 38, 135, 0.2);
+    box-shadow: var(--shadow-hover);
+    border-color: rgba(0, 242, 255, 0.4);
 }
 
 /* Comparison Table Refinement */
@@ -303,13 +318,33 @@ section {
     text-decoration: none;
     font-weight: 700;
     border-radius: 50px;
-    box-shadow: 0 4px 15px rgba(0, 120, 215, 0.3);
+    box-shadow: 0 4px 15px rgba(0, 120, 215, 0.3), 0 0 0 0 rgba(0, 242, 255, 0.5);
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    overflow: hidden;
+}
+
+.cta-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.cta-button:hover::before {
+    width: 300px;
+    height: 300px;
 }
 
 .cta-button:hover {
     transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 8px 25px rgba(0, 120, 215, 0.4);
+    box-shadow: 0 8px 25px rgba(0, 120, 215, 0.4), 0 0 30px rgba(0, 242, 255, 0.6);
     filter: brightness(1.1);
 }
 
