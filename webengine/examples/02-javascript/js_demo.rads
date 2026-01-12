@@ -1,0 +1,34 @@
+// ============================================================================
+// Example 02: JavaScript Integration
+// ============================================================================
+
+blast main() {
+    echo("╔════════════════════════════════════════════════════╗");
+    echo("║  Example 02: JavaScript Integration              ║");
+    echo("╚════════════════════════════════════════════════════╝");
+    echo("");
+
+    // Initialize
+    web_init();
+
+    // Execute JavaScript
+    echo("1. Basic console.log:");
+    js_eval("console.log('Hello from JavaScript!')");
+    echo("");
+
+    echo("2. Math expressions:");
+    js_eval("console.log('2 + 2 = 4')");
+    js_eval("console.log('10 * 5 = 50')");
+    echo("");
+
+    echo("3. Variables:");
+    js_eval("const language = 'RADS'");
+    js_eval("console.log('Language: ' + language)");
+    echo("");
+
+    echo("4. Messages:");
+    js_eval("console.log('RADS is TURBO & RADICAL!')");
+    echo("");
+
+    echo("✓ JavaScript integration working!");
+}

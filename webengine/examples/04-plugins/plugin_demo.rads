@@ -1,0 +1,37 @@
+// ============================================================================
+// Example 04: Plugin System
+// ============================================================================
+
+blast main() {
+    echo("╔════════════════════════════════════════════════════╗");
+    echo("║  Example 04: Plugin System                        ║");
+    echo("╚════════════════════════════════════════════════════╝");
+    echo("");
+
+    // Initialize
+    web_init();
+
+    // Load plugins
+    echo("1. Loading plugins:");
+    turbo markdown = pkg_load("rads-plugin-markdown");
+    echo("   Loaded: " + markdown);
+
+    turbo template = pkg_load("rads-plugin-template");
+    echo("   Loaded: " + template);
+
+    turbo validator = pkg_load("rads-plugin-validator");
+    echo("   Loaded: " + validator);
+
+    turbo crypto = pkg_load("rads-plugin-crypto");
+    echo("   Loaded: " + crypto);
+    echo("");
+
+    // List all plugins
+    echo("2. Installed plugins:");
+    turbo count = pkg_list();
+    echo("");
+    echo("   Total: " + count + " plugins");
+    echo("");
+
+    echo("✓ Plugin system working!");
+}

@@ -1,0 +1,42 @@
+// ============================================================================
+// Example 03: HTML + CSS Parsing
+// ============================================================================
+
+blast main() {
+    echo("╔════════════════════════════════════════════════════╗");
+    echo("║  Example 03: HTML + CSS Parsing                  ║");
+    echo("╚════════════════════════════════════════════════════╝");
+    echo("");
+
+    // Initialize
+    web_init();
+
+    // Parse HTML
+    echo("1. Parsing HTML:");
+    turbo html = "<html><head><title>RADS</title></head><body><h1>Hello!</h1><p>Test</p></body></html>";
+    echo("   Input: " + html);
+
+    turbo doc = html_parse(html);
+    echo("   Result: " + doc);
+    echo("");
+
+    // Query DOM
+    echo("2. Querying DOM:");
+    turbo h1 = html_querySelector(doc, "h1");
+    echo("   Found h1: " + h1);
+
+    turbo p = html_querySelector(doc, "p");
+    echo("   Found p: " + p);
+    echo("");
+
+    // Parse CSS
+    echo("3. Parsing CSS:");
+    turbo css = "body { color: purple; background: linear-gradient(135deg, #667eea, #764ba2); }";
+    echo("   Input: " + css);
+
+    turbo styles = css_parse(css);
+    echo("   Result: " + styles);
+    echo("");
+
+    echo("✓ HTML/CSS parsing working!");
+}

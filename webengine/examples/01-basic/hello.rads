@@ -1,0 +1,22 @@
+// ============================================================================
+// Example 01: Basic Web Engine Usage
+// ============================================================================
+
+blast main() {
+    echo("╔════════════════════════════════════════════════════╗");
+    echo("║  Example 01: Basic Web Engine                    ║");
+    echo("╚════════════════════════════════════════════════════╝");
+    echo("");
+
+    // Initialize web engine
+    echo("1. Initializing web engine...");
+    web_init();
+    echo("");
+
+    echo("2. Web engine ready!");
+    echo("");
+
+    echo("✓ Success!");
+    echo("");
+    echo("Next: Run 02-javascript/js_demo.rads");
+}

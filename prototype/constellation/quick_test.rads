@@ -1,0 +1,24 @@
+// Quick test - just print and exit
+blast main() {
+    echo("🌟 RADS Instance is RUNNING!");
+    echo("This demonstrates process spawning and monitoring.");
+
+    // Do some work to consume a bit of CPU
+    turbo x = 0;
+    turbo i = 0;
+    while (i < 1000000) {
+        x = x + 1;
+        i = i + 1;
+    }
+
+    echo("✅ Work complete! Instance will stay alive...");
+
+    // Keep instance running by doing more work
+    turbo j = 0;
+    while (j < 10000000) {
+        x = x + 1;
+        j = j + 1;
+    }
+
+    echo("🛑 Instance finishing.");
+}

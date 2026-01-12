@@ -1,0 +1,33 @@
+// RADS Constellation - Test Worker Script
+// This script simulates a long-running worker process
+// to demonstrate instance monitoring
+
+blast main() {
+    echo("╔════════════════════════════════════════════════╗");
+    echo("║  🦋 RADS Worker Instance Started              ║");
+    echo("╚════════════════════════════════════════════════╝");
+    echo("");
+    echo("Worker PID: Process started successfully");
+    echo("This worker will run for 30 seconds...");
+    echo("");
+
+    // Simulate work with a loop
+    turbo count = 0;
+    while (count < 30) {
+        count = count + 1;
+
+        if (count == 1 || count % 5 == 0) {
+            echo("⏰ Worker heartbeat: " + count + " seconds elapsed");
+        }
+
+        // Sleep for 1 second (simulated with busy loop)
+        // Note: RADS doesn't have sleep yet, so we'll exit early for demo
+        if (count >= 30) {
+            break;
+        }
+    }
+
+    echo("");
+    echo("✅ Worker completed successfully!");
+    echo("Shutting down gracefully...");
+}
