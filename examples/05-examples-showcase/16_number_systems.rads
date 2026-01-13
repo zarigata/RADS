@@ -1,0 +1,73 @@
+// 16_number_systems.rads
+// Convert between decimal, binary, and hexadecimal
+
+blast decimal_to_binary(i32 num) -> str {
+    if (num == 0) {
+        return "0";
+    }
+    
+    str binary = "";
+    turbo i32 temp = num;
+    
+    loop (temp > 0) {
+        turbo i32 remainder = temp % 2;
+        binary = remainder + binary;
+        temp = temp / 2;
+    }
+    
+    return binary;
+}
+
+blast binary_to_decimal(str binary) -> i32 {
+    turbo i32 decimal = 0;
+    turbo i32 base = 1;
+    turbo i32 len = binary.length();
+    turbo i32 i = len - 1;
+    
+    loop (i >= 0) {
+        if (binary[i] == '1') {
+            decimal = decimal + base;
+        }
+        base = base * 2;
+        i = i - 1;
+    }
+    
+    return decimal;
+}
+
+blast decimal_to_hex(i32 num) -> str {
+    if (num == 0) {
+        return "0";
+    }
+    
+    str hex_chars = "0123456789ABCDEF";
+    str hex = "";
+    turbo i32 temp = num;
+    
+    loop (temp > 0) {
+        turbo i32 remainder = temp % 16;
+        hex = hex_chars[remainder] + hex;
+        temp = temp / 16;
+    }
+    
+    return hex;
+}
+
+blast main() {
+    echo("=== Number System Converter ===");
+    
+    array<i32> numbers = [42, 255, 128, 1024];
+    
+    cruise (num in numbers) {
+        echo("\nDecimal: " + num);
+        echo("Binary:  " + decimal_to_binary(num));
+        echo("Hex:     0x" + decimal_to_hex(num));
+    }
+    
+    echo("\n--- Binary to Decimal ---");
+    array<str> binaries = ["1010", "11111111", "10000000"];
+    
+    cruise (bin in binaries) {
+        echo("Binary " + bin + " = Decimal " + binary_to_decimal(bin));
+    }
+}

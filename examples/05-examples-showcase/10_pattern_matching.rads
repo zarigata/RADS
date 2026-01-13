@@ -1,0 +1,74 @@
+// 10_pattern_matching.rads
+// Demonstrates switch/case pattern matching
+
+blast get_day_name(i32 day) -> str {
+    str result = "";
+    
+    switch (day) {
+        case 1:
+            result = "Monday";
+            break;
+        case 2:
+            result = "Tuesday";
+            break;
+        case 3:
+            result = "Wednesday";
+            break;
+        case 4:
+            result = "Thursday";
+            break;
+        case 5:
+            result = "Friday";
+            break;
+        case 6:
+            result = "Saturday";
+            break;
+        case 7:
+            result = "Sunday";
+            break;
+        default:
+            result = "Invalid day";
+    }
+    
+    return result;
+}
+
+blast get_grade(i32 score) -> str {
+    str grade = "";
+    
+    switch (score / 10) {
+        case 10:
+        case 9:
+            grade = "A - Excellent!";
+            break;
+        case 8:
+            grade = "B - Good job!";
+            break;
+        case 7:
+            grade = "C - Average";
+            break;
+        case 6:
+            grade = "D - Needs improvement";
+            break;
+        default:
+            grade = "F - Failed";
+    }
+    
+    return grade;
+}
+
+blast main() {
+    echo("=== Pattern Matching with Switch ===");
+    
+    echo("\n--- Days of the Week ---");
+    cruise (day in 1..8) {
+        echo("Day " + day + ": " + get_day_name(day));
+    }
+    
+    echo("\n--- Grade Calculator ---");
+    array<i32> scores = [95, 87, 73, 65, 42];
+    
+    cruise (score in scores) {
+        echo("Score " + score + ": " + get_grade(score));
+    }
+}

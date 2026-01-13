@@ -1,0 +1,51 @@
+// 15_gcd_lcm.rads
+// Calculate Greatest Common Divisor and Least Common Multiple
+
+blast gcd(i32 a, i32 b) -> i32 {
+    loop (b != 0) {
+        turbo i32 temp = b;
+        b = a % b;
+        a = temp;
+    }
+    return a;
+}
+
+blast lcm(i32 a, i32 b) -> i32 {
+    return (a * b) / gcd(a, b);
+}
+
+blast gcd_iterative(i32 a, i32 b) -> i32 {
+    loop (a != b) {
+        if (a > b) {
+            a = a - b;
+        } else {
+            b = b - a;
+        }
+    }
+    return a;
+}
+
+blast main() {
+    echo("=== GCD and LCM Calculator ===");
+    
+    turbo i32 num1 = 48;
+    turbo i32 num2 = 18;
+    
+    echo("\nNumbers: " + num1 + " and " + num2);
+    echo("GCD (Euclidean): " + gcd(num1, num2));
+    echo("GCD (Iterative): " + gcd_iterative(num1, num2));
+    echo("LCM: " + lcm(num1, num2));
+    
+    echo("\n--- More Examples ---");
+    array<array<i32>> pairs = [[12, 8], [21, 14], [35, 25], [100, 50]];
+    
+    turbo i32 i = 0;
+    loop (i < 4) {
+        turbo i32 a = pairs[i][0];
+        turbo i32 b = pairs[i][1];
+        echo("\nPair: " + a + " and " + b);
+        echo("  GCD: " + gcd(a, b));
+        echo("  LCM: " + lcm(a, b));
+        i = i + 1;
+    }
+}

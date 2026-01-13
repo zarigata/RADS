@@ -1,0 +1,66 @@
+// 13_binary_search.rads
+// Implements binary search algorithm on sorted arrays
+
+blast binary_search(array<i32> arr, i32 size, i32 target) -> i32 {
+    turbo i32 left = 0;
+    turbo i32 right = size - 1;
+    
+    loop (left <= right) {
+        turbo i32 mid = left + (right - left) / 2;
+        
+        if (arr[mid] == target) {
+            return mid;
+        }
+        
+        if (arr[mid] < target) {
+            left = mid + 1;
+        } else {
+            right = mid - 1;
+        }
+    }
+    
+    return -1;
+}
+
+blast linear_search(array<i32> arr, i32 size, i32 target) -> i32 {
+    turbo i32 i = 0;
+    loop (i < size) {
+        if (arr[i] == target) {
+            return i;
+        }
+        i = i + 1;
+    }
+    return -1;
+}
+
+blast main() {
+    echo("=== Search Algorithms ===");
+    
+    array<i32> sorted_array = [2, 5, 8, 12, 16, 23, 38, 45, 56, 67, 78];
+    turbo i32 size = 11;
+    
+    echo("Sorted array: [2, 5, 8, 12, 16, 23, 38, 45, 56, 67, 78]");
+    echo("");
+    
+    array<i32> targets = [23, 45, 2, 78, 100];
+    
+    echo("--- Binary Search (O(log n)) ---");
+    cruise (target in targets) {
+        turbo i32 index = binary_search(sorted_array, size, target);
+        if (index != -1) {
+            echo("Found " + target + " at index " + index);
+        } else {
+            echo(target + " not found in array");
+        }
+    }
+    
+    echo("\n--- Linear Search (O(n)) ---");
+    cruise (target in targets) {
+        turbo i32 index = linear_search(sorted_array, size, target);
+        if (index != -1) {
+            echo("Found " + target + " at index " + index);
+        } else {
+            echo(target + " not found in array");
+        }
+    }
+}

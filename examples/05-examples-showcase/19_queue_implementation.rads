@@ -1,0 +1,116 @@
+// 19_queue_implementation.rads
+// Queue data structure implementation (FIFO - First In First Out)
+
+struct Queue {
+    array<i32> data;
+    i32 front;
+    i32 rear;
+    i32 size;
+    i32 capacity;
+}
+
+blast create_queue(i32 capacity) -> Queue {
+    turbo Queue q = Queue {
+        data: array(capacity),
+        front: 0,
+        rear: -1,
+        size: 0,
+        capacity: capacity
+    };
+    return q;
+}
+
+blast is_empty(Queue q) -> bool {
+    return q.size == 0;
+}
+
+blast is_full(Queue q) -> bool {
+    return q.size == q.capacity;
+}
+
+blast enqueue(Queue q, i32 value) -> bool {
+    if (is_full(q)) {
+        echo("Queue overflow! Cannot enqueue " + value);
+        return false;
+    }
+    
+    q.rear = (q.rear + 1) % q.capacity;
+    q.data[q.rear] = value;
+    q.size = q.size + 1;
+    echo("Enqueued: " + value);
+    return true;
+}
+
+blast dequeue(Queue q) -> i32 {
+    if (is_empty(q)) {
+        echo("Queue underflow! Cannot dequeue");
+        return -1;
+    }
+    
+    turbo i32 value = q.data[q.front];
+    q.front = (q.front + 1) % q.capacity;
+    q.size = q.size - 1;
+    echo("Dequeued: " + value);
+    return value;
+}
+
+blast front_element(Queue q) -> i32 {
+    if (is_empty(q)) {
+        echo("Queue is empty!");
+        return -1;
+    }
+    
+    return q.data[q.front];
+}
+
+blast display_queue(Queue q) {
+    if (is_empty(q)) {
+        echo("Queue: []");
+        return;
+    }
+    
+    str output = "Queue (front to rear): [";
+    turbo i32 i = 0;
+    turbo i32 index = q.front;
+    
+    loop (i < q.size) {
+        output = output + q.data[index];
+        if (i < q.size - 1) {
+            output = output + ", ";
+        }
+        index = (index + 1) % q.capacity;
+        i = i + 1;
+    }
+    
+    output = output + "]";
+    echo(output);
+}
+
+blast main() {
+    echo("=== Queue Implementation (FIFO) ===");
+    
+    turbo Queue my_queue = create_queue(5);
+    
+    echo("\nEnqueuing elements...");
+    enqueue(my_queue, 10);
+    enqueue(my_queue, 20);
+    enqueue(my_queue, 30);
+    display_queue(my_queue);
+    
+    echo("\nFront element: " + front_element(my_queue));
+    
+    echo("\nDequeuing elements...");
+    dequeue(my_queue);
+    dequeue(my_queue);
+    display_queue(my_queue);
+    
+    echo("\nEnqueuing more elements...");
+    enqueue(my_queue, 40);
+    enqueue(my_queue, 50);
+    enqueue(my_queue, 60);
+    enqueue(my_queue, 70);
+    display_queue(my_queue);
+    
+    echo("\nTrying to overflow...");
+    enqueue(my_queue, 80);
+}

@@ -1,0 +1,67 @@
+// 14_palindrome_checker.rads
+// Check if strings and numbers are palindromes
+
+blast is_palindrome_string(str text) -> bool {
+    turbo i32 len = text.length();
+    turbo i32 i = 0;
+    
+    loop (i < len / 2) {
+        if (text[i] != text[len - 1 - i]) {
+            return false;
+        }
+        i = i + 1;
+    }
+    
+    return true;
+}
+
+blast is_palindrome_number(i32 num) -> bool {
+    turbo i32 original = num;
+    turbo i32 reversed = 0;
+    
+    loop (num > 0) {
+        turbo i32 digit = num % 10;
+        reversed = reversed * 10 + digit;
+        num = num / 10;
+    }
+    
+    return original == reversed;
+}
+
+blast reverse_number(i32 num) -> i32 {
+    turbo i32 reversed = 0;
+    
+    loop (num > 0) {
+        turbo i32 digit = num % 10;
+        reversed = reversed * 10 + digit;
+        num = num / 10;
+    }
+    
+    return reversed;
+}
+
+blast main() {
+    echo("=== Palindrome Checker ===");
+    
+    echo("\n--- String Palindromes ---");
+    array<str> words = ["racecar", "hello", "level", "world", "radar", "test"];
+    
+    cruise (word in words) {
+        if (is_palindrome_string(word)) {
+            echo("'" + word + "' is a PALINDROME");
+        } else {
+            echo("'" + word + "' is NOT a palindrome");
+        }
+    }
+    
+    echo("\n--- Number Palindromes ---");
+    array<i32> numbers = [121, 123, 1221, 12321, 456, 7337];
+    
+    cruise (num in numbers) {
+        if (is_palindrome_number(num)) {
+            echo(num + " is a PALINDROME");
+        } else {
+            echo(num + " is NOT a palindrome (reversed: " + reverse_number(num) + ")");
+        }
+    }
+}

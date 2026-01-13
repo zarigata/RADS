@@ -1,0 +1,39 @@
+// 09_factorial.rads
+// Calculate factorial using recursion and iteration
+
+blast factorial_recursive(i32 n) -> i32 {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial_recursive(n - 1);
+}
+
+blast factorial_iterative(i32 n) -> i32 {
+    turbo i32 result = 1;
+    turbo i32 i = 2;
+    
+    loop (i <= n) {
+        result = result * i;
+        i = i + 1;
+    }
+    
+    return result;
+}
+
+blast main() {
+    echo("=== Factorial Calculator ===");
+    
+    echo("Recursive approach:");
+    cruise (i in 1..11) {
+        echo(i + "! = " + factorial_recursive(i));
+    }
+    
+    echo("\nIterative approach (more efficient):");
+    cruise (i in 1..11) {
+        echo(i + "! = " + factorial_iterative(i));
+    }
+    
+    echo("\nLarge factorial:");
+    turbo i32 big = 15;
+    echo(big + "! = " + factorial_iterative(big));
+}

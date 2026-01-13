@@ -1,0 +1,94 @@
+// 17_linked_list.rads
+// Simple linked list implementation using structs
+
+struct Node {
+    i32 data;
+    Node next;
+}
+
+struct LinkedList {
+    Node head;
+    i32 size;
+}
+
+blast create_list() -> LinkedList {
+    turbo LinkedList list = LinkedList {
+        head: null,
+        size: 0
+    };
+    return list;
+}
+
+blast create_node(i32 value) -> Node {
+    turbo Node node = Node {
+        data: value,
+        next: null
+    };
+    return node;
+}
+
+blast insert_at_head(LinkedList list, i32 value) {
+    turbo Node new_node = create_node(value);
+    new_node.next = list.head;
+    list.head = new_node;
+    list.size = list.size + 1;
+}
+
+blast insert_at_tail(LinkedList list, i32 value) {
+    turbo Node new_node = create_node(value);
+    
+    if (list.head == null) {
+        list.head = new_node;
+    } else {
+        turbo Node current = list.head;
+        loop (current.next != null) {
+            current = current.next;
+        }
+        current.next = new_node;
+    }
+    
+    list.size = list.size + 1;
+}
+
+blast print_list(LinkedList list) {
+    if (list.head == null) {
+        echo("List is empty");
+        return;
+    }
+    
+    str output = "List: ";
+    turbo Node current = list.head;
+    
+    loop (current != null) {
+        output = output + current.data;
+        if (current.next != null) {
+            output = output + " -> ";
+        }
+        current = current.next;
+    }
+    
+    echo(output);
+}
+
+blast main() {
+    echo("=== Linked List Implementation ===");
+    
+    turbo LinkedList my_list = create_list();
+    
+    echo("\nInserting at tail: 10, 20, 30");
+    insert_at_tail(my_list, 10);
+    insert_at_tail(my_list, 20);
+    insert_at_tail(my_list, 30);
+    print_list(my_list);
+    echo("Size: " + my_list.size);
+    
+    echo("\nInserting at head: 5");
+    insert_at_head(my_list, 5);
+    print_list(my_list);
+    echo("Size: " + my_list.size);
+    
+    echo("\nInserting at tail: 40");
+    insert_at_tail(my_list, 40);
+    print_list(my_list);
+    echo("Size: " + my_list.size);
+}

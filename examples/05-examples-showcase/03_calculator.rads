@@ -1,0 +1,50 @@
+// 03_calculator.rads
+// A simple calculator with multiple operations
+
+blast add(f64 a, f64 b) -> f64 {
+    return a + b;
+}
+
+blast subtract(f64 a, f64 b) -> f64 {
+    return a - b;
+}
+
+blast multiply(f64 a, f64 b) -> f64 {
+    return a * b;
+}
+
+blast divide(f64 a, f64 b) -> f64 {
+    if (b == 0.0) {
+        echo("Error: Division by zero!");
+        return 0.0;
+    }
+    return a / b;
+}
+
+blast power(f64 base, i32 exponent) -> f64 {
+    turbo f64 result = 1.0;
+    turbo i32 i = 0;
+    
+    loop (i < exponent) {
+        result = result * base;
+        i = i + 1;
+    }
+    
+    return result;
+}
+
+blast main() {
+    echo("=== RADS Calculator ===");
+    
+    turbo f64 x = 10.0;
+    turbo f64 y = 3.0;
+    
+    echo("Numbers: x = " + x + ", y = " + y);
+    echo("");
+    echo("Addition: " + x + " + " + y + " = " + add(x, y));
+    echo("Subtraction: " + x + " - " + y + " = " + subtract(x, y));
+    echo("Multiplication: " + x + " * " + y + " = " + multiply(x, y));
+    echo("Division: " + x + " / " + y + " = " + divide(x, y));
+    echo("Power: " + x + " ^ 2 = " + power(x, 2));
+    echo("Power: " + y + " ^ 3 = " + power(y, 3));
+}

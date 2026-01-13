@@ -1,0 +1,134 @@
+// 20_hash_table.rads
+// Simple hash table implementation using arrays
+
+struct HashEntry {
+    str key;
+    i32 value;
+    bool occupied;
+}
+
+struct HashTable {
+    array<HashEntry> entries;
+    i32 capacity;
+    i32 size;
+}
+
+blast hash_function(str key, i32 capacity) -> i32 {
+    turbo i32 hash = 0;
+    turbo i32 i = 0;
+    
+    loop (i < key.length()) {
+        hash = (hash * 31 + key[i]) % capacity;
+        i = i + 1;
+    }
+    
+    if (hash < 0) {
+        hash = hash + capacity;
+    }
+    
+    return hash;
+}
+
+blast create_hash_table(i32 capacity) -> HashTable {
+    turbo HashTable ht = HashTable {
+        entries: array(capacity),
+        capacity: capacity,
+        size: 0
+    };
+    
+    turbo i32 i = 0;
+    loop (i < capacity) {
+        ht.entries[i] = HashEntry {
+            key: "",
+            value: 0,
+            occupied: false
+        };
+        i = i + 1;
+    }
+    
+    return ht;
+}
+
+blast insert(HashTable ht, str key, i32 value) {
+    turbo i32 index = hash_function(key, ht.capacity);
+    turbo i32 original_index = index;
+    
+    loop (ht.entries[index].occupied) {
+        if (ht.entries[index].key == key) {
+            ht.entries[index].value = value;
+            echo("Updated: " + key + " = " + value);
+            return;
+        }
+        
+        index = (index + 1) % ht.capacity;
+        
+        if (index == original_index) {
+            echo("Hash table is full!");
+            return;
+        }
+    }
+    
+    ht.entries[index].key = key;
+    ht.entries[index].value = value;
+    ht.entries[index].occupied = true;
+    ht.size = ht.size + 1;
+    echo("Inserted: " + key + " = " + value);
+}
+
+blast get(HashTable ht, str key) -> i32 {
+    turbo i32 index = hash_function(key, ht.capacity);
+    turbo i32 original_index = index;
+    
+    loop (ht.entries[index].occupied) {
+        if (ht.entries[index].key == key) {
+            return ht.entries[index].value;
+        }
+        
+        index = (index + 1) % ht.capacity;
+        
+        if (index == original_index) {
+            break;
+        }
+    }
+    
+    echo("Key '" + key + "' not found");
+    return -1;
+}
+
+blast display_hash_table(HashTable ht) {
+    echo("\n=== Hash Table Contents ===");
+    echo("Size: " + ht.size + " / " + ht.capacity);
+    
+    turbo i32 i = 0;
+    loop (i < ht.capacity) {
+        if (ht.entries[i].occupied) {
+            echo("[" + i + "] " + ht.entries[i].key + " => " + ht.entries[i].value);
+        }
+        i = i + 1;
+    }
+}
+
+blast main() {
+    echo("=== Hash Table Implementation ===");
+    
+    turbo HashTable ht = create_hash_table(10);
+    
+    echo("\nInserting key-value pairs...");
+    insert(ht, "apple", 100);
+    insert(ht, "banana", 200);
+    insert(ht, "cherry", 300);
+    insert(ht, "date", 400);
+    
+    display_hash_table(ht);
+    
+    echo("\n--- Looking up values ---");
+    echo("apple: " + get(ht, "apple"));
+    echo("banana: " + get(ht, "banana"));
+    echo("grape: " + get(ht, "grape"));
+    
+    echo("\n--- Updating values ---");
+    insert(ht, "apple", 150);
+    echo("apple (updated): " + get(ht, "apple"));
+    
+    display_hash_table(ht);
+}

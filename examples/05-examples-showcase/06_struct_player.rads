@@ -1,0 +1,65 @@
+// 06_struct_player.rads
+// Demonstrates structs with a game player example
+
+struct Player {
+    str name;
+    i32 level;
+    f32 health;
+    f32 mana;
+    i32 score;
+}
+
+blast create_player(str name) -> Player {
+    turbo Player p = Player {
+        name: name,
+        level: 1,
+        health: 100.0,
+        mana: 50.0,
+        score: 0
+    };
+    return p;
+}
+
+blast level_up(Player p) {
+    p.level = p.level + 1;
+    p.health = p.health + 20.0;
+    p.mana = p.mana + 10.0;
+    echo(p.name + " leveled up to level " + p.level + "!");
+}
+
+blast take_damage(Player p, f32 damage) {
+    p.health = p.health - damage;
+    if (p.health < 0.0) {
+        p.health = 0.0;
+    }
+    echo(p.name + " took " + damage + " damage! Health: " + p.health);
+}
+
+blast add_score(Player p, i32 points) {
+    p.score = p.score + points;
+    echo(p.name + " earned " + points + " points! Total: " + p.score);
+}
+
+blast display_stats(Player p) {
+    echo("\n=== Player Stats ===");
+    echo("Name: " + p.name);
+    echo("Level: " + p.level);
+    echo("Health: " + p.health + " HP");
+    echo("Mana: " + p.mana + " MP");
+    echo("Score: " + p.score);
+    echo("===================\n");
+}
+
+blast main() {
+    echo("=== RPG Player System ===");
+    
+    turbo Player hero = create_player("XxDarkSlayerxX");
+    display_stats(hero);
+    
+    add_score(hero, 100);
+    take_damage(hero, 25.0);
+    level_up(hero);
+    add_score(hero, 250);
+    
+    display_stats(hero);
+}

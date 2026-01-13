@@ -1,0 +1,108 @@
+// 18_stack_implementation.rads
+// Stack data structure implementation (LIFO - Last In First Out)
+
+struct Stack {
+    array<i32> data;
+    i32 top;
+    i32 capacity;
+}
+
+blast create_stack(i32 capacity) -> Stack {
+    turbo Stack s = Stack {
+        data: array(capacity),
+        top: -1,
+        capacity: capacity
+    };
+    return s;
+}
+
+blast is_empty(Stack s) -> bool {
+    return s.top == -1;
+}
+
+blast is_full(Stack s) -> bool {
+    return s.top == s.capacity - 1;
+}
+
+blast push(Stack s, i32 value) -> bool {
+    if (is_full(s)) {
+        echo("Stack overflow! Cannot push " + value);
+        return false;
+    }
+    
+    s.top = s.top + 1;
+    s.data[s.top] = value;
+    echo("Pushed: " + value);
+    return true;
+}
+
+blast pop(Stack s) -> i32 {
+    if (is_empty(s)) {
+        echo("Stack underflow! Cannot pop");
+        return -1;
+    }
+    
+    turbo i32 value = s.data[s.top];
+    s.top = s.top - 1;
+    echo("Popped: " + value);
+    return value;
+}
+
+blast peek(Stack s) -> i32 {
+    if (is_empty(s)) {
+        echo("Stack is empty!");
+        return -1;
+    }
+    
+    return s.data[s.top];
+}
+
+blast display_stack(Stack s) {
+    if (is_empty(s)) {
+        echo("Stack: []");
+        return;
+    }
+    
+    str output = "Stack (top to bottom): [";
+    turbo i32 i = s.top;
+    
+    loop (i >= 0) {
+        output = output + s.data[i];
+        if (i > 0) {
+            output = output + ", ";
+        }
+        i = i - 1;
+    }
+    
+    output = output + "]";
+    echo(output);
+}
+
+blast main() {
+    echo("=== Stack Implementation (LIFO) ===");
+    
+    turbo Stack my_stack = create_stack(5);
+    
+    echo("\nPushing elements...");
+    push(my_stack, 10);
+    push(my_stack, 20);
+    push(my_stack, 30);
+    display_stack(my_stack);
+    
+    echo("\nPeek at top: " + peek(my_stack));
+    
+    echo("\nPopping elements...");
+    pop(my_stack);
+    pop(my_stack);
+    display_stack(my_stack);
+    
+    echo("\nPushing more elements...");
+    push(my_stack, 40);
+    push(my_stack, 50);
+    push(my_stack, 60);
+    push(my_stack, 70);
+    display_stack(my_stack);
+    
+    echo("\nTrying to overflow...");
+    push(my_stack, 80);
+}

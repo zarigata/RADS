@@ -1,0 +1,72 @@
+// 04_sorting_algorithms.rads
+// Demonstrates bubble sort and selection sort algorithms
+
+blast bubble_sort(array<i32> arr, i32 size) {
+    turbo i32 i = 0;
+    loop (i < size - 1) {
+        turbo i32 j = 0;
+        loop (j < size - i - 1) {
+            if (arr[j] > arr[j + 1]) {
+                turbo i32 temp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = temp;
+            }
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+}
+
+blast selection_sort(array<i32> arr, i32 size) {
+    turbo i32 i = 0;
+    loop (i < size - 1) {
+        turbo i32 min_idx = i;
+        turbo i32 j = i + 1;
+        
+        loop (j < size) {
+            if (arr[j] < arr[min_idx]) {
+                min_idx = j;
+            }
+            j = j + 1;
+        }
+        
+        if (min_idx != i) {
+            turbo i32 temp = arr[i];
+            arr[i] = arr[min_idx];
+            arr[min_idx] = temp;
+        }
+        i = i + 1;
+    }
+}
+
+blast print_array(array<i32> arr, i32 size) {
+    str output = "[";
+    turbo i32 i = 0;
+    loop (i < size) {
+        output = output + arr[i];
+        if (i < size - 1) {
+            output = output + ", ";
+        }
+        i = i + 1;
+    }
+    output = output + "]";
+    echo(output);
+}
+
+blast main() {
+    echo("=== Sorting Algorithms ===");
+    
+    array<i32> numbers1 = [64, 34, 25, 12, 22, 11, 90];
+    array<i32> numbers2 = [64, 34, 25, 12, 22, 11, 90];
+    
+    echo("Original array:");
+    print_array(numbers1, 7);
+    
+    echo("\nBubble Sort:");
+    bubble_sort(numbers1, 7);
+    print_array(numbers1, 7);
+    
+    echo("\nSelection Sort:");
+    selection_sort(numbers2, 7);
+    print_array(numbers2, 7);
+}

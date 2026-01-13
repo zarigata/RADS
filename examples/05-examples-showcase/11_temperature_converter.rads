@@ -1,0 +1,49 @@
+// 11_temperature_converter.rads
+// Convert between Celsius, Fahrenheit, and Kelvin
+
+blast celsius_to_fahrenheit(f64 celsius) -> f64 {
+    return (celsius * 9.0 / 5.0) + 32.0;
+}
+
+blast fahrenheit_to_celsius(f64 fahrenheit) -> f64 {
+    return (fahrenheit - 32.0) * 5.0 / 9.0;
+}
+
+blast celsius_to_kelvin(f64 celsius) -> f64 {
+    return celsius + 273.15;
+}
+
+blast kelvin_to_celsius(f64 kelvin) -> f64 {
+    return kelvin - 273.15;
+}
+
+blast fahrenheit_to_kelvin(f64 fahrenheit) -> f64 {
+    return celsius_to_kelvin(fahrenheit_to_celsius(fahrenheit));
+}
+
+blast kelvin_to_fahrenheit(f64 kelvin) -> f64 {
+    return celsius_to_fahrenheit(kelvin_to_celsius(kelvin));
+}
+
+blast main() {
+    echo("=== Temperature Converter ===");
+    
+    turbo f64 temp_c = 25.0;
+    echo("\nStarting temperature: " + temp_c + "°C");
+    echo("In Fahrenheit: " + celsius_to_fahrenheit(temp_c) + "°F");
+    echo("In Kelvin: " + celsius_to_kelvin(temp_c) + "K");
+    
+    turbo f64 temp_f = 77.0;
+    echo("\nStarting temperature: " + temp_f + "°F");
+    echo("In Celsius: " + fahrenheit_to_celsius(temp_f) + "°C");
+    echo("In Kelvin: " + fahrenheit_to_kelvin(temp_f) + "K");
+    
+    turbo f64 temp_k = 300.0;
+    echo("\nStarting temperature: " + temp_k + "K");
+    echo("In Celsius: " + kelvin_to_celsius(temp_k) + "°C");
+    echo("In Fahrenheit: " + kelvin_to_fahrenheit(temp_k) + "°F");
+    
+    echo("\n--- Common Temperatures ---");
+    echo("Water freezing point: 0°C = " + celsius_to_fahrenheit(0.0) + "°F = " + celsius_to_kelvin(0.0) + "K");
+    echo("Water boiling point: 100°C = " + celsius_to_fahrenheit(100.0) + "°F = " + celsius_to_kelvin(100.0) + "K");
+}

@@ -1,0 +1,57 @@
+// 05_prime_numbers.rads
+// Find and display prime numbers using the Sieve of Eratosthenes
+
+blast is_prime(i32 n) -> bool {
+    if (n <= 1) {
+        return false;
+    }
+    if (n <= 3) {
+        return true;
+    }
+    if (n % 2 == 0 || n % 3 == 0) {
+        return false;
+    }
+    
+    turbo i32 i = 5;
+    loop (i * i <= n) {
+        if (n % i == 0 || n % (i + 2) == 0) {
+            return false;
+        }
+        i = i + 6;
+    }
+    
+    return true;
+}
+
+blast find_primes_up_to(i32 limit) {
+    echo("Prime numbers up to " + limit + ":");
+    str primes = "";
+    turbo i32 count = 0;
+    
+    cruise (i in 2..limit + 1) {
+        if (is_prime(i)) {
+            primes = primes + i + " ";
+            count = count + 1;
+        }
+    }
+    
+    echo(primes);
+    echo("Total primes found: " + count);
+}
+
+blast main() {
+    echo("=== Prime Number Finder ===");
+    
+    find_primes_up_to(50);
+    
+    echo("\n--- Testing specific numbers ---");
+    array<i32> test_numbers = [17, 20, 29, 100, 97];
+    
+    cruise (num in test_numbers) {
+        if (is_prime(num)) {
+            echo(num + " is PRIME");
+        } else {
+            echo(num + " is NOT prime");
+        }
+    }
+}

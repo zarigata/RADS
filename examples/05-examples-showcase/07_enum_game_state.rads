@@ -1,0 +1,71 @@
+// 07_enum_game_state.rads
+// Demonstrates enums with a game state machine
+
+enum GameState {
+    MENU,
+    LOADING,
+    PLAYING,
+    PAUSED,
+    GAME_OVER,
+    VICTORY
+}
+
+blast get_state_name(GameState state) -> str {
+    if (state == GameState.MENU) {
+        return "Main Menu";
+    } elif (state == GameState.LOADING) {
+        return "Loading...";
+    } elif (state == GameState.PLAYING) {
+        return "Playing";
+    } elif (state == GameState.PAUSED) {
+        return "Paused";
+    } elif (state == GameState.GAME_OVER) {
+        return "Game Over";
+    } elif (state == GameState.VICTORY) {
+        return "Victory!";
+    }
+    return "Unknown";
+}
+
+blast handle_state(GameState state) {
+    echo("\n--- Current State: " + get_state_name(state) + " ---");
+    
+    if (state == GameState.MENU) {
+        echo("Press START to begin");
+        echo("Press OPTIONS for settings");
+    } elif (state == GameState.LOADING) {
+        echo("Loading assets...");
+        echo("Please wait...");
+    } elif (state == GameState.PLAYING) {
+        echo("Game in progress!");
+        echo("Press ESC to pause");
+    } elif (state == GameState.PAUSED) {
+        echo("Game paused");
+        echo("Press RESUME to continue");
+    } elif (state == GameState.GAME_OVER) {
+        echo("You died!");
+        echo("Press RETRY to try again");
+    } elif (state == GameState.VICTORY) {
+        echo("Congratulations! You won!");
+        echo("Final score will be displayed");
+    }
+}
+
+blast main() {
+    echo("=== Game State Machine ===");
+    
+    turbo GameState current_state = GameState.MENU;
+    handle_state(current_state);
+    
+    current_state = GameState.LOADING;
+    handle_state(current_state);
+    
+    current_state = GameState.PLAYING;
+    handle_state(current_state);
+    
+    current_state = GameState.PAUSED;
+    handle_state(current_state);
+    
+    current_state = GameState.VICTORY;
+    handle_state(current_state);
+}

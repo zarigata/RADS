@@ -1,0 +1,495 @@
+🧪 Running Constellation Phase 1 tests...
+
+./constellation_test
+
+[1;36m╔════════════════════════════════════════════════╗[0m
+[1;36m║  RADS CONSTELLATION - Phase 1 Tests           ║[0m
+[1;36m║  Foundation Tests                             ║[0m
+[1;36m╚════════════════════════════════════════════════╝[0m
+
+[1;36m➜[0m Test 1: Controller Initialization
+[1;36m╔════════════════════════════════════════════════╗[0m
+[1;36m║  🌟 RADS CONSTELLATION v0.0.4-alpha              ║[0m
+[1;36m║  Distributed Computing Platform                ║[0m
+[1;36m╚════════════════════════════════════════════════╝[0m
+
+[1;32m[INIT][0m Controller initialized
+  Node: test-node
+  Cluster: test-cluster
+  Max Instances: 100
+  Clustering: disabled
+
+[1;32m✓ PASS[0m Controller init
+[1;32m✓ PASS[0m Controller is running
+
+[1;36m➜[0m Test 2: Instance Creation
+[1;34m[CREATE][0m Instance created: test-instance
+  ID: inst-1768283190392714-1
+  Limits: CPU=50%, RAM=256MB
+[1;32m✓ PASS[0m Instance create succeeds
+[1;32m✓ PASS[0m Instance returned
+[1;32m✓ PASS[0m Instance has ID
+[1;32m✓ PASS[0m Instance name matches
+[1;32m✓ PASS[0m Instance state is PENDING
+[1;32m✓ PASS[0m CPU limit set
+[1;32m✓ PASS[0m RAM limit set
+
+[1;36m➜[0m Test 3: Instance Lifecycle
+[1;34m[CREATE][0m Instance created: lifecycle-test
+  ID: inst-1768283190392717-2
+  Limits: CPU=25%, RAM=128MB
+[1;34m[START][0m Starting instance: lifecycle-test
+[1;32m[START][0m Instance running: lifecycle-test (PID: 0)
+[1;32m✓ PASS[0m Instance start
+[1;32m✓ PASS[0m Instance state is RUNNING
+[1;33m[STOP][0m Stopping instance: lifecycle-test
+[1;32m[STOP][0m Instance stopped: lifecycle-test
+[1;32m✓ PASS[0m Instance stop
+[1;32m✓ PASS[0m Instance state is STOPPED
+[1;31m[DESTROY][0m Instance destroyed: lifecycle-test
+[1;32m✓ PASS[0m Instance destroy
+
+[1;36m➜[0m Test 4: Multiple Instances
+[1;34m[CREATE][0m Instance created: multi-test-0
+  ID: inst-1768283190392719-3
+  Limits: CPU=10%, RAM=64MB
+[1;34m[CREATE][0m Instance created: multi-test-1
+  ID: inst-1768283190392720-4
+  Limits: CPU=20%, RAM=128MB
+[1;34m[CREATE][0m Instance created: multi-test-2
+  ID: inst-1768283190392720-5
+  Limits: CPU=30%, RAM=192MB
+[1;34m[CREATE][0m Instance created: multi-test-3
+  ID: inst-1768283190392720-6
+  Limits: CPU=40%, RAM=256MB
+[1;34m[CREATE][0m Instance created: multi-test-4
+  ID: inst-1768283190392722-7
+  Limits: CPU=50%, RAM=320MB
+[1;32m✓ PASS[0m Correct instance count
+[1;31m[DESTROY][0m Instance destroyed: multi-test-0
+[1;31m[DESTROY][0m Instance destroyed: multi-test-1
+[1;31m[DESTROY][0m Instance destroyed: multi-test-2
+[1;31m[DESTROY][0m Instance destroyed: multi-test-3
+[1;31m[DESTROY][0m Instance destroyed: multi-test-4
+
+[1;36m➜[0m Test 5: Instance Query
+[1;34m[CREATE][0m Instance created: query-test
+  ID: inst-1768283190392724-8
+  Limits: CPU=0%, RAM=0MB
+[1;32m✓ PASS[0m Instance found by ID
+[1;32m✓ PASS[0m State query works
+[1;32m✓ PASS[0m List returns instances
+[1;31m[DESTROY][0m Instance destroyed: query-test
+
+[1;36m➜[0m Test 6: Error Handling
+[1;32m✓ PASS[0m NULL config rejected
+[1;32m✓ PASS[0m NULL instance rejected
+[1;32m✓ PASS[0m Error string for OK
+[1;32m✓ PASS[0m Error string for NO_MEMORY
+
+[1;36m➜[0m Test 7: Isolation Setup
+[1;34m[CREATE][0m Instance created: isolation-test
+  ID: inst-1768283190392725-9
+  Limits: CPU=0%, RAM=0MB
+[1;36m[ISOLATION][0m Setting up namespaces for: isolation-test
+[1;33m[WARN][0m Not running as root, namespace isolation limited
+[1;33m[WARN][0m Will use process-level isolation only
+[1;32m[ISOLATION][0m Namespaces configured
+  Hostname: isolation-test
+  Network NS: disabled
+  Mou[1;31m[ERROR][0m Failed to create cgroup: No such file or directory
+nt NS: disabled
+[1;32m✓ PASS[0m Namespace setup
+[1;32m✓ PASS[0m Isolation context created
+[1;36m[ISOLATION][0m Tearing down namespaces for: isolation-test
+[1;32m[ISOLATION][0m Namespaces cleaned up
+[1;32m✓ PASS[0m Namespace teardown
+[1;31m[DESTROY][0m Instance destroyed: isolation-test
+
+[1;36m➜[0m Test 8: Resource Limits (cgroups)
+[1;34m[CREATE][0m Instance created: cgroup-test
+  ID: inst-1768283190392731-10
+  Limits: CPU=30%, RAM=512MB
+[1;36m[CGROUPS][0m Setting up resource limits for: cgroup-test
+[1;32m✓ PASS[0m Cgroup setup (may require root)
+[1;36m[CGROUPS][0m Cleaning up cgroup for: cgroup-test
+[1;32m[CGROUPS][0m Cgroup removed
+[1;32m✓ PASS[0m Cgroup teardown
+[1;31m[DESTROY][0m Instance destroyed: cgroup-test
+
+[1;36m➜[0m Test 9: Controller Shutdown
+[1;33m[SHUTDOWN][0m Stopping all instances...
+[1;31m[DESTROY][0m Instance destroyed: test-instance
+[1;32m[SHUTDOWN][0m Controller stopped
+
+[1;32m✓ PASS[0m Controller shutdown
+[1;32m✓ PASS[0m Controller not running
+
+[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1;37mTest Summary:[0m
+  Passed: [1;32m29[0m
+  Failed: [1;31m0[0m
+  Total:  29
+[1;36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+
+[1;32m🎉 All tests passed![0m
+
+[1;37mPhase 1: Foundation - COMPLETE[0m
+✓ Controller lifecycle
+✓ Instance management
+✓ Process isolation
+✓ Resource limits
+
+🧪 Running Constellation Phase 2 cluster tests...
+
+./cluster_test
+[1;36m╔════════════════════════════════════════════════╗[0m
+[1;36m║  RADS CONSTELLATION - Phase 2 Tests           ║[0m
+[1;36m║  Clustering & Communication Tests             ║[0m
+[1;36m╚════════════════════════════════════════════════╝[0m
+
+[TEST] Cluster Initialization
+[1;36m╔════════════════════════════════════════════════╗[0m
+[1;36m║  🌐 RADS CONSTELLATION - Clustering           ║[0m
+[1;36m║  Phase 2: Multi-Machine Communication          ║[0m
+[1;36m╚════════════════════════════════════════════════╝[0m
+
+[1;36m[GOSSIP]\033[0m Background thread started
+[1;32m[CLUSTER][0m Cluster initialized
+  Cluster: test-cluster
+  Node: node1
+  ID: node1@127.0.0.1
+  Address: 127.0.0.1:7000
+  State: ALIVE
+  Leader: YES (term 1)
+
+  ✓ Cluster init succeeds
+  ✓ Cluster is running
+  ✓ Local node exists
+  ✓ Local node name correct
+  ✓ Local node state is ALIVE
+
+[TEST] Cluster Shutdown
+[1;33m[CLUSTER][0m Shutting down cluster...
+[1;34m[HEALTH][0m Background thread started
+[1;32m[CLUSTER][0m Cluster stopped
+
+  ✓ Cluster shutdown succeeds
+  ✓ Cluster is stopped
+
+[TEST] Node Registry
+[1;36m╔════════════════════════════════════════════════╗[0m
+[1;36m║  🌐 RADS CONSTELLATION - Clustering           ║[0m
+[1;36m║  Phase 2: Multi-Machine Communication          ║[0m
+[1;36m╚════════════════════════════════════════════════╝[0m
+
+[1;36m[GOSSIP]\033[0m Background thread started
+[1;32m[CLUSTER][0m Cluster initialized
+  Cluster: test-cluster
+  Node: node1
+  ID: node1@127.0.0.1
+  Address: 127.0.0.1:7001
+  State: ALIVE
+  Leader: YES (term 1)
+
+[1;32m[REGISTRY][0m Node added: node2 (127.0.0.1:7002)
+  ✓ Node can be added to registry
+  ✓ Node can be found in registry
+  ✓ Found node has correct name
+  ✓ Node count is 2 (local + added)
+  ✓ Nodes array is valid
+  ✓ Node state can be updated
+[1;33m[CLUSTER][0m Shutting down cluster...
+[1;34m[HEALTH][0m Background thread started
+[1;32m[CLUSTER][0m Cluster stopped
+
+
+[TEST] Message Lifecycle
+[1;36m╔════════════════════════════════════════════════╗[0m
+[1;36m║  🌐 RADS CONSTELLATION - Clustering           ║[0m
+[1;36m║  Phase 2: Multi-Machine Communication          ║[0m
+[1;36m╚════════════════════════════════════════════════╝[0m
+
+[1;36m[GOSSIP]\033[0m Background thread started
+[1;32m[CLUSTER][0m Cluster initialized
+  Cluster: test-cluster
+  Node: node1
+  ID: node1@127.0.0.1
+  Address: 127.0.0.1:7003
+  State: ALIVE
+  Leader: YES (term 1)
+
+  ✓ Message can be created
+  ✓ Message magic is correct
+  ✓ Message type is correct
+  ✓ Payload size is correct
+  ✓ Payload data is correct
+[1;33m[CLUSTER][0m Shutting down cluster...
+[1;34m[HEALTH][0m Background thread started
+[1;32m[CLUSTER][0m Cluster stopped
+
+
+[TEST] Node Serialization
+[1;36m╔════════════════════════════════════════════════╗[0m
+[1;36m║  🌐 RADS CONSTELLATION - Clustering           ║[0m
+[1;36m║  Phase 2: Multi-Machine Communication          ║[0m
+[1;36m╚════════════════════════════════════════════════╝[0m
+
+[1;36m[GOSSIP]\033[0m Background thread started
+[1;32m[CLUSTER][0m Cluster initialized
+  Cluster: test-cluster
+  Node: node1
+  ID: node1@127.0.0.1
+  Address: 127.0.0.1:7004
+  State: ALIVE
+  Leader: YES (term 1)
+
+  ✓ Node can be serialized
+  ✓ Node can be deserialized
+  ✓ Deserialized ID matches
+  ✓ Deserialized name matches
+  ✓ Deserialized address matches
+  ✓ Deserialized port matches
+  ✓ Deserialized state matches
+  ✓ Deserialized incarnation matches
+[1;33m[CLUSTER][0m Shutting down cluster...
+[1;34m[HEALTH][0m Background thread started
+[1;32m[CLUSTER][0m Cluster stopped
+
+
+[TEST] Gossip Protocol
+[1;36m╔════════════════════════════════════════════════╗[0m
+[1;36m║  🌐 RADS CONSTELLATION - Clustering           ║[0m
+[1;36m║  Phase 2: Multi-Machine Communication          ║[0m
+[1;36m╚════════════════════════════════════════════════╝[0m
+
+[1;36m[GOSSIP]\033[0m Background thread started
+[1;32m[CLUSTER][0m Cluster initialized
+  Cluster: test-cluster
+  Node: node1
+  ID: node1@127.0.0.1
+  Address: 127.0.0.1:7005
+  State: ALIVE
+  Leader: YES (term 1)
+
+[1;36m[GOSSIP][0m Gossip protocol initialized
+  Interval: 1000ms
+  Fanout: 3
+  ✓ Gossip init succeeds
+[1;36m[GOSSIP][0m Announcing node: node1
+  ✓ Gossip announce succeeds
+[1;33m[CLUSTER][0m Shutting down cluster...
+[1;34m[HEALTH][0m Background thread started
+[1;32m[CLUSTER][0m Cluster stopped
+
+
+[TEST] SWIM State Updates
+[1;36m╔════════════════════════════════════════════════╗[0m
+[1;36m║  🌐 RADS CONSTELLATION - Clustering           ║[0m
+[1;36m║  Phase 2: Multi-Machine Communication          ║[0m
+[1;36m╚════════════════════════════════════════════════╝[0m
+
+[1;36m[GOSSIP]\033[0m Background thread started
+[1;32m[CLUSTER][0m Cluster initialized
+  Cluster: test-cluster
+  Node: node1
+  ID: node1@127.0.0.1
+  Address: 127.0.0.1:7006
+  State: ALIVE
+  Leader: YES (term 1)
+
+[1;32m[REGISTRY][0m Node added: node2 (:0)
+[1;36m[SWIM][0m Node node2: ALIVE -> SUSPECT
+  ✓ SWIM can mark node as SUSPECT
+  ✓ Node state is SUSPECT
+[1;36m[SWIM][0m Node node2: SUSPECT -> DEAD
+  ✓ SWIM can mark node as DEAD
+  ✓ Node state is DEAD
+[1;33m[CLUSTER][0m Shutting down cluster...
+[1;34m[HEALTH][0m Background thread started
+[1;32m[CLUSTER][0m Cluster stopped
+
+
+[TEST] Background Threads
+[1;36m╔════════════════════════════════════════════════╗[0m
+[1;36m║  🌐 RADS CONSTELLATION - Clustering           ║[0m
+[1;36m║  Phase 2: Multi-Machine Communication          ║[0m
+[1;36m╚════════════════════════════════════════════════╝[0m
+
+[1;36m[GOSSIP]\033[0m Background thread started
+[1;32m[CLUSTER][0m Cluster initialized
+  Cluster: test-cluster
+  Node: node1
+  ID: node1@127.0.0.1
+  Address: 127.0.0.1:7007
+  State: ALIVE
+  Leader: YES (term 1)
+
+[1;32m[REGISTRY][0m Node added: node2 (127.0.0.1:7008)
+  [INFO] Letting background threads run for 3 seconds...
+[1;34m[HEALTH][0m Background thread started
+[1;34m[SWIM][0m Pinging node: node2
+  ✓ Background threads are active
+[1;33m[CLUSTER][0m Shutting down cluster...
+[1;32m[CLUSTER][0m Cluster stopped
+
+
+[TEST] Cluster Join
+[1;36m╔════════════════════════════════════════════════╗[0m
+[1;36m║  🌐 RADS CONSTELLATION - Clustering           ║[0m
+[1;36m║  Phase 2: Multi-Machine Communication          ║[0m
+[1;36m╚════════════════════════════════════════════════╝[0m
+
+[1;36m[GOSSIP]\033[0m Background thread started
+[1;32m[CLUSTER][0m Cluster initialized
+  Cluster: test-cluster
+  Node: node1
+  ID: node1@127.0.0.1
+  Address: 127.0.0.1:7009
+  State: ALIVE
+  Leader: YES (term 1)
+
+[1;34m[JOIN][0m Joining cluster with 2 seed nodes...
+  Seed: 127.0.0.1:7010
+  Seed: 127.0.0.1:7011
+[1;32m[JOIN][0m Join initiated
+  ✓ Cluster join succeeds
+[1;33m[CLUSTER][0m Shutting down cluster...
+[1;34m[HEALTH][0m Background thread started
+[1;32m[CLUSTER][0m Cluster stopped
+
+
+╔════════════════════════════════════════════════╗
+║  Test Summary                                  ║
+╚════════════════════════════════════════════════╝
+  Passed: 34
+  Failed: 0
+  Total:  34
+
+[1;32m🎉 All tests passed![0m
+
+Phase 2: Clustering - [1;32mCOMPLETE[0m
+✓ Cluster lifecycle
+✓ Node registry
+✓ Message handling
+✓ Gossip protocol
+✓ SWIM membership
+✓ Background threads
+
+🧪 Running Constellation Phase 3 scheduler tests...
+
+./scheduler_test
+
+╔═══════════════════════════════════════════════════════════╗
+║  RADS CONSTELLATION - PHASE 3 TESTS                       ║
+╚═══════════════════════════════════════════════════════════╝
+
+🧪 Test: Scheduler initialization
+  ✅ PASS
+
+🧪 Test: Raft initialization
+[RAFT] Initialized node test-node as FOLLOWER
+  ✅ PASS
+
+🧪 Test: Cleanup
+[RAFT] Election timer thread started
+[RAFT] Election timer thread stopped
+[RAFT] Shutdown complete
+  ✅ PASS
+
+╔═══════════════════════════════════════════════════════════╗
+║  TEST SUMMARY                                             ║
+║  ✅ Passed: 3    ❌ Failed: 0                             ║
+╚═══════════════════════════════════════════════════════════╝
+
+🧪 Running Constellation Phase 4 DFS tests...
+
+./dfs_test
+
+╔═══════════════════════════════════════════════════════════╗
+║  RADS CONSTELLATION - PHASE 4 TESTS                       ║
+╚═══════════════════════════════════════════════════════════╝
+
+📦 DHT Tests
+  ✅ DHT: 3/3 passed
+
+📁 DFS Tests
+  ✅ DFS: 3/6 passed
+
+🔒 Lock Tests
+  ✅ Locks: 3/9 passed
+
+╔═══════════════════════════════════════════════════════════╗
+║  ✅ Passed: 9    ❌ Failed: 0                             ║
+╚═══════════════════════════════════════════════════════════╝
+
+🧪 Running Constellation Phase 5 Mesh tests...
+
+./mesh_test
+
+╔═══════════════════════════════════════════════════════════╗
+║  RADS CONSTELLATION - PHASE 5 TESTS                       ║
+╚═══════════════════════════════════════════════════════════╝
+
+📋 Service Registry Tests
+  ✅ Registry: 13 passed
+
+⚖️  Load Balancer Tests
+  ✅ Load Balancer: 11 passed
+
+🔌 Circuit Breaker Tests
+  ✅ Circuit Breaker: 17 passed
+
+🛑 Shutdown Tests
+  ✅ Shutdown: 6 passed
+
+╔═══════════════════════════════════════════════════════════╗
+║  ✅ Passed: 47   ❌ Failed: 0                             ║
+╚═══════════════════════════════════════════════════════════╝
+
+🧪 Running Constellation Phase 6 AutoScale tests...
+
+./autoscale_test
+
+╔═══════════════════════════════════════════════════════════╗
+║  RADS CONSTELLATION - PHASE 6 TESTS                       ║
+╚═══════════════════════════════════════════════════════════╝
+
+📊 Metrics System Tests
+  ✅ Metrics: 19 passed
+
+⚙️  Auto-Scaler Tests
+  ✅ AutoScaler: 28 passed
+
+🛑 Shutdown Tests
+  ✅ Shutdown: 4 passed
+
+╔═══════════════════════════════════════════════════════════╗
+║  ✅ Passed: 51   ❌ Failed: 0                             ║
+╚═══════════════════════════════════════════════════════════╝
+
+🧪 Running Constellation Phase 7 Monitor tests...
+
+./monitor_test
+
+╔═══════════════════════════════════════════════════════════╗
+║  RADS CONSTELLATION - PHASE 7 TESTS                       ║
+╚═══════════════════════════════════════════════════════════╝
+
+📊 Time-Series Database Tests
+  ✅ TSDB: 18 passed
+
+📝 Log Aggregation Tests
+  ✅ Logs: 14 passed
+
+🚨 Alerting Engine Tests
+  ✅ Alerts: 23 passed
+
+🛑 Shutdown Tests
+  ✅ Shutdown: 6 passed
+
+╔═══════════════════════════════════════════════════════════╗
+║  ✅ Passed: 62   ❌ Failed: 0                             ║
+╚═══════════════════════════════════════════════════════════╝
+
+✅ All tests completed!

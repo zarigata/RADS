@@ -5,6 +5,7 @@
 # Phase 4: Distributed Filesystem
 # Phase 5: Service Mesh
 # Phase 6: Auto-Scaling
+# Phase 7: Monitoring & Observability
 
 CC = gcc
 CFLAGS = -Wall -Wextra -O2 -g -std=gnu11
@@ -20,8 +21,9 @@ CONSENSUS_SRC = consensus/raft.c
 DFS_SRC = dfs/dht.c dfs/dfs.c dfs/locks.c
 MESH_SRC = mesh/registry.c mesh/loadbalancer.c mesh/circuit.c
 AUTOSCALE_SRC = autoscale/metrics.c autoscale/scaler.c
+MONITOR_SRC = monitor/tsdb.c monitor/logs.c monitor/alerts.c
 
-ALL_SRC = $(CORE_SRC) $(ISOLATION_SRC) $(RESOURCES_SRC) $(CLUSTER_SRC) $(SCHEDULER_SRC) $(CONSENSUS_SRC) $(DFS_SRC) $(MESH_SRC) $(AUTOSCALE_SRC)
+ALL_SRC = $(CORE_SRC) $(ISOLATION_SRC) $(RESOURCES_SRC) $(CLUSTER_SRC) $(SCHEDULER_SRC) $(CONSENSUS_SRC) $(DFS_SRC) $(MESH_SRC) $(AUTOSCALE_SRC) $(MONITOR_SRC)
 ALL_OBJ = $(ALL_SRC:.c=.o)
 
 # Output library
@@ -34,10 +36,11 @@ SCHEDULER_TEST = scheduler_test
 DFS_TEST = dfs_test
 MESH_TEST = mesh_test
 AUTOSCALE_TEST = autoscale_test
+MONITOR_TEST = monitor_test
 
-.PHONY: all clean test test-cluster test-scheduler test-dfs test-mesh test-autoscale test-all
+.PHONY: all clean test test-cluster test-scheduler test-dfs test-mesh test-autoscale test-monitor test-all
 
-all: $(LIB_NAME) $(TEST_PROG) $(CLUSTER_TEST) $(SCHEDULER_TEST) $(DFS_TEST) $(MESH_TEST) $(AUTOSCALE_TEST)
+all: $(LIB_NAME) $(TEST_PROG) $(CLUSTER_TEST) $(SCHEDULER_TEST) $(DFS_TEST) $(MESH_TEST) $(AUTOSCALE_TEST) $(MONITOR_TEST)
 
 # Build static library
 $(LIB_NAME): $(ALL_OBJ)
@@ -88,6 +91,13 @@ $(AUTOSCALE_TEST): test_autoscale.c $(LIB_NAME)
 	@echo "✅ AutoScale test program built: $(AUTOSCALE_TEST)"
 	@echo ""
 
+# Build Monitor test program
+$(MONITOR_TEST): test_monitor.c $(LIB_NAME)
+	@echo "🔨 Building Monitor test program..."
+	$(CC) $(CFLAGS) -o $@ $< -L. -lconstellation $(LDFLAGS)
+	@echo "✅ Monitor test program built: $(MONITOR_TEST)"
+	@echo ""
+
 # Compile source files
 %.o: %.c constellation.h
 	@echo "🔧 Compiling $<..."
@@ -95,7 +105,7 @@ $(AUTOSCALE_TEST): test_autoscale.c $(LIB_NAME)
 
 clean:
 	@echo "🧹 Cleaning build artifacts..."
-	rm -f $(ALL_OBJ) $(LIB_NAME) $(TEST_PROG) $(CLUSTER_TEST) $(SCHEDULER_TEST) $(DFS_TEST) $(MESH_TEST) $(AUTOSCALE_TEST)
+	rm -f $(ALL_OBJ) $(LIB_NAME) $(TEST_PROG) $(CLUSTER_TEST) $(SCHEDULER_TEST) $(DFS_TEST) $(MESH_TEST) $(AUTOSCALE_TEST) $(MONITOR_TEST)
 	@echo "✅ Clean complete"
 	@echo ""
 
@@ -129,7 +139,12 @@ test-autoscale: $(AUTOSCALE_TEST)
 	@echo ""
 	./$(AUTOSCALE_TEST)
 
-test-all: test test-cluster test-scheduler test-dfs test-mesh test-autoscale
+test-monitor: $(MONITOR_TEST)
+	@echo "🧪 Running Constellation Phase 7 Monitor tests..."
+	@echo ""
+	./$(MONITOR_TEST)
+
+test-all: test test-cluster test-scheduler test-dfs test-mesh test-autoscale test-monitor
 	@echo "✅ All tests completed!"
 
 help:
@@ -143,7 +158,8 @@ help:
 	@echo "  make test-dfs        - Build and run Phase 4 DFS tests"
 	@echo "  make test-mesh       - Build and run Phase 5 Mesh tests"
 	@echo "  make test-autoscale  - Build and run Phase 6 AutoScale tests"
-	@echo "  make test-all        - Run all tests (Phase 1, 2, 3, 4, 5, 6)"
+	@echo "  make test-monitor    - Build and run Phase 7 Monitor tests"
+	@echo "  make test-all        - Run all tests (Phase 1, 2, 3, 4, 5, 6, 7)"
 	@echo "  make clean           - Remove build artifacts"
 	@echo "  make help            - Show this help"
 	@echo ""
@@ -155,3 +171,4 @@ help:
 	@echo "  $(DFS_TEST)              - Phase 4 DFS test program"
 	@echo "  $(MESH_TEST)             - Phase 5 Mesh test program"
 	@echo "  $(AUTOSCALE_TEST)        - Phase 6 AutoScale test program"
+	@echo "  $(MONITOR_TEST)          - Phase 7 Monitor test program"

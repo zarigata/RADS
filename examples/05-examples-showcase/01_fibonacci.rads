@@ -1,0 +1,42 @@
+// 01_fibonacci.rads
+// Calculate Fibonacci sequence using recursion and iteration
+
+blast fibonacci_recursive(i32 n) -> i32 {
+    if (n <= 1) {
+        return n;
+    }
+    return fibonacci_recursive(n - 1) + fibonacci_recursive(n - 2);
+}
+
+blast fibonacci_iterative(i32 n) -> i32 {
+    if (n <= 1) {
+        return n;
+    }
+    
+    turbo i32 prev = 0;
+    turbo i32 curr = 1;
+    turbo i32 i = 2;
+    
+    loop (i <= n) {
+        turbo i32 next = prev + curr;
+        prev = curr;
+        curr = next;
+        i = i + 1;
+    }
+    
+    return curr;
+}
+
+blast main() {
+    echo("=== Fibonacci Sequence ===");
+    echo("First 10 numbers (recursive):");
+    
+    cruise (i in 0..10) {
+        echo("F(" + i + ") = " + fibonacci_recursive(i));
+    }
+    
+    echo("\nFirst 15 numbers (iterative - faster!):");
+    cruise (i in 0..15) {
+        echo("F(" + i + ") = " + fibonacci_iterative(i));
+    }
+}

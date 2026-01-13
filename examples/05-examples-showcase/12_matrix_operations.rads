@@ -1,0 +1,69 @@
+// 12_matrix_operations.rads
+// Basic matrix operations using 2D arrays
+
+blast print_matrix(array<array<i32>> matrix, i32 rows, i32 cols) {
+    turbo i32 i = 0;
+    loop (i < rows) {
+        str row = "[ ";
+        turbo i32 j = 0;
+        loop (j < cols) {
+            row = row + matrix[i][j];
+            if (j < cols - 1) {
+                row = row + ", ";
+            }
+            j = j + 1;
+        }
+        row = row + " ]";
+        echo(row);
+        i = i + 1;
+    }
+}
+
+blast add_matrices(array<array<i32>> a, array<array<i32>> b, 
+                   array<array<i32>> result, i32 rows, i32 cols) {
+    turbo i32 i = 0;
+    loop (i < rows) {
+        turbo i32 j = 0;
+        loop (j < cols) {
+            result[i][j] = a[i][j] + b[i][j];
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+}
+
+blast transpose_matrix(array<array<i32>> matrix, array<array<i32>> result, 
+                       i32 rows, i32 cols) {
+    turbo i32 i = 0;
+    loop (i < rows) {
+        turbo i32 j = 0;
+        loop (j < cols) {
+            result[j][i] = matrix[i][j];
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+}
+
+blast main() {
+    echo("=== Matrix Operations ===");
+    
+    array<array<i32>> matrix1 = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+    array<array<i32>> matrix2 = [[9, 8, 7], [6, 5, 4], [3, 2, 1]];
+    array<array<i32>> result = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    array<array<i32>> transposed = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    
+    echo("\nMatrix 1:");
+    print_matrix(matrix1, 3, 3);
+    
+    echo("\nMatrix 2:");
+    print_matrix(matrix2, 3, 3);
+    
+    echo("\nMatrix 1 + Matrix 2:");
+    add_matrices(matrix1, matrix2, result, 3, 3);
+    print_matrix(result, 3, 3);
+    
+    echo("\nTranspose of Matrix 1:");
+    transpose_matrix(matrix1, transposed, 3, 3);
+    print_matrix(transposed, 3, 3);
+}
