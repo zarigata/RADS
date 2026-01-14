@@ -13,6 +13,7 @@
 <body>
     <div class="bg-blur blur-1"></div>
     <div class="bg-blur blur-2"></div>
+    <div class="bg-blur blur-3"></div>
 
     <header>
         <div class="header-inner">
@@ -23,8 +24,8 @@
                 <a href="index.html" class="active">Home</a>
                 <a href="guide.html">Guide</a>
                 <a href="documentation.html">Docs</a>
+                <a href="playground.html" style="background: linear-gradient(135deg, rgba(0,217,255,0.15), rgba(157,78,221,0.15)); color: var(--accent-purple); font-weight: 700;">🎮 Try Me!</a>
                 <a href="examples.html">Examples</a>
-                <a href="EXAMPLES.html">20 Examples</a>
                 <a href="compare.html">Compare</a>
                 <a href="releases.html">Releases</a>
             </nav>
@@ -33,34 +34,52 @@
 
     <main>
         <section class="hero-sub">
-            <h1>Blast Through Data at <br>Turbo Speed!</h1>
-            <p style="font-size: 1.2rem; max-width: 800px; margin: 0 auto 1rem;">The ultimate high-performance language for microservers, IoT, and high-speed data processing. Designed with a premium retro-futuristic soul.</p>
-            <div style="display: flex; gap: 2rem; justify-content: center; margin: 2rem auto; flex-wrap: wrap; max-width: 600px;">
-                <div style="text-align: center;">
-                    <div style="font-size: 2.5rem; font-weight: 700; color: var(--primary-blue);">2-5x</div>
-                    <div style="color: var(--text-muted); font-size: 0.9rem;">Faster than Python</div>
+            <h1 style="animation: float 6s ease-in-out infinite;">Blast Through Data at <br>Turbo Speed! 🚀</h1>
+            <p style="font-size: 1.3rem; max-width: 850px; margin: 0 auto 1rem; line-height: 1.8;">The ultimate high-performance language for microservers, IoT, and high-speed data processing. <strong style="background: linear-gradient(135deg, #0078D7, #00D9FF); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Designed with a premium retro-futuristic soul.</strong></p>
+            <div style="display: flex; gap: 2.5rem; justify-content: center; margin: 2.5rem auto; flex-wrap: wrap; max-width: 700px;">
+                <div style="text-align: center; background: rgba(255,255,255,0.5); backdrop-filter: blur(10px); padding: 1.5rem 2rem; border-radius: 20px; border: 2px solid rgba(0,120,215,0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.1); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px) scale(1.05)'; this.style.boxShadow='0 12px 32px rgba(0,120,215,0.3)'" onmouseout="this.style.transform=''; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.1)'">
+                    <div style="font-size: 3rem; font-weight: 700; background: linear-gradient(135deg, #0078D7, #00D9FF); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">2-5x</div>
+                    <div style="color: var(--text-muted); font-size: 1rem; font-weight: 600;">⚡ Faster than Python</div>
                 </div>
-                <div style="text-align: center;">
-                    <div style="font-size: 2.5rem; font-weight: 700; color: var(--secondary-green);">~C</div>
-                    <div style="color: var(--text-muted); font-size: 0.9rem;">Performance Level</div>
+                <div style="text-align: center; background: rgba(255,255,255,0.5); backdrop-filter: blur(10px); padding: 1.5rem 2rem; border-radius: 20px; border: 2px solid rgba(76,175,80,0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.1); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px) scale(1.05)'; this.style.boxShadow='0 12px 32px rgba(76,175,80,0.3)'" onmouseout="this.style.transform=''; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.1)'">
+                    <div style="font-size: 3rem; font-weight: 700; background: linear-gradient(135deg, #4CAF50, #7FFF00); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">~C</div>
+                    <div style="color: var(--text-muted); font-size: 1rem; font-weight: 600;">🎯 Performance Level</div>
                 </div>
-                <div style="text-align: center;">
-                    <div style="font-size: 2.5rem; font-weight: 700; color: var(--accent-cyan);"><10ms</div>
-                    <div style="color: var(--text-muted); font-size: 0.9rem;">Startup Time</div>
+                <div style="text-align: center; background: rgba(255,255,255,0.5); backdrop-filter: blur(10px); padding: 1.5rem 2rem; border-radius: 20px; border: 2px solid rgba(0,217,255,0.3); box-shadow: 0 8px 24px rgba(0,0,0,0.1); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-5px) scale(1.05)'; this.style.boxShadow='0 12px 32px rgba(0,217,255,0.3)'" onmouseout="this.style.transform=''; this.style.boxShadow='0 8px 24px rgba(0,0,0,0.1)'">
+                    <div style="font-size: 3rem; font-weight: 700; background: linear-gradient(135deg, #00D9FF, #9D4EDD); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">&lt;10ms</div>
+                    <div style="color: var(--text-muted); font-size: 1rem; font-weight: 600;">⚡ Startup Time</div>
                 </div>
             </div>
-            <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                <a href="guide.html" class="cta-button">Get Started Now</a>
-                <a href="https://github.com/zarigata/rads" class="cta-button secondary">Explore Source</a>
+            <div style="margin-top: 2.5rem; display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap;">
+                <a href="guide.html" class="cta-button">🚀 Get Started Now</a>
+                <a href="playground.html" class="cta-button" style="background: linear-gradient(135deg, #9D4EDD, #FF006E);">🎮 Try Live Demo</a>
+                <a href="https://github.com/zarigata/rads" class="cta-button secondary">⭐ Explore Source</a>
             </div>
             <div style="margin-top: 4rem;">
-                <img src="assets/branding/emblem.png" alt="RADS Emblem" class="float-img" style="max-width: 250px; animation: float 6s ease-in-out infinite;">
+                <img src="assets/branding/emblem.png" alt="RADS Emblem" class="float-img" style="max-width: 280px; animation: float 6s ease-in-out infinite; filter: drop-shadow(0 10px 30px rgba(0,217,255,0.3));">
+            </div>
+        </section>
+
+        <section id="quick-start" style="margin-top: 5rem;">
+            <div class="glass-card" style="background: linear-gradient(135deg, rgba(0,217,255,0.1), rgba(157,78,221,0.05)); border-color: rgba(0,217,255,0.4);">
+                <h2 style="text-align: center; margin-bottom: 2rem;">⚡ Quick Start</h2>
+                <p style="text-align: center; font-size: 1.1rem; color: var(--text-muted); margin-bottom: 2rem;">Get RADS running on your machine in seconds</p>
+                <div style="background: rgba(30,30,30,0.95); border-radius: 16px; padding: 2rem; max-width: 700px; margin: 0 auto;">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                        <span style="color: #4CAF50; font-family: 'Fira Code', monospace; font-weight: 700;">$</span>
+                        <code style="color: #00D9FF; font-family: 'Fira Code', monospace; font-size: 1.1rem; background: none;">curl -sSL https://rads-lang.org/install.sh | bash</code>
+                    </div>
+                    <div style="color: #888; font-size: 0.9rem; font-family: 'Fira Code', monospace; margin-top: 1rem;"># Or download from GitHub releases</div>
+                </div>
+                <div style="text-align: center; margin-top: 2rem;">
+                    <a href="guide.html" class="cta-button secondary">📖 Full Installation Guide</a>
+                </div>
             </div>
         </section>
 
         <section id="features">
             <div class="glass-card">
-                <h2 style="text-align: center; margin-bottom: 3rem;">Why RADS?</h2>
+                <h2 style="text-align: center; margin-bottom: 3rem;">✨ Why RADS?</h2>
                 <div class="compare-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
                     <div class="feature-card" style="text-align: center;">
                         <span style="font-size: 3rem;">⚡</span>
@@ -165,8 +184,9 @@
 }</code></pre>
                 </div>
                 <div style="margin-top: 2rem; text-align: center;">
-                    <a href="examples.html" class="cta-button">View More Examples</a>
-                    <a href="documentation.html" class="cta-button secondary" style="margin-left: 1rem;">Read Documentation</a>
+                    <a href="playground.html" class="cta-button" style="background: linear-gradient(135deg, #4CAF50, #7FFF00);">🎮 Try in Browser</a>
+                    <a href="examples.html" class="cta-button" style="margin-left: 1rem;">📚 View More Examples</a>
+                    <a href="documentation.html" class="cta-button secondary" style="margin-left: 1rem;">📖 Read Documentation</a>
                 </div>
             </div>
         </section>
@@ -254,6 +274,34 @@
                         </tbody>
                     </table>
                     <p style="text-align: center; margin-top: 2rem; color: var(--text-muted); font-size: 0.9rem;">* Benchmarks run on Intel i7-12700K, 32GB RAM, Ubuntu 22.04. Results may vary.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="language-highlights" style="margin-top: 4rem;">
+            <div class="glass-card" style="background: linear-gradient(135deg, rgba(157,78,221,0.08), rgba(255,0,110,0.05));">
+                <h2 style="text-align: center; margin-bottom: 3rem;">💎 Language Highlights</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                    <div style="background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); padding: 2rem; border-radius: 16px; border: 2px solid rgba(0,120,215,0.2);">
+                        <div style="font-size: 2.5rem; margin-bottom: 1rem;">🎯</div>
+                        <h3 style="color: var(--primary-blue); margin-bottom: 1rem;">Zero-Cost Abstractions</h3>
+                        <p>Write high-level code that compiles down to efficient machine code. No runtime overhead.</p>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); padding: 2rem; border-radius: 16px; border: 2px solid rgba(76,175,80,0.2);">
+                        <div style="font-size: 2.5rem; margin-bottom: 1rem;">🔒</div>
+                        <h3 style="color: var(--secondary-green); margin-bottom: 1rem;">Memory Safe</h3>
+                        <p>Automatic memory management with optional manual control. No buffer overflows or memory leaks.</p>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); padding: 2rem; border-radius: 16px; border: 2px solid rgba(0,217,255,0.2);">
+                        <div style="font-size: 2.5rem; margin-bottom: 1rem;">⚡</div>
+                        <h3 style="color: var(--accent-cyan); margin-bottom: 1rem;">Async by Default</h3>
+                        <p>Built-in async/await makes concurrent programming natural and efficient.</p>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); padding: 2rem; border-radius: 16px; border: 2px solid rgba(157,78,221,0.2);">
+                        <div style="font-size: 2.5rem; margin-bottom: 1rem;">🔌</div>
+                        <h3 style="color: var(--accent-purple); margin-bottom: 1rem;">C Interoperability</h3>
+                        <p>Seamlessly call C libraries and extend with native plugins. Best of both worlds.</p>
+                    </div>
                 </div>
             </div>
         </section>

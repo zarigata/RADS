@@ -1,27 +1,333 @@
-# Build artifacts
+# ============================================
+# RADS Programming Language - .gitignore
+# ============================================
+
+# ---------------------------------------------
+# Build Artifacts & Compiled Files
+# ---------------------------------------------
 build/
 bin/
 release/
+dist/
+out/
+target/
+
+# RADS executables
 rads
 rstar
 rpm
 rads-convert
+rads-repl
+rads-debug
+
+# Compiled object files
 *.o
+*.obj
+*.ko
+*.elf
 *.rbc
 
-# Temporary files
-*.tmp
-*.log
-output.txt
-output2.txt
-build_error.txt
-build2_error.txt
-build_and_test.sh
-tests/*.txt
-scripts/*.log
+# Compiled dynamic libraries
+*.so
+*.so.*
+*.dylib
+*.dll
 
-# System files
+# Compiled static libraries
+*.a
+*.lib
+*.la
+*.lo
+
+# Precompiled headers
+*.gch
+*.pch
+
+# Linker output
+*.ilk
+*.map
+*.exp
+*.lst
+
+# Assembly files (generated)
+*.s
+*.asm
+
+# Core dumps
+core
+core.*
+*.core
+vgcore.*
+
+# ---------------------------------------------
+# Dependency & Package Management
+# ---------------------------------------------
+*.d
+.deps/
+.libs/
+*.la
+*.lai
+
+# ---------------------------------------------
+# Testing & Coverage
+# ---------------------------------------------
+tests/*.txt
+tests/output/
+tests/temp/
+tests/*.log
+test_results/
+coverage/
+*.gcov
+*.gcda
+*.gcno
+*.lcov
+htmlcov/
+
+# Valgrind output
+valgrind-*.log
+*.memcheck
+
+# ---------------------------------------------
+# Temporary & Log Files
+# ---------------------------------------------
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+*.bak
+*.orig
+*.log
+*.tlog
+
+# Specific temp files
+output.txt
+output*.txt
+build_error.txt
+build*_error.txt
+error.log
+debug.log
+
+# Script logs
+scripts/*.log
+scripts/*.txt
+scripts/build_log.txt
+
+# ---------------------------------------------
+# IDE & Editor Files
+# ---------------------------------------------
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# Windsurf (keep rules directory)
+.windsurf/*
+!.windsurf/rules/
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+cmake-build-*/
+
+# Vim
+*.swp
+*.swo
+*.swn
+.*.sw?
+Session.vim
+
+# Emacs
+*~
+\#*\#
+.\#*
+.emacs.desktop
+.emacs.desktop.lock
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Atom
+.atom/
+
+# Eclipse
+.cproject
+.project
+.settings/
+
+# Xcode
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+
+# ---------------------------------------------
+# OS-Specific Files
+# ---------------------------------------------
+
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
 Thumbs.db
-.claude/
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+*.stackdump
+
+# Linux
+.directory
+.Trash-*
+.nfs*
+
+# NTFS ghost files
+.ghost-ntfs-3g-*
+
+# ---------------------------------------------
+# Build System Files
+# ---------------------------------------------
+Makefile.in
+aclocal.m4
+autom4te.cache/
+compile
+config.guess
+config.h
+config.h.in
+config.log
+config.status
+config.sub
+configure
+depcomp
+install-sh
+libtool
+ltmain.sh
+missing
+stamp-h1
+.dirstamp
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+_deps/
+
+# Meson
+builddir/
+.mesonpy-*
+
+# ---------------------------------------------
+# Documentation Build
+# ---------------------------------------------
+docs/_build/
+docs/.doctrees/
+site/
+_site/
+.jekyll-cache/
+.jekyll-metadata
+
+# Doxygen
+html/
+latex/
+Doxyfile.bak
+
+# ---------------------------------------------
+# Database & Cache Files
+# ---------------------------------------------
 *.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+.cache/
+__pycache__/
+*.pyc
+*.pyo
+
+# ---------------------------------------------
+# Security & Credentials
+# ---------------------------------------------
+*.key
+*.pem
+*.crt
+*.cer
+*.p12
+*.pfx
+.env
+.env.local
+secrets.txt
+credentials.json
+*.secret
+
+# ---------------------------------------------
+# Archives & Compressed Files
+# ---------------------------------------------
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.rar
+*.7z
+*.gz
+*.bz2
+*.xz
+
+# ---------------------------------------------
+# RADS-Specific Files
+# ---------------------------------------------
+
+# RADS bytecode/intermediate files
+*.radc
+*.radso
+*.radi
+
+# RADS package cache
+.rads-cache/
+.rads-packages/
+
+# RADS build scripts (generated)
+build_and_test.sh
+
+# RADS plugin builds
+plugins/*/build/
+plugins/*/*.so
+plugins/*/*.dll
+plugins/*/*.dylib
+
+# ---------------------------------------------
+# Constellation Cluster (RADS distributed system)
+# ---------------------------------------------
+src/constellation/*.o
+src/constellation/cluster/*.log
+src/constellation/consensus/raft_*.dat
+
+# ---------------------------------------------
+# Miscellaneous
+# ---------------------------------------------
+*.pid
+*.seed
+*.pid.lock
+.npm
+node_modules/
+tags
+TAGS
+.tags
+.ctags
+cscope.out
+cscope.files
+.gdb_history
