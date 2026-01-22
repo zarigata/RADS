@@ -17,10 +17,10 @@
 // JavaScript Engine State (using embedded interpreter approach)
 typedef struct {
     bool initialized;
-    char** global_vars;
-    char** global_values;
     int global_count;
     int global_capacity;
+    char** global_vars;
+    char** global_values;
 } JSEngine;
 
 static JSEngine* js_engine = NULL;
@@ -59,7 +59,7 @@ static Plugin* plugin_head = NULL;
 // ============================================================================
 
 // Initialize JavaScript engine
-Value native_web_engine_init(struct Interpreter* interp, int argc, Value* args) {
+Value native_web_engine_init(struct Interpreter* __attribute__((unused)) interp, int __attribute__((unused)) argc, Value* __attribute__((unused)) args) {
     if (!js_engine) {
         js_engine = malloc(sizeof(JSEngine));
         js_engine->initialized = true;
@@ -78,7 +78,7 @@ Value native_web_engine_init(struct Interpreter* interp, int argc, Value* args) 
 }
 
 // Execute JavaScript code (simplified - evaluates simple expressions)
-Value native_web_js_eval(struct Interpreter* interp, int argc, Value* args) {
+Value native_web_js_eval(struct Interpreter* __attribute__((unused)) interp, int argc, Value* args) {
     if (argc != 1 || args[0].type != VAL_STRING) {
         fprintf(stderr, "Error: web.js.eval() requires 1 string argument\n");
         Value v = {0};
@@ -189,7 +189,7 @@ static HTMLNode* html_create_node(const char* tag) {
 }
 
 // Parse HTML string (simplified parser)
-Value native_web_html_parse(struct Interpreter* interp, int argc, Value* args) {
+Value native_web_html_parse(struct Interpreter* __attribute__((unused)) interp, int argc, Value* args) {
     if (argc != 1 || args[0].type != VAL_STRING) {
         fprintf(stderr, "Error: web.html.parse() requires 1 string argument\n");
         Value v = {0};
@@ -214,7 +214,7 @@ Value native_web_html_parse(struct Interpreter* interp, int argc, Value* args) {
 }
 
 // Query selector (basic implementation)
-Value native_web_html_querySelector(struct Interpreter* interp, int argc, Value* args) {
+Value native_web_html_querySelector(struct Interpreter* __attribute__((unused)) interp, int argc, Value* args) {
     if (argc != 2) {
         fprintf(stderr, "Error: web.html.querySelector() requires 2 arguments\n");
         Value v = {0};
@@ -235,7 +235,7 @@ Value native_web_html_querySelector(struct Interpreter* interp, int argc, Value*
 // ============================================================================
 
 // Load plugin
-Value native_web_plugin_load(struct Interpreter* interp, int argc, Value* args) {
+Value native_web_plugin_load(struct Interpreter* __attribute__((unused)) interp, int argc, Value* args) {
     if (argc != 1 || args[0].type != VAL_STRING) {
         fprintf(stderr, "Error: web.plugin.load() requires 1 string argument\n");
         Value v = {0};
@@ -279,7 +279,7 @@ Value native_web_plugin_load(struct Interpreter* interp, int argc, Value* args) 
 }
 
 // List installed plugins
-Value native_web_plugin_list(struct Interpreter* interp, int argc, Value* args) {
+Value native_web_plugin_list(struct Interpreter* __attribute__((unused)) interp, int __attribute__((unused)) argc, Value* __attribute__((unused)) args) {
     printf("\033[1;36m[PLUGIN]\033[0m Installed plugins:\n");
 
     Plugin* current = plugin_head;
@@ -302,7 +302,7 @@ Value native_web_plugin_list(struct Interpreter* interp, int argc, Value* args) 
 }
 
 // Install plugin from path
-Value native_web_plugin_install(struct Interpreter* interp, int argc, Value* args) {
+Value native_web_plugin_install(struct Interpreter* __attribute__((unused)) interp, int argc, Value* args) {
     if (argc != 1 || args[0].type != VAL_STRING) {
         fprintf(stderr, "Error: web.plugin.install() requires 1 string argument\n");
         Value v = {0};
@@ -331,7 +331,7 @@ Value native_web_plugin_install(struct Interpreter* interp, int argc, Value* arg
 // ============================================================================
 
 // Parse CSS
-Value native_web_css_parse(struct Interpreter* interp, int argc, Value* args) {
+Value native_web_css_parse(struct Interpreter* __attribute__((unused)) interp, int argc, Value* args) {
     if (argc != 1 || args[0].type != VAL_STRING) {
         fprintf(stderr, "Error: web.css.parse() requires 1 string argument\n");
         Value v = {0};

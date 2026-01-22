@@ -781,7 +781,7 @@ static bool route_registry_add_static(RouteRegistry* reg, const char* prefix, co
     return true;
 }
 
-static RouteNode* route_registry_find(RouteRegistry* reg, const char* path, const char* method) {
+static RouteNode* __attribute__((unused)) route_registry_find(RouteRegistry* reg, const char* path, const char* method) {
     if (!reg || !path) return NULL;
     RouteNode* wildcard = NULL;
     for (RouteNode* cur = reg->head; cur; cur = cur->next) {
@@ -914,14 +914,14 @@ static RouteNode* route_registry_find_with_params(RouteRegistry* reg, const char
 }
 
 // Middleware Implementation
-static MiddlewareChain* middleware_chain_create(void) {
+static MiddlewareChain* __attribute__((unused)) middleware_chain_create(void) {
     MiddlewareChain* chain = calloc(1, sizeof(MiddlewareChain));
     chain->head = NULL;
     chain->count = 0;
     return chain;
 }
 
-static void middleware_chain_add(MiddlewareChain* chain, Value handler) {
+static void __attribute__((unused)) middleware_chain_add(MiddlewareChain* chain, Value handler) {
     if (!chain) return;
     MiddlewareNode* node = calloc(1, sizeof(MiddlewareNode));
     node->handler = clone_value(handler);
@@ -930,7 +930,7 @@ static void middleware_chain_add(MiddlewareChain* chain, Value handler) {
     chain->count++;
 }
 
-static void middleware_chain_free(MiddlewareChain* chain) {
+static void __attribute__((unused)) middleware_chain_free(MiddlewareChain* chain) {
     if (!chain) return;
     MiddlewareNode* cur = chain->head;
     while (cur) {
@@ -943,7 +943,7 @@ static void middleware_chain_free(MiddlewareChain* chain) {
 }
 
 // Cookie Implementation
-static char* parse_cookies(const char* cookie_header) {
+static char* __attribute__((unused)) parse_cookies(const char* cookie_header) {
     // Simply return a copy for now; caller can use cookie_get to parse
     return cookie_header ? strdup(cookie_header) : NULL;
 }
@@ -1092,7 +1092,7 @@ static char* template_render(const char* template_str, RouteParams* vars) {
 }
 
 // Session Management
-static SessionStore* session_store_create(void) {
+static SessionStore* __attribute__((unused)) session_store_create(void) {
     SessionStore* store = calloc(1, sizeof(SessionStore));
     store->head = NULL;
     store->count = 0;
@@ -1110,7 +1110,7 @@ static char* generate_session_id(void) {
     return id;
 }
 
-static Session* session_create(const char* id) {
+static Session* __attribute__((unused)) session_create(const char* id) {
     Session* sess = calloc(1, sizeof(Session));
     sess->id = id ? strdup(id) : generate_session_id();
     sess->keys = NULL;
@@ -1122,7 +1122,7 @@ static Session* session_create(const char* id) {
     return sess;
 }
 
-static Session* session_find(SessionStore* store, const char* id) {
+static Session* __attribute__((unused)) session_find(SessionStore* store, const char* id) {
     if (!store || !id) return NULL;
     for (Session* sess = store->head; sess; sess = sess->next) {
         if (strcmp(sess->id, id) == 0) {
@@ -1133,7 +1133,7 @@ static Session* session_find(SessionStore* store, const char* id) {
     return NULL;
 }
 
-static void session_set(Session* sess, const char* key, const char* value) {
+static void __attribute__((unused)) session_set(Session* sess, const char* key, const char* value) {
     if (!sess || !key || !value) return;
 
     // Check if key already exists
@@ -1153,7 +1153,7 @@ static void session_set(Session* sess, const char* key, const char* value) {
     sess->count++;
 }
 
-static const char* session_get(Session* sess, const char* key) {
+static const char* __attribute__((unused)) session_get(Session* sess, const char* key) {
     if (!sess || !key) return NULL;
     for (int i = 0; i < sess->count; i++) {
         if (strcmp(sess->keys[i], key) == 0) {
@@ -1163,7 +1163,7 @@ static const char* session_get(Session* sess, const char* key) {
     return NULL;
 }
 
-static void session_destroy(SessionStore* store, const char* id) {
+static void __attribute__((unused)) session_destroy(SessionStore* store, const char* id) {
     if (!store || !id) return;
     Session** cur = &store->head;
     while (*cur) {
@@ -1185,7 +1185,7 @@ static void session_destroy(SessionStore* store, const char* id) {
     }
 }
 
-static void session_store_free(SessionStore* store) {
+static void __attribute__((unused)) session_store_free(SessionStore* store) {
     if (!store) return;
     Session* cur = store->head;
     while (cur) {

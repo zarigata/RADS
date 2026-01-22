@@ -6,7 +6,7 @@
 #include "stdlib_db.h"
 
 // ============================================================================
-// RADS v0.0.3 "Butterfly" - SQLite Database Driver
+    // RADS v0.0.5 "CHAMELEON" - SQLite Database Driver
 // ============================================================================
 //
 // Provides elegant database connectivity for building real applications.
@@ -32,31 +32,30 @@ typedef struct {
 static DBHandle* current_db = NULL;
 
 // ============================================================================
-// Helper Functions
+// Database Error Helper
 // ============================================================================
-
 static void print_db_error(const char* message, sqlite3* db) {
-    fprintf(stderr, "\033[1;31mDatabase Error:\033[0m %s\n", message);
-    if (db) {
-        fprintf(stderr, "  SQL Error: %s\n", sqlite3_errmsg(db));
-    }
+    const char* err = sqlite3_errmsg(db);
+    fprintf(stderr, "\033[1;31m[DB ERROR]\033[0m %s: %s\n", message, err ? err : "Unknown error");
 }
 
-static Value create_row_object(sqlite3_stmt* stmt) {
+// ============================================================================
+// Database Row Object Creation (for future use)
+// ============================================================================
+
+static Value __attribute__((unused)) create_row_object(sqlite3_stmt* stmt) {
     // Create a struct-like object representing a database row
     // For now, we'll use a simple approach with a custom type
-    // In the future, this could be enhanced with proper struct support
+    // In future, this could be enhanced with proper struct support
 
     Value row = {0};
     row.type = VAL_NULL; // Placeholder - will implement proper row objects
-
-    int col_count = sqlite3_column_count(stmt);
 
     // For demonstration, we'll just print the row data
     // TODO: Create proper struct instance with column values
 
     return row;
-}
+ }
 
 // ============================================================================
 // db.open(path) - Open database connection

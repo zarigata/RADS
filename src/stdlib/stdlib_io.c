@@ -166,7 +166,7 @@ Value native_io_file_size(struct Interpreter* interp, int argc, Value* args) {
     return v;
 }
 
-Value native_io_read_line(struct Interpreter* interp, int argc, Value* args) {
+Value native_io_read_line(struct Interpreter* __attribute__((unused)) interp, int __attribute__((unused)) argc, Value* __attribute__((unused)) args) {
     (void)interp;
     
     if (argc != 0) {

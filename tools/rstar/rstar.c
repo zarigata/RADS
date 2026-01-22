@@ -275,7 +275,7 @@ RSTAR_INTERNAL void cmd_list(void) {
  * How to upgrade: Resolve plugin.radsmeta entry, chdir to plugin path,
  * set env vars, and spawn rads with forwarded args.
  */
-RSTAR_INTERNAL void cmd_run(const char *package, int argc, char **argv) {
+RSTAR_INTERNAL void cmd_run(const char *package, int __attribute__((unused)) argc, char ** __attribute__((unused)) argv) {
     if (!package) {
         fprintf(stderr, "Error: package name required. Try: rstar run ai-discord-bot -- args\n");
         return;

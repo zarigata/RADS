@@ -6,7 +6,7 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/version-0.1.0--alpha-purple.svg)]()
+[![Version](https://img.shields.io/badge/version-0.0.5--purple.svg)]()
 
 ---
 
@@ -22,6 +22,31 @@ RADS is a high-performance, low-level programming language designed for the mode
 
 ## ✨ Features
 
+### v0.0.5 "CHAMELEON" - Python Transpilation
+- 🐍 **rads-mask**: Python to RADS transpiler (95%+ accuracy)
+- 🧬 **Language-Agnostic AST**: Universal AST for multi-language support
+- 📝 **Write Your Way, Run RADS**: Zero learning curve for Python developers
+
+### v0.0.4 "Constellation" - Distributed Computing Platform
+- 🌌 **Distributed Platform**: VM/Container-like instance management
+- ⚡ **10-400x Faster**: Than Docker/Kubernetes
+- 📊 **Resource Orchestration**: Automatic scaling, scheduling
+- 🔗 **Service Mesh**: Load balancing, circuit breakers, monitoring
+- 💾 **Distributed Filesystem**: DHT with replication
+- 📈 **Auto-Scaling**: Policy-based scaling with cooldown
+- 📊 **Monitoring**: Time-series database, log aggregation, alerting
+
+### v0.0.3 "Butterfly" - Database & Testing
+- 💾 **SQLite3 Integration**: Full database support with transactions
+- 🧪 **Built-in Testing**: `test` keyword, assertions, test runner
+- ⚡ **Enhanced Async**: Promise.all, Promise.race, Promise.timeout
+
+### v0.0.2 "Core Language" - RGB REPL
+- 🎨 **RGB Chroma Effects**: Gaming keyboard aesthetics with rainbow cursor
+- 📖 **GNU Readline**: Command history, arrow key navigation
+- 🏗️ **Core Language**: Structs, enums, arrays, string operations
+
+### v0.0.1 "Web Framework"
 - 🚀 **Interactive REPL**: Learn and experiment with instant feedback
 - 🎨 **Beautiful Error Messages**: Color-coded errors with source context and helpful suggestions
 - ⭐ **RADStar Package Manager**: Install and manage plugins with `rstar`
@@ -37,11 +62,11 @@ RADS is a high-performance, low-level programming language designed for the mode
 
 ```bash
 # Download the latest release
-wget https://github.com/zarigata/rads/releases/download/v0.1.0-alpha/rads-0.1.0-alpha-linux-x86_64.tar.gz
+wget https://github.com/zarigata/rads/releases/download/v0.0.5/rads-0.0.5-linux-x86_64.tar.gz
 
 # Extract
-tar -xzf rads-0.1.0-alpha-linux-x86_64.tar.gz
-cd rads-0.1.0-alpha-linux-x86_64
+tar -xzf rads-0.0.5-linux-x86_64.tar.gz
+cd rads-0.0.5
 
 # Run installer
 ./install.sh
@@ -49,6 +74,8 @@ cd rads-0.1.0-alpha-linux-x86_64
 # Verify installation
 rads --version
 rstar help
+rads-mask --help
+rpm help
 ```
 
 #### Option 2: Build from Source
