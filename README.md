@@ -6,7 +6,7 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/version-0.0.6--blue.svg)]()
+[![Version](https://img.shields.io/badge/version-0.0.6--brightgreen.svg)](CHANGELOG.md)
 
 ---
 
@@ -89,11 +89,11 @@ RADS is a high-performance, low-level programming language designed for the mode
 
 ```bash
 # Download the latest release
-wget https://github.com/zarigata/rads/releases/download/v0.0.5/rads-0.0.5-linux-x86_64.tar.gz
+wget https://github.com/zarigata/rads/releases/download/v0.0.6/rads-0.0.6-linux-x86_64.tar.gz
 
 # Extract
-tar -xzf rads-0.0.5-linux-x86_64.tar.gz
-cd rads-0.0.5
+tar -xzf rads-0.0.6-linux-x86_64.tar.gz
+cd rads-0.0.6
 
 # Run installer
 ./install.sh
@@ -217,19 +217,26 @@ Plugins are stored in `~/.rads/plugins/`. See [docs/PACKAGE_MANAGER.md](docs/PAC
 
 ## 📚 Documentation
 
+### Latest Documentation
+- **[CHANGELOG.md](CHANGELOG.md)** - Complete version history and changes
 - **[REPL Guide](docs/REPL_GUIDE.md)** - Interactive shell tutorial
 - **[Package Manager](docs/PACKAGE_MANAGER.md)** - Plugin system guide
 - **[Examples](examples/)** - Code examples by category
 
+### Release Archives
+- **[v0.0.5 "CHAMELEON" Archive](release/rads-0.0.5/)** - Python transpilation release (Jan 19, 2026)
+- **[v0.0.6 "FIGHTER JET" Summary](V0.0.6_FIGHTER_JET_SUMMARY.md)** - Current release details (Jan 27, 2026)
+
 ## 🗺️ Roadmap
 
-### v0.0.6 "FIGHTER JET" (Current) ✅
+### 🛩️ v0.0.6 "FIGHTER JET" (Current - Released) ✅
 - ✅ Bytecode Compiler with VM and disassembler
 - ✅ Sampling Profiler with flamegraph generation
 - ✅ WebSocket server and client APIs
 - ✅ GraphQL server with queries/mutations
 - ✅ LSP server (Rust-based) with completion and navigation
 - ✅ Debug protocol (DAP) with breakpoints and inspection
+- See [CHANGELOG.md](CHANGELOG.md) for full details
 
 ### v0.0.7 (Next) 🔜
 - 🔜 JIT Compilation: LLVM-based JIT for hot paths

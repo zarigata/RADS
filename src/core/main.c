@@ -63,7 +63,7 @@ void print_usage() {
 void print_version() {
     printf("\n");
     printf("%s┌────────────────────────────────────────┐%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
-    printf("%s│ %sRADS v0.0.3 \"Butterfly\" 🦋%s          %s│%s\n",
+    printf("%s│ %sRADS v0.0.6 \"Fighter Jet\" 🛩%s          %s│%s\n",
            COLOR_BRIGHT_CYAN, COLOR_BRIGHT_MAGENTA,
            COLOR_WHITE, COLOR_BRIGHT_CYAN, COLOR_RESET);
     printf("%s│ %sRapid Asynchronous Data Server%s     %s│%s\n",
@@ -174,7 +174,7 @@ void print_repl_welcome() {
 
     printf(COLOR_BRIGHT_CYAN "  ╠═══════════════════════════════════════════════════════════╣\n" COLOR_RESET);
     printf(COLOR_BRIGHT_CYAN "  ║  " COLOR_RESET);
-    printf(COLOR_CYAN "🦋 Interactive REPL v0.0.3 Butterfly" COLOR_RESET);
+    printf(COLOR_CYAN "🛩 Interactive REPL v0.0.6 Fighter Jet" COLOR_RESET);
     printf(COLOR_DIM " - " COLOR_RESET);
     printf(COLOR_BRIGHT_CYAN "TURBO" COLOR_RESET);
     printf(COLOR_DIM " & " COLOR_RESET);
@@ -187,9 +187,11 @@ void print_repl_welcome() {
     printf(COLOR_BRIGHT_CYAN "  ╠═══════════════════════════════════════════════════════════╣\n" COLOR_RESET);
     printf(COLOR_BRIGHT_CYAN "  ║  " COLOR_RESET);
     printf(COLOR_BRIGHT_GREEN "✨ NEW:" COLOR_RESET);
-    printf(COLOR_WHITE " SQLite DB 💾  " COLOR_RESET);
-    printf(COLOR_BRIGHT_YELLOW "✨ Testing 🧪  " COLOR_RESET);
-    printf(COLOR_BRIGHT_MAGENTA "✨ RGB Chroma!" COLOR_RESET);
+    printf(COLOR_WHITE " Bytecode VM ⚡  " COLOR_RESET);
+    printf(COLOR_BRIGHT_YELLOW "✨ Profiler 📊  " COLOR_RESET);
+    printf(COLOR_BRIGHT_CYAN "✨ Debugger 🐛  " COLOR_RESET);
+    printf(COLOR_BRIGHT_MAGENTA "✨ WebSocket 🔥  " COLOR_RESET);
+    printf(COLOR_BRIGHT_GREEN "✨ GraphQL 📊  " COLOR_RESET);
     printf(COLOR_BRIGHT_CYAN "    ║\n" COLOR_RESET);
     printf(COLOR_BRIGHT_CYAN "  ╠═══════════════════════════════════════════════════════════╣\n" COLOR_RESET);
     printf(COLOR_BRIGHT_CYAN "  ║  " COLOR_RESET);
@@ -433,7 +435,7 @@ int main(int argc, char* argv[]) {
     }
     
     // Normal execution mode
-    printf("%s🦋 RADS v0.0.3 Butterfly%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s🛩 RADS v0.0.6 Fighter Jet%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
     printf("%sExecuting:%s %s%s%s\n\n",
            COLOR_BRIGHT_YELLOW, COLOR_RESET,
            COLOR_BRIGHT_MAGENTA, filename, COLOR_RESET);
