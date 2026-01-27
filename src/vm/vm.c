@@ -151,7 +151,7 @@ Value value_struct(const char* type_name, int field_count) {
     return v;
 }
 
-void value_print(Value value) {
+void vm_value_print(Value value) {
     switch (value.type) {
         case VAL_NULL:
             printf("null");
@@ -350,7 +350,7 @@ void vm_interpret(VM* vm, Chunk* chunk) {
             }
             case OP_RETURN: {
                 Value result = vm_pop(vm);
-                value_print(result);
+                vm_value_print(result);
                 printf("\n");
                 return;
             }
@@ -429,7 +429,7 @@ static int simple_instruction(const char* name, int offset) {
 static int constant_instruction(const char* name, Chunk* chunk, int offset) {
     uint8_t constant = chunk->code[offset + 1];
     printf("%-16s %4d '", name, constant);
-    value_print(chunk->constants[constant]);
+    vm_value_print(chunk->constants[constant]);
     printf("'\n");
     return offset + 2;
 }

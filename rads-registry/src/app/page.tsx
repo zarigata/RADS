@@ -22,25 +22,19 @@ export default function HomePage() {
     {
       icon: <Zap className="h-8 w-8" />,
       title: "Lightning Fast",
-      description: "Packages compiled to native RADS for maximum performance.",
-      link: "/docs#performance",
-    },
-    {
-      icon: <Rocket className="h-8 w-8" />,
-      title: "Bytecode Performance",
-      description: "3-5x faster execution with stack-based bytecode VM and 50+ opcodes.",
+      description: "3-5x faster with stack-based bytecode VM and 50+ opcodes.",
       link: "https://github.com/zarigata/RADS/releases/tag/v0.0.6",
     },
     {
       icon: <BarChart className="h-8 w-8" />,
       title: "Profiler & Debugging",
-      description: "Real-time profiling with flamegraphs and full debugger with breakpoints.",
+      description: "Real-time profiling with flamegraphs and full DAP debugger support.",
       link: "https://github.com/zarigata/RADS/releases/tag/v0.0.6",
     },
     {
       icon: <Wifi className="h-8 w-8" />,
       title: "WebSocket & GraphQL",
-      description: "Real-time web with 128+ concurrent connections and GraphQL server.",
+      description: "Real-time web with 128+ concurrent connections and full GraphQL server support.",
       link: "https://github.com/zarigata/RADS/releases/tag/v0.0.6",
     },
     {
@@ -61,11 +55,11 @@ export default function HomePage() {
     <div className="container py-16">
       <section className="text-center space-y-8 py-16">
         <h1 className="text-5xl font-bold tracking-tight sm:text-6xl rads-text-gradient">
-          RADS Package Registry
+          RADS v0.0.6 Registry
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Discover, publish, and install RADS packages. The official package registry for the
-          RADS programming language.
+          Discover, publish, and install RADS packages for <strong class="text-primary">Fighter Jet</strong>—
+          Mach speed performance with bytecode VM, profiler, debugger, and real-time web.
         </p>
         <div className="flex justify-center gap-4">
           <Button asChild size="lg">

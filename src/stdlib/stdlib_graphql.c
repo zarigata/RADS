@@ -3,6 +3,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 
 #define GQL_MAX_FIELDS 128
 #define GQL_MAX_TYPES 32
@@ -123,8 +127,9 @@ int graphql_schema_add_subscription(GraphQLSchema* schema, GraphQLField* field) 
 }
 
 void graphql_field_set_resolver(GraphQLField* field, GraphQLResolver resolver, void* user_data) {
+    (void)user_data;
     if (!field) return;
-    field->value = resolver;
+    field->resolver = resolver;
 }
 
 GraphQLValue* graphql_value_string(const char* str) {
@@ -158,6 +163,7 @@ GraphQLValue* graphql_value_null(void) {
 }
 
 GraphQLValue* graphql_value_list(GraphQLValue** items, int count) {
+    (void)count;
     GraphQLValue* v = (GraphQLValue*)malloc(sizeof(GraphQLValue));
     v->type = GQL_TYPE_LIST;
     v->is_null = false;
@@ -184,8 +190,9 @@ void graphql_value_free(GraphQLValue* value) {
                 break;
             case GQL_TYPE_LIST:
                 if (value->as.list) {
+                    GraphQLValue** list_items = (GraphQLValue**)value->as.list;
                     for (int i = 0; i < 10; i++) {
-                        if (value->as.list[i]) graphql_value_free(value->as.list[i]);
+                        if (list_items[i]) graphql_value_free(list_items[i]);
                     }
                     free(value->as.list);
                 }
@@ -245,9 +252,8 @@ static GraphQLField* find_field(GraphQLField* fields, int field_count, const cha
 }
 
 static GraphQLValue* resolve_field(GraphQLContext* ctx, GraphQLField* field) {
-    if (field->value) {
-        GraphQLResolver resolver = (GraphQLResolver)field->value;
-        return resolver(ctx, field, ctx->schema->user_data);
+    if (field->resolver) {
+        return field->resolver(ctx, field, ctx->schema->user_data);
     }
 
     return graphql_value_null();
@@ -322,7 +328,7 @@ void graphql_query_free(GraphQLQuery* query) {
     if (query->error) free(query->error);
     if (query->variables) {
         for (int i = 0; i < query->variable_count; i++) {
-            if (query->variables[i].name) free(query->variables[i].name);
+            if (query->variables[i].key) free(query->variables[i].key);
             if (query->variables[i].value) free(query->variables[i].value);
         }
         free(query->variables);

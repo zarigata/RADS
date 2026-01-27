@@ -21,16 +21,32 @@ typedef enum {
 typedef struct GraphQLValue GraphQLValue;
 
 typedef struct {
+    char* key;
+    char* value;
+} GraphQLVariable;
+
+typedef struct {
     char* name;
     GraphQLValue* value;
 } GraphQLArgument;
 
-typedef struct {
+typedef struct GraphQLValue GraphQLValue;
+
+typedef struct GraphQLField GraphQLField;
+
+typedef struct GraphQLSchema GraphQLSchema;
+
+typedef struct GraphQLContext GraphQLContext;
+
+typedef GraphQLValue* (*GraphQLResolver)(GraphQLContext* ctx, GraphQLField* field, void* user_data);
+
+struct GraphQLField {
     char* name;
     GraphQLArgument* args;
     int arg_count;
     GraphQLValue* value;
-} GraphQLField;
+    GraphQLResolver resolver;
+};
 
 typedef struct {
     char* name;
@@ -54,7 +70,7 @@ typedef union {
     char* string;
     double number;
     bool boolean;
-    GraphQLValue* list;
+    GraphQLValue** list;
     struct {
         GraphQLField* fields;
         int count;
@@ -67,29 +83,23 @@ struct GraphQLValue {
     GraphQLValueUnion as;
 };
 
-typedef struct {
-    GraphQLTypeDef* types;
+struct GraphQLSchema {
+    GraphQLTypeDef** types;
     int type_count;
     GraphQLField* queries;
     GraphQLField* mutations;
     GraphQLField* subscriptions;
     void* user_data;
-} GraphQLSchema;
+};
 
-typedef struct {
-    char* key;
-    char* value;
-} GraphQLVariable;
-
-typedef struct {
+struct GraphQLContext {
     GraphQLQuery* query;
     GraphQLVariable* variables;
     int variable_count;
     GraphQLValue* result;
     char* error;
-} GraphQLContext;
-
-typedef GraphQLValue* (*GraphQLResolver)(GraphQLContext* ctx, GraphQLField* field, void* user_data);
+    GraphQLSchema* schema;
+};
 
 typedef struct GraphQLServer GraphQLServer;
 

@@ -1,61 +1,68 @@
-// Profiler Example
-// Demonstrates flame graph generation
-
-import "profiler"
-
-blast heavy_computation() {
-    turbo sum = 0;
-    cruise (i = 0; i < 100000; i = i + 1) {
-        sum = sum + i;
-    }
-    return sum;
-}
-
-blast medium_computation() {
-    turbo product = 1;
-    cruise (i = 1; i <= 50; i = i + 1) {
-        product = product * i;
-    }
-    return product;
-}
-
-blast light_computation() {
-    return 42;
-}
+// Profiler Demo - RADS v0.0.6
+// Demonstrates performance profiling with flamegraph generation
 
 blast main() {
-    turbo profiler;
-    profiler_init(profiler);
+    echo("🚀 RADS Profiler Demo v0.0.6");
+    echo("Running benchmark with profiler enabled\n");
 
-    echo("RADS Profiler Demo v0.0.6");
-    echo("Running benchmarks...");
+    // Start profiler
+    profiler_start();
 
-    profiler_start(profiler);
+    // Run benchmark
+    benchmark();
 
-    profiler_begin_sample(profiler, "heavy_computation");
-    turbo result1 = heavy_computation();
-    profiler_end_sample(profiler);
+    // Stop profiler
+    profiler_stop();
 
-    profiler_begin_sample(profiler, "medium_computation");
-    turbo result2 = medium_computation();
-    profiler_end_sample(profiler);
+    // Generate reports
+    echo("\n📊 Performance Report:");
+    profiler_report_text();
 
-    profiler_begin_sample(profiler, "light_computation");
-    turbo result3 = light_computation();
-    profiler_end_sample(profiler);
+    echo("\n🔥 Generating flamegraph...");
+    profiler_report("flamegraph.html");
 
-    profiler_stop(profiler);
+    echo("✨ Done! Open flamegraph.html in your browser\n");
+}
 
-    echo("\nProfiler Results:");
-    profiler_report_text(profiler, NULL);
-    profiler_report_flamegraph(profiler, "flamegraph.html");
+// Benchmark function to profile
+blast benchmark() {
+    echo("⏱ Running fibonacci(35)...");
+    turbo result = fibonacci(35);
+    echo("Result: " + str(result));
 
-    echo("\nResults:");
-    echo("  heavy_computation: " + result1);
-    echo("  medium_computation: " + result2);
-    echo("  light_computation: " + result3);
+    echo("\n⏱ Running array operations...");
+    array_operations();
+}
 
-    profiler_free(profiler);
-    echo("\nFlame graph saved to: flamegraph.html");
-    echo("Open in your browser to view!");
+// Fibonacci calculation (recursive)
+blast fibonacci(n) {
+    if (n <= 1) {
+        return n;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+// Array operations benchmark
+blast array_operations() {
+    turbo arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+    // Sum
+    turbo sum = 0;
+    turbo i = 0;
+    while (i < len(arr)) {
+        sum = sum + arr[i];
+        i = i + 1;
+    }
+
+    // Filter
+    turbo filtered = [];
+    turbo j = 0;
+    while (j < len(arr)) {
+        if (arr[j] > 5) {
+            filtered = filtered + [arr[j]];
+        }
+        j = j + 1;
+    }
+
+    echo("  Sum: " + str(sum) + ", Filtered count: " + str(len(filtered)));
 }

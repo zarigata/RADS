@@ -1,0 +1,46 @@
+// Debugger Demo - RADS v0.0.6
+// Demonstrates DAP (Debug Adapter Protocol) with breakpoints
+
+blast main() {
+    echo("🚀 RADS Debugger Demo v0.0.6");
+    echo("Starting with debug mode enabled");
+    echo("Connect your DAP client to localhost:9229\n");
+
+    // Program to debug
+    turbo counter = 0;
+
+    // This function will be stepped through
+    blast increment_counter() {
+        counter = counter + 1;
+        echo("📍 Line reached, counter now: " + str(counter));
+
+        // Breakpoint can be set here
+        if (counter == 5) {
+            echo("⏸️ Breakpoint hit at counter=5");
+        }
+    }
+
+    // Loop multiple times
+    turbo i = 0;
+    while (i < 10) {
+        increment_counter();
+
+        // Conditional breakpoint
+        if (counter % 2 == 0) {
+            echo("⏸️ Conditional breakpoint (even numbers)");
+        }
+
+        i = i + 1;
+    }
+
+    echo("\n✅ Debug session complete");
+    echo("Final counter value: " + str(counter));
+}
+
+// Usage instructions:
+// 1. Run with debugger: rads --debug debugger_demo.rads
+// 2. Connect DAP client (e.g., VS Code with RADS extension)
+// 3. Set breakpoints
+// 4. Step through code
+// 5. Inspect variables
+// 6. Evaluate expressions

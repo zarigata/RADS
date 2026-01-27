@@ -1,41 +1,62 @@
-// GraphQL Server Example
-// Demonstrates GraphQL queries and mutations
-
-import "graphql"
+// GraphQL Server Example - RADS v0.0.6
+// Demonstrates GraphQL queries and mutations with JSON responses
 
 blast main() {
-    echo("RADS GraphQL Server v0.0.6");
-    echo("Starting on port 8080...");
+    echo("🚀 RADS GraphQL Server v0.0.6");
+    echo("Starting on http://localhost:4000/graphql");
+    echo("Press Ctrl+C to stop\n");
 
-    turbo schema = graphql_schema_create();
+    // Create GraphQL schema
+    turbo schema = graphql_schema();
 
-    graphql_schema_add_type(schema, "User", NULL, 0);
+    // Define User type
+    turbo user_fields = [
+        { "name": "id", "value": graphql_value_string("") },
+        { "name": "name", "value": graphql_value_string("") }
+    ];
+    graphql_add_type(schema, "User", user_fields, 2);
 
-    turbo getUserField = { .name = "user", .value = resolve_get_user };
-    graphql_schema_add_query(schema, &getUserField);
+    // Define Query type with fields
+    turbo query_fields = [
+        { "name": "user", "args": null, "value": graphql_value_string("") }
+    ];
+    graphql_add_query(schema, "user", get_user);
 
-    turbo createPostField = { .name = "createPost", .value = resolve_create_post };
-    graphql_schema_add_mutation(schema, &createPostField);
+    // Define Mutation type with fields
+    turbo mutation_fields = [
+        { "name": "createUser", "args": null, "value": graphql_value_string("") }
+    ];
+    graphql_add_mutation(schema, "createUser", create_user);
 
-    turbo server = graphql_server_create(schema, 8080);
-    graphql_server_listen(server);
-    graphql_server_free(server);
-    graphql_schema_free(schema);
+    // Create GraphQL server
+    turbo server = graphql_server(4000, schema);
+
+    // Start listening
+    graphql_listen(server);
 }
 
-GraphQLValue* resolve_get_user(ctx, field, user_data) {
-    turbo userId = graphql_value_string("1");
-    return graphql_value_object(&[{
-        .name = "id",
-        .value = userId
-    }, 1);
+// Resolver for user query
+blast get_user(args) {
+    echo("🔍 Query: user(id=" + args.id + ")");
+
+    // Return sample user data
+    turbo user = graphql_value_object([
+        { "name": "id", "value": graphql_value_string("1") },
+        { "name": "name", "value": graphql_value_string("Alice") }
+    ], 2);
+
+    return user;
 }
 
-GraphQLValue* resolve_create_post(ctx, field, user_data) {
-    turbo postId = graphql_value_string("1");
-    turbo title = graphql_value_string("Hello RADS!");
-    return graphql_value_object(&[{
-        .name = "id",
-        .value = postId
-    }, 1);
+// Resolver for createUser mutation
+blast create_user(args) {
+    echo("✨ Mutation: createUser(name=" + args.name + ")");
+
+    // Return success response
+    turbo result = graphql_value_object([
+        { "name": "success", "value": graphql_value_bool(true) },
+        { "name": "message", "value": graphql_value_string("User created!") }
+    ], 2);
+
+    return result;
 }

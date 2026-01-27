@@ -71,11 +71,35 @@
   background-clip: text;
 }
 
+/* Glassmorphism Cards */
+.glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
 .package-card:hover {
-  transform: translateY(-2px);
-  transition: all 0.2s ease;
+  transform: translateY(-4px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 16px rgba(147, 51, 234, 0.15);
+  border-color: rgba(147, 51, 234, 0.4);
 }
 
 .search-input:focus {
-  box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.2);
+  box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.3), inset 0 0 6px rgba(147, 51, 234, 0.1);
+}
+
+/* Button glass effects */
+.glass-button {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.glass-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(147, 51, 234, 0.5);
+  box-shadow: 0 6px 20px rgba(147, 51, 234, 0.2);
 }

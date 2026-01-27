@@ -11,7 +11,7 @@
 
 // ============================================================================
 // WEB ENGINE - JavaScript Runtime, HTML/CSS Parser, Plugin System
-// RADS v0.0.3 "Butterfly" - Alternative to Node.js and Python
+// RADS v0.0.6 "Fighter Jet" - Alternative to Node.js and Python
 // ============================================================================
 
 // JavaScript Engine State (using embedded interpreter approach)

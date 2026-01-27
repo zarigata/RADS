@@ -51,10 +51,16 @@ VPATH =
 # Source files
 CORE_SOURCES = $(wildcard $(SRC_CORE_DIR)/*.c)
 STDLIB_SOURCES = $(wildcard $(SRC_STDLIB_DIR)/*.c)
-SOURCES = $(CORE_SOURCES) $(STDLIB_SOURCES)
+VM_SOURCES = $(wildcard src/vm/*.c)
+PROFILER_SOURCES = $(wildcard src/profiler/*.c)
+DEBUG_SOURCES = $(wildcard src/debug/*.c)
+SOURCES = $(CORE_SOURCES) $(STDLIB_SOURCES) $(VM_SOURCES) $(PROFILER_SOURCES) $(DEBUG_SOURCES)
 
 OBJECTS = $(patsubst $(SRC_CORE_DIR)/%.c,$(BUILD_DIR)/core/%.o,$(CORE_SOURCES)) \
-          $(patsubst $(SRC_STDLIB_DIR)/%.c,$(BUILD_DIR)/stdlib/%.o,$(STDLIB_SOURCES))
+          $(patsubst $(SRC_STDLIB_DIR)/%.c,$(BUILD_DIR)/stdlib/%.o,$(STDLIB_SOURCES)) \
+          $(patsubst src/vm/%.c,$(BUILD_DIR)/vm/%.o,$(VM_SOURCES)) \
+          $(patsubst src/profiler/%.c,$(BUILD_DIR)/profiler/%.o,$(PROFILER_SOURCES)) \
+          $(patsubst src/debug/%.c,$(BUILD_DIR)/debug/%.o,$(DEBUG_SOURCES))
 
 # Tools
 RSTAR = bin/rstar
@@ -66,7 +72,7 @@ all: $(TARGET) $(RSTAR) $(RPM) $(RADS_MASK)
 
 # Create build and bin directories
 $(BUILD_DIR):
-	mkdir -p $(BUILD_DIR) $(BUILD_DIR)/core $(BUILD_DIR)/stdlib $(BIN_DIR)
+	mkdir -p $(BUILD_DIR) $(BUILD_DIR)/core $(BUILD_DIR)/stdlib $(BUILD_DIR)/vm $(BUILD_DIR)/profiler $(BUILD_DIR)/debug $(BIN_DIR)
 
 # Ensure bin directory exists for tools
 $(BIN_DIR):
@@ -77,6 +83,15 @@ $(BUILD_DIR)/core/%.o: $(SRC_CORE_DIR)/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/stdlib/%.o: $(SRC_STDLIB_DIR)/%.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/vm/%.o: src/vm/%.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/profiler/%.o: src/profiler/%.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/debug/%.o: src/debug/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Link executable
