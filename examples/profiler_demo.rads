@@ -1,0 +1,61 @@
+// Profiler Example
+// Demonstrates flame graph generation
+
+import "profiler"
+
+blast heavy_computation() {
+    turbo sum = 0;
+    cruise (i = 0; i < 100000; i = i + 1) {
+        sum = sum + i;
+    }
+    return sum;
+}
+
+blast medium_computation() {
+    turbo product = 1;
+    cruise (i = 1; i <= 50; i = i + 1) {
+        product = product * i;
+    }
+    return product;
+}
+
+blast light_computation() {
+    return 42;
+}
+
+blast main() {
+    turbo profiler;
+    profiler_init(profiler);
+
+    echo("RADS Profiler Demo v0.0.6");
+    echo("Running benchmarks...");
+
+    profiler_start(profiler);
+
+    profiler_begin_sample(profiler, "heavy_computation");
+    turbo result1 = heavy_computation();
+    profiler_end_sample(profiler);
+
+    profiler_begin_sample(profiler, "medium_computation");
+    turbo result2 = medium_computation();
+    profiler_end_sample(profiler);
+
+    profiler_begin_sample(profiler, "light_computation");
+    turbo result3 = light_computation();
+    profiler_end_sample(profiler);
+
+    profiler_stop(profiler);
+
+    echo("\nProfiler Results:");
+    profiler_report_text(profiler, NULL);
+    profiler_report_flamegraph(profiler, "flamegraph.html");
+
+    echo("\nResults:");
+    echo("  heavy_computation: " + result1);
+    echo("  medium_computation: " + result2);
+    echo("  light_computation: " + result3);
+
+    profiler_free(profiler);
+    echo("\nFlame graph saved to: flamegraph.html");
+    echo("Open in your browser to view!");
+}

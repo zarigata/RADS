@@ -1,0 +1,33 @@
+// RADS WebSocket Echo Server Example
+// Demonstrates real-time bidirectional communication
+
+import "websocket"
+
+blast main() {
+    echo("RADS WebSocket Echo Server v0.0.6");
+    echo("Starting on port 8080...");
+
+    turbo ws = websocket_server_new(8080);
+
+    websocket_on_connect(ws, on_client_connect, NULL);
+    websocket_on_message(ws, on_message, NULL);
+    websocket_on_close(ws, on_client_close, NULL);
+
+    websocket_listen(ws);
+}
+
+blast on_client_connect(client, user_data) {
+    turbo addr = websocket_get_remote_address(client);
+    echo("Client connected: " + addr);
+}
+
+blast on_message(client, message, user_data) {
+    if (message.type == WS_MESSAGE_TEXT) {
+        echo("Received: " + message.data);
+        websocket_send_text(client, "Echo: " + message.data);
+    }
+}
+
+blast on_client_close(client, user_data) {
+    echo("Client disconnected");
+}

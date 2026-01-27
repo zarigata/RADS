@@ -1,0 +1,26 @@
+[package]
+name = "rads-lsp"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+tokio-tungstenite = "0.20"
+tower-lsp = "0.20"
+lsp-types = "0.94"
+regex = "1.0"
+log = "0.4"
+env_logger = "0.10"
+tower = "0.4"
+tower-http = "0.4"
+futures = "0.3"
+
+[lib]
+name = "rads_lsp"
+path = "src"
+
+[[bin]]
+name = "rads-lsp"
+path = "src"

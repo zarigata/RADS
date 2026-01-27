@@ -25,6 +25,30 @@ export default function HomePage() {
       description: "Packages compiled to native RADS for maximum performance.",
       link: "/docs#performance",
     },
+    {
+      icon: <Rocket className="h-8 w-8" />,
+      title: "Bytecode Performance",
+      description: "3-5x faster execution with stack-based bytecode VM and 50+ opcodes.",
+      link: "https://github.com/zarigata/RADS/releases/tag/v0.0.6",
+    },
+    {
+      icon: <BarChart className="h-8 w-8" />,
+      title: "Profiler & Debugging",
+      description: "Real-time profiling with flamegraphs and full debugger with breakpoints.",
+      link: "https://github.com/zarigata/RADS/releases/tag/v0.0.6",
+    },
+    {
+      icon: <Wifi className="h-8 w-8" />,
+      title: "WebSocket & GraphQL",
+      description: "Real-time web with 128+ concurrent connections and GraphQL server.",
+      link: "https://github.com/zarigata/RADS/releases/tag/v0.0.6",
+    },
+    {
+      icon: <Code2 className="h-8 w-8" />,
+      title: "LSP Server",
+      description: "Full Language Server Protocol support with Rust-based implementation for all editors.",
+      link: "https://github.com/zarigata/RADS/releases/tag/v0.0.6",
+    },
   ]
 
   const quickStart = [

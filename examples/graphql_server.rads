@@ -1,0 +1,41 @@
+// GraphQL Server Example
+// Demonstrates GraphQL queries and mutations
+
+import "graphql"
+
+blast main() {
+    echo("RADS GraphQL Server v0.0.6");
+    echo("Starting on port 8080...");
+
+    turbo schema = graphql_schema_create();
+
+    graphql_schema_add_type(schema, "User", NULL, 0);
+
+    turbo getUserField = { .name = "user", .value = resolve_get_user };
+    graphql_schema_add_query(schema, &getUserField);
+
+    turbo createPostField = { .name = "createPost", .value = resolve_create_post };
+    graphql_schema_add_mutation(schema, &createPostField);
+
+    turbo server = graphql_server_create(schema, 8080);
+    graphql_server_listen(server);
+    graphql_server_free(server);
+    graphql_schema_free(schema);
+}
+
+GraphQLValue* resolve_get_user(ctx, field, user_data) {
+    turbo userId = graphql_value_string("1");
+    return graphql_value_object(&[{
+        .name = "id",
+        .value = userId
+    }, 1);
+}
+
+GraphQLValue* resolve_create_post(ctx, field, user_data) {
+    turbo postId = graphql_value_string("1");
+    turbo title = graphql_value_string("Hello RADS!");
+    return graphql_value_object(&[{
+        .name = "id",
+        .value = postId
+    }, 1);
+}

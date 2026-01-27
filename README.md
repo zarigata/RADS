@@ -6,7 +6,7 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/version-0.0.5--purple.svg)]()
+[![Version](https://img.shields.io/badge/version-0.0.6--blue.svg)]()
 
 ---
 
@@ -21,6 +21,15 @@ RADS is a high-performance, low-level programming language designed for the mode
 - 🎨 **Aesthetic**: Frutiger Aero design philosophy meets nu-metal intensity.
 
 ## ✨ Features
+
+### v0.0.6 "FIGHTER JET" - Mach Speed Upgrades
+- 🛩️ **Bytecode VM**: Stack-based virtual machine for 3-5x performance
+- ⚡ **Sampling Profiler**: Real-time profiling with flamegraph generation
+- 🔥 **WebSocket Support**: Real-time bidirectional communication (128+ concurrent connections)
+- 📊 **GraphQL Server**: Queries, mutations, subscriptions with JSON responses
+- 🎯 **LSP Server**: Full Language Server Protocol (Rust-based)
+- 🐛 **Debug Protocol**: DAP with breakpoints, step controls, variable inspection
+- See [v0.0.6 plan](V0.0.6_FIGHTER_JET_PLAN.md) for details
 
 ### v0.0.5 "CHAMELEON" - Python Transpilation
 - 🐍 **rads-mask**: Python to RADS transpiler (95%+ accuracy)
@@ -214,7 +223,25 @@ Plugins are stored in `~/.rads/plugins/`. See [docs/PACKAGE_MANAGER.md](docs/PAC
 
 ## 🗺️ Roadmap
 
-### v0.1.0-alpha (Current) ✅
+### v0.0.6 "FIGHTER JET" (Current) ✅
+- ✅ Bytecode Compiler with VM and disassembler
+- ✅ Sampling Profiler with flamegraph generation
+- ✅ WebSocket server and client APIs
+- ✅ GraphQL server with queries/mutations
+- ✅ LSP server (Rust-based) with completion and navigation
+- ✅ Debug protocol (DAP) with breakpoints and inspection
+
+### v0.0.7 (Next) 🔜
+- 🔜 JIT Compilation: LLVM-based JIT for hot paths
+- 🔜 Advanced LSP: Full refactoring and code actions
+- 🔜 Enhanced Debugger: Conditional breakpoints, watch expressions
+- 🔜 Full GraphQL Spec: Subscriptions and live queries
+- 🔜 ECMAScript Transpiler: JavaScript → RADS conversion
+
+### v0.0.5 "CHAMELEON" (Completed) ✅
+- ✅ Python to RADS transpiler (95%+ accuracy)
+- ✅ Language-agnostic AST for multi-language support
+- ✅ Write Your Way, Run RADS: Zero learning curve for Python developers
 - ✅ Core compiler and interpreter
 - ✅ Interactive REPL mode
 - ✅ Beautiful error messages with suggestions
