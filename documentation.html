@@ -37,6 +37,8 @@
 <body>
     <div class="bg-blur blur-1"></div>
     <div class="bg-blur blur-2"></div>
+    <div class="bg-blur blur-3"></div>
+    <div class="bg-blur blur-4"></div>
 
     <header>
         <div class="header-inner">
@@ -154,5 +156,22 @@
         <img src="assets/branding/emblem.png" alt="RADS Emblem" class="footer-emblem">
         <p>&copy; 2026 RADS Dev Group. Crafted with precision and turbo speed.</p>
     </footer>
+
+    <!-- Mouse-following spotlight -->
+    <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const spotlight = document.createElement('div');
+                spotlight.className = 'mouse-spotlight';
+                document.body.appendChild(spotlight);
+
+                document.addEventListener('mousemove', (e) => {
+                    const x = e.clientX;
+                    const y = e.clientY;
+                    spotlight.style.left = `${x}px`;
+                    spotlight.style.top = `${y}px`;
+                });
+            });
+        </script>
+
 </body>
 </html>

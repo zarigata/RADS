@@ -16,6 +16,8 @@
 <body>
     <div class="bg-blur blur-1"></div>
     <div class="bg-blur blur-2"></div>
+    <div class="bg-blur blur-3"></div>
+    <div class="bg-blur blur-4"></div>
 
     <header>
         <div class="header-inner">
@@ -26,8 +28,8 @@
                 <a href="index.html">Home</a>
                 <a href="guide.html">Guide</a>
                 <a href="documentation.html">Docs</a>
+                <a href="playground.html" style="background: linear-gradient(135deg, rgba(0,217,255,0.15), rgba(157,78,221,0.15)); color: var(--accent-purple); font-weight: 700;">🎮 Try Me!</a>
                 <a href="examples.html">Examples</a>
-                <a href="EXAMPLES.html">20 Examples</a>
                 <a href="compare.html">Compare</a>
                 <a href="releases.html" class="active">Releases</a>
             </nav>
@@ -36,43 +38,130 @@
 
     <main>
         <section class="hero-sub" style="padding: 4rem 1rem;">
-            <h1>Evolutionary Roadmap</h1>
-            <p>From a radical concept to a high-speed reality. Track our progress below.</p>
+            <h1 style="animation: float 6s ease-in-out infinite;">Evolution Roadmap 🚀</h1>
+            <p style="font-size: 1.3rem; max-width: 850px; margin: 0 auto 1rem; line-height: 1.8;">From a radical concept to a high-speed reality. Track RADS evolution through all versions.</p>
         </section>
 
         <section id="timeline">
             <div class="glass-card">
                 <div class="timeline">
 
-                    <div class="timeline-item">
-                        <div class="timeline-date">Phase 1: Concept & Design ✅</div>
-                        <h3>The Atomic Structure</h3>
-                        <p>Established the core philosophy of RADS. Defined the Frutiger Aero aesthetic, the unique
-                            syntax (blast, turbo, cruise), and the primary goals for microserver performance.</p>
+                    <!-- v0.0.5 CHAMELEON - CURRENT -->
+                    <div class="timeline-item current-release">
+                        <div class="timeline-badge current-badge">
+                            <span style="font-size: 2rem;">🦎</span>
+                            LATEST
+                        </div>
+                        <div class="timeline-date">v0.0.5 "CHAMELEON" ✨ (Latest)</div>
+                        <h3>Python Transpiler Revolution</h3>
+                        <p>🐍 <strong>rads-mask</strong> - Python to RADS transpiler with 95%+ accuracy. Language-agnostic AST foundation enables multi-language support. Write your Python, run as RADS.</p>
+                        <div class="feature-tags">
+                            <span class="feature-tag">🐍 rads-mask Transpiler</span>
+                            <span class="feature-tag">🧬 Universal AST</span>
+                            <span class="feature-tag">⚡ 95%+ Accuracy</span>
+                        </div>
                     </div>
 
+                    <!-- v0.0.4 Constellation -->
                     <div class="timeline-item">
-                        <div class="timeline-date">Phase 2: Core Compiler & VM ✅</div>
-                        <h3>Stability & Speed</h3>
-                        <p>Developed the first-generation C-based interpreter and lexer. Implemented first-class
-                            functions, expressions, and basic control flow. Near-C performance benchmarks achieved.</p>
+                        <div class="timeline-date">v0.0.4 "Constellation" 🌌</div>
+                        <h3>Distributed Computing Platform</h3>
+                        <p>🌌 Complete distributed computing platform with clustering, resource orchestration, service mesh, and auto-scaling. <strong style="color: var(--accent-cyan);">10-400x faster than Docker/Kubernetes.</strong></p>
+                        <div class="feature-tags">
+                            <span class="feature-tag">🔗 Clustering</span>
+                            <span class="feature-tag">📊 Resource Orchestration</span>
+                            <span class="feature-tag">🔀 Service Mesh</span>
+                            <span class="feature-tag">📈 Auto-Scaling</span>
+                            <span class="feature-tag">💾 Distributed Filesystem</span>
+                            <span class="feature-tag">📊 Monitoring</span>
+                        </div>
                     </div>
 
+                    <!-- v0.0.3 Butterfly -->
                     <div class="timeline-item">
-                        <div class="timeline-date">Phase 2.5: Community Release (Current) 🚧</div>
-                        <h3>The Expansion Surge</h3>
-                        <p>Integration of <code>async/await</code> for networking, introduction of the FFI for
-                            C-interop, and the debut of the high-fidelity branding. Website overhaul to provide a
-                            premium developer experience.</p>
+                        <div class="timeline-date">v0.0.3 "Butterfly" 🦋</div>
+                        <h3>Database & Testing Framework</h3>
+                        <p>💾 SQLite3 integration with transactions, prepared statements. Built-in testing framework with assertions and test runner.</p>
+                        <div class="feature-tags">
+                            <span class="feature-tag">💾 SQLite3 Support</span>
+                            <span class="feature-tag">🧪 Testing Framework</span>
+                            <span class="feature-tag">⚡ Enhanced Async</span>
+                        </div>
                     </div>
 
+                    <!-- v0.0.2 Core Language -->
                     <div class="timeline-item">
-                        <div class="timeline-date">Phase 3: Advanced Ecosystem 🔜</div>
-                        <h3>The Future Horizon</h3>
-                        <p>Development of the RADS Package Manager (RPM). Extension of the standard library for media
-                            processing, directory utilities, and enhanced security primitives.</p>
+                        <div class="timeline-date">v0.0.2 "Core Language" 🎨</div>
+                        <h3>RGB REPL & Language Core</h3>
+                        <p>🎨 RGB chroma effects with gaming keyboard aesthetics. GNU Readline REPL with history. Structs, enums, arrays, and string operations.</p>
+                        <div class="feature-tags">
+                            <span class="feature-tag">🎨 RGB Chroma</span>
+                            <span class="feature-tag">📖 GNU Readline</span>
+                            <span class="feature-tag">🏗️ Structs & Enums</span>
+                            <span class="feature-tag">🔧 Array Methods</span>
+                        </div>
                     </div>
 
+                    <!-- v0.0.1 Web Framework -->
+                    <div class="timeline-item">
+                        <div class="timeline-date">v0.0.1 "Web Framework" 🌐</div>
+                        <h3>Interactive REPL & HTTP Server</h3>
+                        <p>🌐 Interactive REPL with beautiful error messages. Built-in HTTP server, routing, template engine, sessions, and static files.</p>
+                        <div class="feature-tags">
+                            <span class="feature-tag">🖥️ Interactive REPL</span>
+                            <span class="feature-tag">🌐 HTTP Server</span>
+                            <span class="feature-tag">🎨 Template Engine</span>
+                            <span class="feature-tag">🔒 Session Management</span>
+                            <span class="feature-tag">📦 RADStar Package Manager</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <section id="stats" style="background: linear-gradient(135deg, rgba(0,120,215,0.05), rgba(0,242,255,0.05)); padding: 4rem 2rem; margin: 4rem -2rem 0; border-radius: 20px;">
+            <div style="max-width: 1200px; margin: 0 auto;">
+                <h2 style="text-align: center; margin-bottom: 3rem;">📊 Version Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div style="font-size: 3.5rem; font-weight: 700; background: linear-gradient(135deg, #0078D7, #00D9FF); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">5</div>
+                        <div style="color: var(--text-muted); font-size: 1rem; font-weight: 600; margin-top: 0.5rem;">Major Releases</div>
+                    </div>
+                    <div class="stat-card">
+                        <div style="font-size: 3.5rem; font-weight: 700; background: linear-gradient(135deg, #4CAF50, #7FFF00); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">19,653+</div>
+                        <div style="color: var(--text-muted); font-size: 1rem; font-weight: 600; margin-top: 0.5rem;">Lines of Code</div>
+                    </div>
+                    <div class="stat-card">
+                        <div style="font-size: 3.5rem; font-weight: 700; background: linear-gradient(135deg, #9D4EDD, #00D9FF); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">300+</div>
+                        <div style="color: var(--text-muted); font-size: 1rem; font-weight: 600; margin-top: 0.5rem;">Tests Passing</div>
+                    </div>
+                    <div class="stat-card">
+                        <div style="font-size: 3.5rem; font-weight: 700; background: linear-gradient(135deg, #FF006E, #FF8C00); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">4</div>
+                        <div style="color: var(--text-muted); font-size: 1rem; font-weight: 600; margin-top: 0.5rem;">Production Tools</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="download">
+            <div class="glass-card" style="background: linear-gradient(135deg, rgba(0,217,255,0.1), rgba(157,78,221,0.05)); border-color: rgba(0,217,255,0.4); text-align: center;">
+                <h2 style="margin-bottom: 2rem;">📥 Download v0.0.5 Now</h2>
+                <p style="max-width: 600px; margin: 0 auto 2rem; font-size: 1.1rem; color: var(--text-muted);">Get the latest release with all features including the Python transpiler.</p>
+
+                <div style="display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; margin: 2rem 0;">
+                    <a href="https://github.com/zarigata/rads/releases/tag/v0.0.5" class="cta-button" style="background: linear-gradient(135deg, #0078D7, #00D9FF);">
+                        📥 Download v0.0.5
+                    </a>
+                    <a href="https://github.com/zarigata/rads" class="cta-button secondary">
+                        ⭐ View on GitHub
+                    </a>
+                </div>
+
+                <div style="margin-top: 2rem; background: rgba(30,30,30,0.95); border-radius: 12px; padding: 1.5rem; max-width: 600px; margin: 0 auto;">
+                    <div style="font-family: 'Fira Code', monospace; font-size: 1rem; color: #4CAF50; font-weight: 700;">$ wget https://github.com/zarigata/rads/releases/download/v0.0.5/rads-0.0.5-linux-x86_64.tar.gz</div>
+                    <div style="font-family: 'Fira Code', monospace; color: #888; font-size: 0.9rem; margin-top: 1rem;">$ tar -xzf rads-0.0.5-linux-x86_64.tar.gz</div>
+                    <div style="font-family: 'Fira Code', monospace; color: #00D9FF; font-size: 0.9rem; margin-top: 1rem;">$ cd rads-0.0.5 && ./install.sh</div>
                 </div>
             </div>
         </section>
@@ -80,8 +169,7 @@
         <section id="github">
             <div class="glass-card" style="text-align: center;">
                 <h2>Stay Updated</h2>
-                <p>For the latest commits, active branches, and community discussions, visit our official GitHub
-                    repository.</p>
+                <p>For latest commits, active branches, and community discussions, visit our official GitHub repository.</p>
                 <div style="margin-top: 2rem;">
                     <a href="https://github.com/zarigata/rads" class="cta-button">Visit GitHub</a>
                 </div>
@@ -93,6 +181,22 @@
         <img src="assets/branding/emblem.png" alt="RADS Emblem" class="footer-emblem">
         <p>&copy; 2026 RADS Dev Group. Crafted with precision and turbo speed.</p>
     </footer>
+
+    <!-- Mouse-following spotlight -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const spotlight = document.createElement('div');
+            spotlight.className = 'mouse-spotlight';
+            document.body.appendChild(spotlight);
+
+            document.addEventListener('mousemove', (e) => {
+                const x = e.clientX;
+                const y = e.clientY;
+                spotlight.style.left = `${x}px`;
+                spotlight.style.top = `${y}px`;
+            });
+        });
+    </script>
 </body>
 
 </html>

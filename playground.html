@@ -206,6 +206,8 @@
     <div class="bg-blur blur-1"></div>
     <div class="bg-blur blur-2"></div>
     <div class="bg-blur blur-3"></div>
+    <div class="bg-blur blur-4"></div>
+    <div class="bg-blur blur-3"></div>
 
     <header>
         <div class="header-inner">
@@ -506,5 +508,22 @@ blast main() {
             }
         });
     </script>
+
+    <!-- Mouse-following spotlight -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const spotlight = document.createElement('div');
+            spotlight.className = 'mouse-spotlight';
+            document.body.appendChild(spotlight);
+
+            document.addEventListener('mousemove', (e) => {
+                const x = e.clientX;
+                const y = e.clientY;
+                spotlight.style.left = `${x}px`;
+                spotlight.style.top = `${y}px`;
+            });
+        });
+    </script>
+
 </body>
 </html>
