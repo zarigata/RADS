@@ -1,0 +1,91 @@
+name: API - List Packages
+
+on:
+  repository_dispatch:
+    types: [api-list-packages]
+
+permissions:
+  contents: read
+  issues: read
+
+jobs:
+  list-packages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query Packages from GitHub Issues
+        uses: actions/github-script@v7
+        id: query-packages
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const query = `
+              query($labels: [String!], $page: Int, $perPage: Int) {
+                search(query: "repo:zarigata/rads-packages label:package", type: ISSUE, first: $perPage, after: $page) {
+                  issueCount
+                  edges {
+                    node {
+                      ... on Issue {
+                        title
+                        body
+                        labels(first: 10) {
+                          nodes {
+                            name
+                          }
+                        }
+                        createdAt
+                        updatedAt
+                      }
+                    }
+                  }
+                  pageInfo {
+                    endCursor
+                    hasNextPage
+                  }
+                }
+              }
+            `
+
+            const response = await github.graphql(query, {
+              labels: ['package'],
+              page: '',
+              perPage: 50
+            })
+
+            const packages = response.search.edges.map(edge => {
+              const match = edge.node.title.match(/^([^:]+):\s*(.+)$/)
+              const body = JSON.parse(edge.node.body)
+              return {
+                name: match[1],
+                displayName: match[2],
+                description: body.description,
+                version: body.version,
+                author: body.author,
+                repository: body.repository,
+                homepage: body.homepage,
+                keywords: body.keywords || [],
+                license: body.license,
+                readme: body.readme,
+                latestVersion: body.latestVersion,
+                versions: body.versions || [],
+                stats: body.stats || { downloads: 0, stars: 0, lastUpdated: edge.node.updatedAt },
+                category: edge.node.labels.find(l => l.name.startsWith('category:'))?.name.replace('category:', ''),
+                createdAt: edge.node.createdAt,
+                updatedAt: edge.node.updatedAt
+              }
+            })
+
+            const output = {
+              packages,
+              total: response.search.issueCount,
+              page: 1,
+              pageSize: 50
+            }
+
+            core.setOutput('packages', JSON.stringify(packages))
+            core.setOutput('total', response.search.issueCount)
+            core.setOutput('json', JSON.stringify(output))
+
+      - name: Create API Response
+        run: |
+          echo "${{ steps.query-packages.outputs.json }}" > response.json
+          cat response.json

@@ -1,0 +1,85 @@
+name: API - GitHub OAuth
+
+on:
+  repository_dispatch:
+    types: [api-auth-callback]
+
+permissions:
+  contents: read
+
+jobs:
+  oauth-callback:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Process OAuth Callback
+        uses: actions/github-script@v7
+        id: oauth-callback
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { SignJWT } = require('jose')
+
+            const code = '${{ github.event.client_payload.code }}'
+            const state = '${{ github.event.client_payload.state }}'
+
+            const response = await fetch('https://github.com/login/oauth/access_token', {
+              method: 'POST',
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                client_id: process.env.GITHUB_CLIENT_ID,
+                client_secret: process.env.GITHUB_CLIENT_SECRET,
+                code: code
+              })
+            })
+
+            const data = await response.json()
+
+            if (!response.ok || data.error) {
+              core.setFailed('OAuth failed: ' + (data.error_description || data.error))
+              return
+            }
+
+            const accessToken = data.access_token
+
+            const userResponse = await fetch('https://api.github.com/user', {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/vnd.github.v3+json'
+              }
+            })
+
+            const user = await userResponse.json()
+
+            const jwt = await new SignJWT({ user, accessToken })
+              .setProtectedHeader({ alg: 'HS256' })
+              .setIssuedAt()
+              .setExpirationTime('24h')
+              .sign(new TextEncoder().encode(process.env.JWT_SECRET))
+
+            const output = {
+              success: true,
+              data: {
+                token: jwt,
+                user: {
+                  login: user.login,
+                  name: user.name,
+                  avatarUrl: user.avatar_url,
+                  bio: user.bio,
+                  url: user.html_url
+                }
+              }
+            }
+
+            core.setOutput('json', JSON.stringify(output))
+        env:
+          GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
+          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
+      - name: Create API Response
+        run: |
+          echo "${{ steps.oauth-callback.outputs.json }}" > response.json
+          cat response.json

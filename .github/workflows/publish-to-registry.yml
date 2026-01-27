@@ -1,0 +1,176 @@
+name: Publish to RADS Registry
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  publish-to-registry:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout package repository
+        uses: actions/checkout@v4
+
+      - name: Validate package.rads
+        id: validate-package
+        run: |
+          if [ ! -f "package.rads" ]; then
+            echo "Error: package.rads not found"
+            exit 1
+          fi
+
+          NAME=$(grep "^name" package.rads | sed 's/name *= *"\?//' | sed 's/"\?$//')
+          VERSION=$(grep "^version" package.rads | sed 's/version *= *"\?//' | sed 's/"\?$//')
+          DESCRIPTION=$(grep "^description" package.rads | sed 's/description *= *"\?//' | sed 's/"\?$//')
+
+          if [ -z "$NAME" ]; then
+            echo "Error: name is required in package.rads"
+            exit 1
+          fi
+
+          if [ -z "$VERSION" ]; then
+            echo "Error: version is required in package.rads"
+            exit 1
+          fi
+
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Error: version must be in semantic versioning format (x.y.z)"
+            exit 1
+          fi
+
+          echo "name=$NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "description=$DESCRIPTION" >> $GITHUB_OUTPUT
+
+      - name: Get release information
+        id: get-release
+        run: |
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
+          RELEASE_NAME="${{ github.event.release.name }}"
+          RELEASE_BODY="${{ github.event.release.body || '' }}"
+          RELEASE_URL="${{ github.event.release.html_url }}"
+          RELEASE_ASSETS_URL="${{ github.event.release.assets_url }}"
+
+          echo "tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+          echo "name=$RELEASE_NAME" >> $GITHUB_OUTPUT
+          echo "url=$RELEASE_URL" >> $GITHUB_OUTPUT
+
+      - name: Create package metadata
+        id: create-metadata
+        env:
+          PACKAGE_NAME: ${{ steps.validate-package.outputs.name }}
+          PACKAGE_VERSION: ${{ steps.validate-package.outputs.version }}
+          PACKAGE_DESCRIPTION: ${{ steps.validate-package.outputs.description || '' }}
+          REPOSITORY: ${{ github.repository }}
+          AUTHOR: ${{ github.actor }}
+          RELEASE_TAG: ${{ steps.get-release.outputs.tag }}
+          RELEASE_URL: ${{ steps.get-release.outputs.url }}
+          REPO_OWNER: ${{ github.repository_owner }}
+        run: |
+          cat > metadata.json << EOF
+          {
+            "name": "$PACKAGE_NAME",
+            "displayName": "$PACKAGE_NAME",
+            "description": "$PACKAGE_DESCRIPTION",
+            "version": "$PACKAGE_VERSION",
+            "author": "$AUTHOR",
+            "repository": "https://github.com/$REPOSITORY",
+            "homepage": "",
+            "keywords": [],
+            "license": "MIT",
+            "readme": "$RELEASE_BODY",
+            "latestVersion": "$PACKAGE_VERSION",
+            "versions": [
+              {
+                "version": "$PACKAGE_VERSION",
+                "releaseDate": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+                "releaseUrl": "$RELEASE_URL",
+                "downloadUrl": "https://github.com/$REPOSITORY/releases/download/$RELEASE_TAG/${PACKAGE_NAME}-${PACKAGE_VERSION}.tar.gz",
+                "checksum": ""
+              }
+            ],
+            "stats": {
+              "downloads": 0,
+              "stars": 0,
+              "lastUpdated": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+            }
+          }
+          EOF
+
+          cat metadata.json
+
+      - name: Create GitHub Release asset
+        run: |
+          PACKAGE_NAME="${{ steps.validate-package.outputs.name }}"
+          PACKAGE_VERSION="${{ steps.validate-package.outputs.version }}"
+          RELEASE_TAG="${{ steps.get-release.outputs.tag }}"
+
+          echo "Creating package archive: ${PACKAGE_NAME}-${PACKAGE_VERSION}.tar.gz"
+
+          tar -czf "${PACKAGE_NAME}-${PACKAGE_VERSION}.tar.gz" \
+            --exclude=".git" \
+            --exclude="*.md" \
+            --exclude="tests/" \
+            .
+
+          echo "Created package archive"
+
+      - name: Upload release asset
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-archive
+          path: "${{ steps.validate-package.outputs.name }}-${{ steps.validate-package.outputs.version }}.tar.gz"
+
+      - name: Update Registry Database
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_REGISTRY_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const metadata = JSON.parse(fs.readFileSync('metadata.json', 'utf8'));
+
+            const packageTitle = `${metadata.name}: ${metadata.displayName}`;
+            const packageBody = JSON.stringify(metadata, null, 2);
+
+            const labels = ['package'];
+            if (metadata.category) labels.push(`category:${metadata.category}`);
+            if (metadata.license) labels.push(`license:${metadata.license}`);
+            labels.push('status:published');
+
+            const issues = await github.rest.issues.listForRepo({
+              owner: 'zarigata',
+              repo: 'rads-packages',
+              labels: 'package',
+              state: 'all',
+              per_page: 100
+            });
+
+            const existingIssue = issues.data.find(issue =>
+              issue.title === packageTitle && issue.state === 'open'
+            );
+
+            if (existingIssue) {
+              console.log(`Updating existing issue #${existingIssue.number}`);
+
+              await github.rest.issues.update({
+                owner: 'zarigata',
+                repo: 'rads-packages',
+                issue_number: existingIssue.number,
+                body: packageBody,
+                labels: labels
+              });
+            } else {
+              console.log('Creating new issue');
+
+              await github.rest.issues.create({
+                owner: 'zarigata',
+                repo: 'rads-packages',
+                title: packageTitle,
+                body: packageBody,
+                labels: labels
+              });
+            }

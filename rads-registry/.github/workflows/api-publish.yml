@@ -1,0 +1,105 @@
+name: API - Publish Package
+
+on:
+  repository_dispatch:
+    types: [api-publish]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  publish-package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish Package to Registry
+        uses: actions/github-script@v7
+        id: publish-package
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pkg = JSON.parse('${{ github.event.client_payload.package }}')
+            const token = '${{ github.event.client_payload.token }}'
+
+            const decoded = require('jose').decodeJwt(token)
+            const user = decoded.payload.user.login
+
+            if (pkg.author !== user) {
+              core.setFailed(`User ${user} is not authorized to publish packages as ${pkg.author}`)
+              return
+            }
+
+            const packageTitle = `${pkg.name}: ${pkg.displayName || pkg.name}`
+            const packageBody = {
+              name: pkg.name,
+              displayName: pkg.displayName || pkg.name,
+              description: pkg.description,
+              version: pkg.version,
+              author: pkg.author,
+              repository: pkg.repository,
+              homepage: pkg.homepage,
+              keywords: pkg.keywords || [],
+              license: pkg.license,
+              readme: pkg.readme,
+              latestVersion: pkg.version,
+              versions: [{
+                version: pkg.version,
+                releaseDate: pkg.releaseDate || new Date().toISOString(),
+                releaseUrl: pkg.releaseUrl,
+                downloadUrl: pkg.downloadUrl,
+                checksum: pkg.checksum
+              }],
+              stats: {
+                downloads: 0,
+                stars: 0,
+                lastUpdated: new Date().toISOString()
+              }
+            }
+
+            const labels = ['package']
+            if (pkg.category) labels.push(`category:${pkg.category}`)
+            if (pkg.license) labels.push(`license:${pkg.license}`)
+
+            const issues = await github.rest.issues.listForRepo({
+              owner: 'zarigata',
+              repo: 'rads-packages',
+              labels: 'package',
+              state: 'all',
+              per_page: 100
+            })
+
+            const existingIssue = issues.data.find(issue =>
+              issue.title === packageTitle && issue.state === 'open'
+            )
+
+            if (existingIssue) {
+              await github.rest.issues.update({
+                owner: 'zarigata',
+                repo: 'rads-packages',
+                issue_number: existingIssue.number,
+                body: JSON.stringify(packageBody, null, 2),
+                labels: labels
+              })
+              console.log(`Updated existing issue #${existingIssue.number}`)
+            } else {
+              await github.rest.issues.create({
+                owner: 'zarigata',
+                repo: 'rads-packages',
+                title: packageTitle,
+                body: JSON.stringify(packageBody, null, 2),
+                labels: labels
+              })
+              console.log('Created new issue')
+            }
+
+            core.setOutput('success', 'true')
+
+      - name: Create API Response
+        run: |
+          echo '{
+            "success": true,
+            "data": {
+              "message": "Package published successfully"
+            }
+          }' > response.json
+          cat response.json

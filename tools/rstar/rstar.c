@@ -6,6 +6,8 @@
 #include <sys/stat.h>
 #include <errno.h>
 
+#define REGISTRY_API_BASE "https://api.registry.rads-lang.org"
+
 #ifdef RSTAR_TESTING
 #define RSTAR_INTERNAL
 #else
@@ -44,8 +46,10 @@
 RSTAR_INTERNAL void print_usage(void) {
     printf("RADStar (rstar) - RADS Plugin Manager v0.1.0-skeleton\n");
     printf("Usage: rstar <command> [args]\n\n");
-    printf("Commands:\n");
-    printf("  install <name>   Install a plugin from the remote index\n");
+     printf("Commands:\n");
+    printf("  install <name>   Install a plugin from registry\n");
+    printf("  search <query>   Search packages in registry\n");
+    printf("  info <name>      Get package information\n");
     printf("  list             List installed plugins (plugins.lock)\n");
     printf("  run <name> [...](Execute plugin entry with rads)\n");
     printf("  help             Show this help\n");
@@ -305,6 +309,110 @@ RSTAR_INTERNAL void cmd_run(const char *package, int __attribute__((unused)) arg
     printf(".\n");
 }
 
+/* fetch_registry_packages
+ * Why: Fetch package list from RADS registry via GitHub Actions API
+ * How to upgrade: Add local caching, pagination support, error handling
+ */
+RSTAR_INTERNAL int fetch_registry_packages(const char *query, const char *category, const char *license) {
+    char url[512];
+    char cmd[1024];
+
+    snprintf(url, sizeof(url), "%s/dispatch", REGISTRY_API_BASE);
+
+    snprintf(cmd, sizeof(cmd),
+        "curl -s -X POST %s "
+        "-H 'Content-Type: application/json' "
+        "-d '{\"event_type\":\"api-search\",\"client_payload\":{",
+        "\"query\":\"%s\",\"category\":\"%s\",\"license\":\"%s\"}}'",
+        url, query ? query : "", category ? category : "", license ? license : "");
+
+    FILE *fp = popen(cmd, "r");
+    if (!fp) {
+        fprintf(stderr, "Error: Failed to connect to registry\n");
+        return 1;
+    }
+
+    char response[8192];
+    size_t response_len = fread(response, 1, sizeof(response), fp);
+    response[response_len] = '\0';
+    pclose(fp);
+
+    printf("%s\n", response);
+    return 0;
+}
+
+/* get_package_info
+ * Why: Get detailed information about a specific package from registry
+ * How to upgrade: Add caching, handle network errors gracefully
+ */
+RSTAR_INTERNAL int get_package_info(const char *package_name) {
+    char url[512];
+    char cmd[1024];
+
+    snprintf(url, sizeof(url), "%s/dispatch", REGISTRY_API_BASE);
+
+    snprintf(cmd, sizeof(cmd),
+        "curl -s -X POST %s "
+        "-H 'Content-Type: application/json' "
+        "-d '{\"event_type\":\"api-list-packages\",\"client_payload\":{}}'",
+        url);
+
+    FILE *fp = popen(cmd, "r");
+    if (!fp) {
+        fprintf(stderr, "Error: Failed to connect to registry\n");
+        return 1;
+    }
+
+    char response[8192];
+    size_t response_len = fread(response, 1, sizeof(response), fp);
+    response[response_len] = '\0';
+    pclose(fp);
+
+    printf("%s\n", response);
+    return 0;
+}
+
+/* cmd_search
+ * Why: Search packages in RADS registry with filters
+ * How to upgrade: Add pagination, sorting options, local caching
+ */
+RSTAR_INTERNAL void cmd_search(const char *query, const char *category, const char *license) {
+    if (!query || strlen(query) == 0) {
+        fprintf(stderr, "Error: search query required. Try: rstar search database\n");
+        return;
+    }
+
+    printf("🔍 Searching registry...\n");
+    fetch_registry_packages(query, category, license);
+}
+
+/* cmd_info
+ * Why: Display detailed information about a specific package
+ * How to upgrade: Format output, show versions, dependencies
+ */
+RSTAR_INTERNAL void cmd_info(const char *package_name) {
+    if (!package_name || strlen(package_name) == 0) {
+        fprintf(stderr, "Error: package name required. Try: rstar info database-sqlite\n");
+        return;
+    }
+
+    printf("📦 Getting package info...\n");
+    get_package_info(package_name);
+}
+
+/* cmd_publish
+ * Why: Guide user to publish package via GitHub workflow
+ * How to upgrade: Automated publishing with CLI flags
+ */
+RSTAR_INTERNAL void cmd_publish(void) {
+    printf("📤 To publish a package:\n\n");
+    printf("1. Ensure package.rads exists in repository root\n");
+    printf("2. Commit and push changes to GitHub\n");
+    printf("3. Create GitHub Release: gh release create v1.0.0\n");
+    printf("4. The GitHub Action will automatically publish to registry\n\n");
+    printf("See: docs/registry-architecture/PUBLISHING_WORKFLOW.md\n\n");
+}
+
 #ifndef RSTAR_TESTING
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -316,11 +424,21 @@ int main(int argc, char *argv[]) {
     if (strcmp(cmd, "install") == 0) {
         const char *pkg = (argc >= 3) ? argv[2] : NULL;
         cmd_install(pkg);
+    } else if (strcmp(cmd, "search") == 0) {
+        const char *query = (argc >= 3) ? argv[2] : NULL;
+        const char *category = (argc >= 4) ? argv[3] : NULL;
+        const char *license = (argc >= 5) ? argv[4] : NULL;
+        cmd_search(query, category, license);
+    } else if (strcmp(cmd, "info") == 0) {
+        const char *pkg = (argc >= 3) ? argv[2] : NULL;
+        cmd_info(pkg);
     } else if (strcmp(cmd, "list") == 0) {
         cmd_list();
     } else if (strcmp(cmd, "run") == 0) {
         const char *pkg = (argc >= 3) ? argv[2] : NULL;
         cmd_run(pkg, argc - 3, argv + 3);
+    } else if (strcmp(cmd, "publish") == 0) {
+        cmd_publish();
     } else {
         print_usage();
         return 1;

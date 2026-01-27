@@ -27,6 +27,15 @@ RADS is a high-performance, low-level programming language designed for the mode
 - 🧬 **Language-Agnostic AST**: Universal AST for multi-language support
 - 📝 **Write Your Way, Run RADS**: Zero learning curve for Python developers
 
+### 📦 RADS Package Registry (NEW!)
+- 🌐 **Professional Registry**: npmjs.com-style package management for RADS
+- 🔍 **Search & Browse**: Full-text search with filters (category, license, sort)
+- 🚀 **Easy Publishing**: GitHub OAuth authentication, automated publishing workflow
+- 📊 **Statistics**: Download counts, stars, and analytics
+- 💰 **Zero Cost**: GitHub-native infrastructure (Pages + Actions)
+- 🎨 **Modern UI**: Next.js + shadcn/ui, dark mode, responsive design
+- See [registry architecture docs](docs/registry-architecture/) for details
+
 ### v0.0.4 "Constellation" - Distributed Computing Platform
 - 🌌 **Distributed Platform**: VM/Container-like instance management
 - ⚡ **10-400x Faster**: Than Docker/Kubernetes
@@ -203,12 +212,12 @@ Plugins are stored in `~/.rads/plugins/`. See [docs/PACKAGE_MANAGER.md](docs/PAC
 - ✅ Async I/O with libuv
 - ✅ Cross-platform build system
 
-### v0.2.0 (Next)
-- 🚧 Package registry and remote plugin installation
-- 🚧 Web framework with middleware
-- 🚧 Template engine
-- 🚧 Database connectors
-- 🚧 Enhanced standard library
+### v0.6.0 (Next) - Package Registry Launch
+- 🚧 **Production Package Registry**: Full npmjs.com-style registry at registry.rads-lang.org
+- 🔧 **rstar CLI Integration**: Install/search/publish packages from command line
+- 📊 **Download Analytics**: Package statistics and download counts
+- 📝 **Documentation**: Complete user and package author guides
+- 🧪 **Automated Publishing**: GitHub Actions workflow for package publishing
 
 ### v1.0.0 (Future)
 - 🔜 Language Server Protocol (LSP)

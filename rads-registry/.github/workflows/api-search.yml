@@ -1,0 +1,81 @@
+name: API - Search Packages
+
+on:
+  repository_dispatch:
+    types: [api-search]
+
+permissions:
+  contents: read
+  issues: read
+
+jobs:
+  search-packages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Search Packages from GitHub Issues
+        uses: actions/github-script@v7
+        id: search-packages
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const queryInput = '${{ github.event.client_payload.query }}'
+            const category = '${{ github.event.client_payload.category }}'
+            const license = '${{ github.event.client_payload.license }}'
+            const sortBy = '${{ github.event.client_payload.sort }}'
+
+            let searchQuery = 'repo:zarigata/rads-packages label:package'
+            if (queryInput) {
+              searchQuery += ` ${queryInput} in:title,body`
+            }
+            if (category) {
+              searchQuery += ` label:category:${category}`
+            }
+            if (license) {
+              searchQuery += ` label:license:${license}`
+            }
+
+            const response = await github.rest.search.issues({
+              q: searchQuery,
+              sort: sortBy === 'downloads' ? 'comments' : sortBy === 'stars' ? 'comments' : 'updated',
+              order: 'desc',
+              per_page: 100
+            })
+
+            const packages = response.data.items.map(issue => {
+              const match = issue.title.match(/^([^:]+):\s*(.+)$/)
+              const body = JSON.parse(issue.body)
+              return {
+                name: match[1],
+                displayName: match[2],
+                description: body.description,
+                version: body.version,
+                author: body.author,
+                repository: body.repository,
+                homepage: body.homepage,
+                keywords: body.keywords || [],
+                license: body.license,
+                readme: body.readme,
+                latestVersion: body.latestVersion,
+                versions: body.versions || [],
+                stats: body.stats || {
+                  downloads: body.stats?.downloads || 0,
+                  stars: body.stats?.stars || 0,
+                  lastUpdated: issue.updated_at
+                },
+                category: issue.labels.find(l => l.name.startsWith('category:'))?.name.replace('category:', '')
+              }
+            })
+
+            const output = {
+              packages,
+              total: response.data.total_count
+            }
+
+            core.setOutput('packages', JSON.stringify(packages))
+            core.setOutput('total', response.data.total_count)
+            core.setOutput('json', JSON.stringify(output))
+
+      - name: Create API Response
+        run: |
+          echo "${{ steps.search-packages.outputs.json }}" > response.json
+          cat response.json
