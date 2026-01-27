@@ -90,7 +90,7 @@ This directory contains comprehensive example programs demonstrating various fea
 ---
 
 ### 🛩️ 06-v0.0.6/
-**v0.0.6 "Fighter Jet" - New feature examples**
+**v0.0.6 "FIGHTER JET" - New feature examples**
 
 | Example | Description | Features Demonstrated |
 |---------|-------------|---------------------|
