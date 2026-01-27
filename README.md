@@ -36,6 +36,15 @@ RADS is a high-performance, low-level programming language designed for the mode
 - 🎨 **Modern UI**: Next.js + shadcn/ui, dark mode, responsive design
 - See [registry architecture docs](docs/registry-architecture/) for details
 
+### 📦 RADS Package Registry (NEW!)
+- 🌐 **Professional Registry**: npmjs.com-style package management for RADS
+- 🔍 **Search & Browse**: Full-text search with filters (category, license, sort)
+- 🚀 **Easy Publishing**: GitHub OAuth authentication, automated publishing workflow
+- 📊 **Statistics**: Download counts, stars, and analytics
+- 💰 **Zero Cost**: GitHub-native infrastructure (Pages + Actions)
+- 🎨 **Modern UI**: Next.js + shadcn/ui, dark mode, responsive design
+- See [registry architecture docs](docs/registry-architecture/) for details
+
 ### v0.0.4 "Constellation" - Distributed Computing Platform
 - 🌌 **Distributed Platform**: VM/Container-like instance management
 - ⚡ **10-400x Faster**: Than Docker/Kubernetes
@@ -83,8 +92,10 @@ cd rads-0.0.5
 # Verify installation
 rads --version
 rstar help
-rads-mask --help
 rpm help
+
+# Visit Package Registry
+# Registry will be available at: https://zarigata.github.io/RADS
 ```
 
 #### Option 2: Build from Source

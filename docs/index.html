@@ -45,6 +45,23 @@
     <div class="bg-blur blur-1"></div>
     <div class="bg-blur blur-2"></div>
     <div class="bg-blur blur-3"></div>
+    <div class="bg-blur blur-4"></div>
+
+    <!-- Mouse-following spotlight -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const spotlight = document.createElement('div');
+            spotlight.className = 'mouse-spotlight';
+            document.body.appendChild(spotlight);
+
+            document.addEventListener('mousemove', (e) => {
+                const x = e.clientX;
+                const y = e.clientY;
+                spotlight.style.left = `${x}px`;
+                spotlight.style.top = `${y}px`;
+            });
+        });
+    </script>
 
     <header>
         <div class="header-inner">
@@ -65,6 +82,10 @@
 
     <main>
         <section class="hero-sub">
+            <div style="background: linear-gradient(135deg, rgba(0,217,255,0.15), rgba(157,78,221,0.1)); padding: 2rem 3rem; border-radius: 20px; border: 2px solid rgba(0,217,255,0.3); margin-bottom: 3rem; text-align: center; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+                <span style="font-size: 1.2rem; font-weight: 700; color: var(--primary-blue); margin-bottom: 0.5rem;">🎉 NEW: v0.0.5 "CHAMELEON"</span>
+                <p style="font-size: 1rem; margin: 0;">🐍 Python to RADS transpiler with 95%+ accuracy • <strong style="color: var(--accent-purple);">Write Python, Run RADS</strong></p>
+            </div>
             <h1 style="animation: float 6s ease-in-out infinite;">Blast Through Data at <br>Turbo Speed! 🚀</h1>
             <p style="font-size: 1.3rem; max-width: 850px; margin: 0 auto 1rem; line-height: 1.8;">The ultimate high-performance language for microservers, IoT, and high-speed data processing. <strong style="background: linear-gradient(135deg, #0078D7, #00D9FF); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Designed with a premium retro-futuristic soul.</strong></p>
             <div style="display: flex; gap: 2.5rem; justify-content: center; margin: 2.5rem auto; flex-wrap: wrap; max-width: 700px;">
@@ -109,9 +130,14 @@
         </section>
 
         <section id="features">
-            <div class="glass-card">
+            <div class="glass-card enhanced-glow">
                 <h2 style="text-align: center; margin-bottom: 3rem;">✨ Why RADS?</h2>
                 <div class="compare-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+                    <div class="feature-card" style="text-align: center;">
+                        <span style="font-size: 3rem;">🦎</span>
+                        <h3>Python Transpiler (NEW!)</h3>
+                        <p><strong style="color: var(--accent-purple);">rads-mask</strong> transpiler converts Python to RADS with 95%+ accuracy. Write your way, run RADS!</p>
+                    </div>
                     <div class="feature-card" style="text-align: center;">
                         <span style="font-size: 3rem;">⚡</span>
                         <h3>Turbo Performance</h3>
@@ -120,12 +146,17 @@
                     <div class="feature-card" style="text-align: center;">
                         <span style="font-size: 3rem;">🌐</span>
                         <h3>Async Primitives</h3>
-                        <p>Non-blocking I/O is baked into the language. Keywords like <code>async</code> and <code>await</code> are first-class citizens.</p>
+                        <p>Non-blocking I/O is baked into language. Keywords like <code>async</code> and <code>await</code> are first-class citizens.</p>
                     </div>
                     <div class="feature-card" style="text-align: center;">
                         <span style="font-size: 3rem;">💎</span>
                         <h3>Glossy Syntax</h3>
-                        <p>A syntax that's easy to read and beautiful to write. Inspired by the best of C, Python, and Rust.</p>
+                        <p>A syntax that's easy to read and beautiful to write. Inspired by best of C, Python, and Rust.</p>
+                    </div>
+                    <div class="feature-card" style="text-align: center;">
+                        <span style="font-size: 3rem;">🌌</span>
+                        <h3>Distributed Platform</h3>
+                        <p><strong style="color: var(--accent-cyan);">Constellation</strong> offers clustering, service mesh, and auto-scaling. <strong style="color: var(--secondary-green);">10-400x faster than Docker/K8s!</strong></p>
                     </div>
                 </div>
             </div>
@@ -188,7 +219,7 @@
             <div class="glass-card">
                 <h2 style="text-align: center; margin-bottom: 2rem;">See It In Action</h2>
                 <p style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;">A complete HTTP server in just a few lines</p>
-                <div class="code-window">
+                <div class="code-window animated">
                     <div class="window-header">
                         <div class="window-dots">
                             <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
@@ -367,5 +398,6 @@
         <img src="assets/branding/emblem.png" alt="RADS Emblem" class="footer-emblem">
         <p>&copy; 2026 RADS Dev Group. Crafted with precision and turbo speed.</p>
     </footer>
+    <!-- Mouse-following spotlight --><script>document.addEventListener("DOMContentLoaded", () => {const spotlight = document.createElement("div");spotlight.className = "mouse-spotlight";document.body.appendChild(spotlight);document.addEventListener("mousemove", (e) => {const x = e.clientX;const y = e.clientY;spotlight.style.left = x + "px";spotlight.style.top = y + "px";});});</script>
 </body>
 </html>

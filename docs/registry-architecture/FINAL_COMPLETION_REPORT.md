@@ -585,16 +585,76 @@ tools/rstar/
 
 ---
 
-## Next Steps for You
+## Launch Steps for You
 
-### Immediate (Today - This Week)
+### Today - Deploy Registry (30 minutes)
 
-1. **Create GitHub Repositories (30 min)**
+**Repository:** `zarigata.github.io` (existing GitHub Pages account)
+
+Since you already have `zarigata.github.io` with GitHub Pages enabled, we'll deploy the registry as a subdirectory:
+
+**Steps:**
+
+1. **Create RADS Subdirectory** (5 minutes)
    ```bash
-   # Create these on GitHub:
-   # 1. rads-registry
-   # 2. rads-packages
+   # Clone your GitHub Pages repository locally
+   git clone https://github.com/zarigata/zarigata.github.io.git
+   cd zarigata.github.io
+   
+   # Create RADS subdirectory
+   mkdir -p RADS
+   echo "RADS subdirectory created"
+   
+   # Commit and push
+   git add RADS/
+   git commit -m "Create RADS subdirectory for package registry"
+   git push
    ```
+
+2. **Copy Registry Code** (5 minutes)
+   ```bash
+   # In RADS subdirectory
+   cd RADS
+   
+   # Copy registry files from Rads project
+   cp -r /path/to/Rads/rads-registry/* .
+   
+   # Commit and push
+   git add .
+   git commit -m "Add RADS Package Registry code"
+   git push
+   ```
+
+3. **Deploy to GitHub Pages** (10 minutes)
+   ```bash
+   # Push changes
+   git push
+   
+   # Wait 1-2 minutes for GitHub Pages to build
+   ```
+
+4. **Verify Deployment** (5 minutes)
+   - Visit: https://zarigata.github.io/RADS/
+   - Verify registry loads
+   - Test all functionality
+   - Wait for GitHub Pages to complete build
+
+5. **Configure rads-packages Repository** (10 minutes)
+   ```bash
+   # Create rads-packages repository (if not exists)
+   # Add README.md
+   # Configure labels (from deployment guide)
+   # Note: This will store package metadata
+   ```
+
+**Result:** Registry available at https://zarigata.github.io/RADS/
+
+**Alternative: Separate Repository (if preferred)**
+```bash
+# If you prefer a separate registry repository:
+# 1. Create new repository: registry.rads-lang.io
+# 2. Follow Option 2 deployment steps
+```
 
 2. **Set Up GitHub App (15 min)**
    - Follow: `docs/registry-architecture/REPOSITORY_SETUP.md`

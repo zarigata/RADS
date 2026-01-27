@@ -34,8 +34,8 @@ jobs:
         run: npm run build
         env:
           NEXT_PUBLIC_GITHUB_CLIENT_ID: ${{ secrets.GITHUB_CLIENT_ID }}
-          NEXT_PUBLIC_API_BASE: https://api.registry.rads-lang.org
-          NEXT_PUBLIC_REGISTRY_URL: https://registry.rads-lang.org
+          NEXT_PUBLIC_API_BASE: https://zarigata.github.io/RADS
+          NEXT_PUBLIC_REGISTRY_URL: https://zarigata.github.io/RADS
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

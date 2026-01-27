@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://api.registry.rads-lang.org"
+const API_BASE = "https://zarigata.github.io/RADS"
 
 interface ApiClientOptions {
   method?: "GET" | "POST"
