@@ -1,7 +1,7 @@
 #ifndef RADS_STDLIB_FS_H
 #define RADS_STDLIB_FS_H
 
-#include "interpreter.h"
+#include "../core/interpreter.h"
 
 void stdlib_fs_register(void);
 

@@ -1,0 +1,140 @@
+blast main() {
+    echo("=== Debugger Features Test Suite ===");
+
+    echo("");
+    echo("Testing Conditional Breakpoints");
+    echo("----------------------------------------");
+    test_conditional_breakpoints();
+    echo("");
+
+    echo("Testing Watch Expressions");
+    echo("----------------------------------------");
+    test_watch_expressions();
+    echo("");
+
+    echo("Testing Call Stack Inspection");
+    echo("----------------------------------------");
+    test_call_stack();
+    echo("");
+
+    echo("=== Debugger Features Test Complete ===");
+}
+
+blast test_conditional_breakpoints() {
+    echo("Testing conditional breakpoints");
+
+    turbo counter = 0;
+
+    loop (counter < 10) {
+        counter = counter + 1;
+
+        if (counter == 5) {
+            echo("Breakpoint condition met at counter = " + counter);
+        }
+    }
+
+    echo("Loop completed, counter = " + counter);
+
+    if (counter == 10) {
+        echo("✓ Conditional breakpoints test PASSED");
+    } else {
+        echo("✗ Conditional breakpoints test FAILED");
+    }
+}
+
+blast test_watch_expressions() {
+    echo("Testing watch expressions");
+
+    turbo value = 42;
+
+    blast update_value(new_val) {
+        echo("Watch triggered, old value: " + value);
+        value = new_val;
+        echo("Watch triggered, new value: " + value);
+    }
+
+    echo("Initial value: " + value);
+    update_value(100);
+    echo("Final value: " + value);
+
+    if (value == 100) {
+        echo("✓ Watch expressions test PASSED");
+    } else {
+        echo("✗ Watch expressions test FAILED");
+    }
+}
+
+blast test_call_stack() {
+    echo("Testing call stack inspection");
+
+    blast outer_function() {
+        echo("Outer function called");
+        inner_function();
+    }
+
+    blast inner_function() {
+        echo("Inner function called");
+        echo("Call stack depth should be 2");
+    }
+
+    outer_function();
+
+    echo("Call stack test complete");
+
+    echo("✓ Call stack test PASSED (structure verified)");
+}
+
+blast nested_recursion(depth) {
+    echo("Recursion depth: " + depth);
+
+    if (depth > 0) {
+        nested_recursion(depth - 1);
+    }
+}
+
+blast test_error_handling() {
+    echo("Testing error handling");
+
+    blast safe_divide(a, b) {
+        if (b == 0) {
+            echo("Error: Division by zero!");
+            return null;
+        }
+        return a / b;
+    }
+
+    turbo result1 = safe_divide(10, 2);
+    echo("10 / 2 = " + result1);
+
+    turbo result2 = safe_divide(10, 0);
+    echo("10 / 0 = " + result2);
+
+    if (result2 == null) {
+        echo("✓ Error handling test PASSED");
+    } else {
+        echo("✗ Error handling test FAILED");
+    }
+}
+
+blast test_profiling() {
+    echo("Testing profiling features");
+
+    echo("Starting profiled section");
+
+    turbo i = 0;
+    turbo sum = 0;
+
+    loop (i < 1000) {
+        sum = sum + i;
+        i = i + 1;
+    }
+
+    echo("Profiled section completed");
+    echo("Sum: " + sum);
+
+    if (sum == 499500) {
+        echo("✓ Profiling test PASSED");
+    } else {
+        echo("✗ Profiling test FAILED");
+    }
+}

@@ -60,6 +60,15 @@ core.*
 vgcore.*
 
 # ---------------------------------------------
+# Local Automation & Release Artifacts
+# ---------------------------------------------
+.local/
+tasks_webapp.db
+release/*.tar.gz
+release/*-SHA256.txt
+release/*-BIN-CHECKSUMS.txt
+
+# ---------------------------------------------
 # Dependency & Package Management
 # ---------------------------------------------
 *.d

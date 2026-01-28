@@ -1,6 +1,7 @@
 #ifndef RADS_GRAPHQL_H
 #define RADS_GRAPHQL_H
 
+#include "../core/interpreter.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -132,5 +133,6 @@ struct GraphQLServer* graphql_server_create(GraphQLSchema* schema, int port);
 void graphql_server_free(struct GraphQLServer* server);
 int graphql_server_listen(struct GraphQLServer* server);
 void graphql_server_stop(struct GraphQLServer* server);
+void stdlib_graphql_register(void);
 
 #endif

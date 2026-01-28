@@ -1,7 +1,7 @@
 #ifndef RADS_STDLIB_FFI_H
 #define RADS_STDLIB_FFI_H
 
-#include "interpreter.h"
+#include "../core/interpreter.h"
 
 // FFI Module registration
 void stdlib_ffi_register(void);

@@ -1,101 +1,28 @@
-# 🚀 RADS Programming Language
+# RADS
 
-**R**apid **A**synchronous **D**ata **S**erver Language
+Rapid Asynchronous Data Server - A high-performance, low-level programming language.
 
-*Blast through data at turbo speed! The ultimate retro-futuristic programming language.*
+## Current Version: 0.0.7 "DARK MOON"
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/version-0.0.6--brightgreen.svg)](CHANGELOG.md)
+## The RADS Philosophy
 
----
+**One binary. Infinite possibilities.**
 
-## 🌐 Overview
+RADS is distributed as a single, self-contained binary that can compile and run RADS programs anywhere. The installer uses bash and line-based command processing, making it work seamlessly across different Linux distributions and versions.
 
-RADS is a high-performance, low-level programming language designed for the modern retro enthusiast. It combines the raw power of C with the dynamic energy of the 2000s internet.
+## Quick Start
 
-**Built for:**
-- 🖥️ **Microservers & IoT**: Perfect for Raspberry Pi deployments running 24/7.
-- ⚡ **High-Speed Processing**: Digest images, audio, and video at processor-level speeds.
-- 🛠️ **Reliable Tooling**: Craft F2A (File-to-Any) servers with safety and precision.
-- 🎨 **Aesthetic**: Frutiger Aero design philosophy meets nu-metal intensity.
-
-## ✨ Features
-
-### v0.0.6 "FIGHTER JET" - Mach Speed Upgrades
-- 🛩️ **Bytecode VM**: Stack-based virtual machine for 3-5x performance
-- ⚡ **Sampling Profiler**: Real-time profiling with flamegraph generation
-- 🔥 **WebSocket Support**: Real-time bidirectional communication (128+ concurrent connections)
-- 📊 **GraphQL Server**: Queries, mutations, subscriptions with JSON responses
-- 🎯 **LSP Server**: Full Language Server Protocol (Rust-based)
-- 🐛 **Debug Protocol**: DAP with breakpoints, step controls, variable inspection
-- See [v0.0.6 plan](V0.0.6_FIGHTER_JET_PLAN.md) for details
-
-### v0.0.5 "CHAMELEON" - Python Transpilation
-- 🐍 **rads-mask**: Python to RADS transpiler (95%+ accuracy)
-- 🧬 **Language-Agnostic AST**: Universal AST for multi-language support
-- 📝 **Write Your Way, Run RADS**: Zero learning curve for Python developers
-
-### 📦 RADS Package Registry (NEW!)
-- 🌐 **Professional Registry**: npmjs.com-style package management for RADS
-- 🔍 **Search & Browse**: Full-text search with filters (category, license, sort)
-- 🚀 **Easy Publishing**: GitHub OAuth authentication, automated publishing workflow
-- 📊 **Statistics**: Download counts, stars, and analytics
-- 💰 **Zero Cost**: GitHub-native infrastructure (Pages + Actions)
-- 🎨 **Modern UI**: Next.js + shadcn/ui, dark mode, responsive design
-- See [registry architecture docs](docs/registry-architecture/) for details
-
-### 📦 RADS Package Registry (NEW!)
-- 🌐 **Professional Registry**: npmjs.com-style package management for RADS
-- 🔍 **Search & Browse**: Full-text search with filters (category, license, sort)
-- 🚀 **Easy Publishing**: GitHub OAuth authentication, automated publishing workflow
-- 📊 **Statistics**: Download counts, stars, and analytics
-- 💰 **Zero Cost**: GitHub-native infrastructure (Pages + Actions)
-- 🎨 **Modern UI**: Next.js + shadcn/ui, dark mode, responsive design
-- See [registry architecture docs](docs/registry-architecture/) for details
-
-### v0.0.4 "Constellation" - Distributed Computing Platform
-- 🌌 **Distributed Platform**: VM/Container-like instance management
-- ⚡ **10-400x Faster**: Than Docker/Kubernetes
-- 📊 **Resource Orchestration**: Automatic scaling, scheduling
-- 🔗 **Service Mesh**: Load balancing, circuit breakers, monitoring
-- 💾 **Distributed Filesystem**: DHT with replication
-- 📈 **Auto-Scaling**: Policy-based scaling with cooldown
-- 📊 **Monitoring**: Time-series database, log aggregation, alerting
-
-### v0.0.3 "Butterfly" - Database & Testing
-- 💾 **SQLite3 Integration**: Full database support with transactions
-- 🧪 **Built-in Testing**: `test` keyword, assertions, test runner
-- ⚡ **Enhanced Async**: Promise.all, Promise.race, Promise.timeout
-
-### v0.0.2 "Core Language" - RGB REPL
-- 🎨 **RGB Chroma Effects**: Gaming keyboard aesthetics with rainbow cursor
-- 📖 **GNU Readline**: Command history, arrow key navigation
-- 🏗️ **Core Language**: Structs, enums, arrays, string operations
-
-### v0.0.1 "Web Framework"
-- 🚀 **Interactive REPL**: Learn and experiment with instant feedback
-- 🎨 **Beautiful Error Messages**: Color-coded errors with source context and helpful suggestions
-- ⭐ **RADStar Package Manager**: Install and manage plugins with `rstar`
-- ⚡ **Turbo Performance**: Compiles to native code with libuv async I/O
-- 🌐 **Built-in HTTP Server**: Create web servers with minimal code
-- 🔒 **Safety & Speed**: Choose your mode - Safe or Xtreme
-
-## 🚀 Quick Start
-
-### Installation
-
-#### Option 1: Download Pre-built Binary (Recommended)
+### Automatic Installation (Recommended)
 
 ```bash
-# Download the latest release
-wget https://github.com/zarigata/rads/releases/download/v0.0.6/rads-0.0.6-linux-x86_64.tar.gz
+# Download the latest release (Linux x86_64)
+wget https://github.com/zarigata/RADS/releases/download/v0.0.7/rads-v0.0.7-linux-x86_64.tar.gz
 
 # Extract
-tar -xzf rads-0.0.6-linux-x86_64.tar.gz
-cd rads-0.0.6
+tar -xzf rads-v0.0.7-linux-x86_64.tar.gz
 
 # Run installer
+cd rads-v0.0.7
 ./install.sh
 
 # Verify installation
@@ -104,183 +31,542 @@ rstar help
 rpm help
 
 # Visit Package Registry
-# Registry will be available at: https://zarigata.github.io/RADS
+# The Package Registry will be available at: https://zarigata.github.io/RADS
 ```
 
-#### Option 2: Build from Source
+The `install.sh` script handles everything automatically - dependencies, compilation, and system-wide installation.
 
-**Prerequisites:**
+## Features
+
+### Core Language (v0.0.7 Dark Moon)
+
+- **Types**: int, float, string, bool, array, struct, enum, function, pointer
+- **Control Flow**: if/else, for, while, switch, break, continue, return
+- **Functions**: Named and anonymous functions, multiple return values, default parameters
+- **Structs**: Custom data types with member access
+- **Enums**: Type-safe enumerations
+- **Arrays**: Dynamic arrays with push, pop, length operations
+
+### Bytecode VM
+
+- Stack-based virtual machine
+- 3-5x performance improvement over interpreter
+- Disassembler for debugging
+- Bytecode validation and safety checks
+
+### Profiling
+
+- Sampling-based profiler
+- Flamegraph generation
+- Hotspot identification and call tree analysis
+- Real-time statistics display
+
+### Debugger
+
+- DAP support with breakpoints
+- Variable inspection
+- Step controls
+- Call stack inspection
+
+### Networking & Web
+
+- WebSocket server with 128+ concurrent connections
+- GraphQL server with queries, mutations, subscriptions
+- HTTP client and built-in server capabilities
+
+### Database
+
+- SQLite3 integration
+- SQL query execution interface
+- Parameterized queries for security
+- Connection pooling and management
+
+### Tools
+
+- **rstar**: Package manager for installing and managing plugins
+- **rpm**: Resource package manager for bundling assets
+- **rads-mask**: Python transpiler
+
+### Development Tools
+
+- **LSP Server**: Rust-based language server
+- Code completion
+- Go to definition
+- Refactoring
+
+## Example Programs
+
+### Hello World
+
+\`\`\`rads
+blast main() {
+    echo("Hello, RADS World!");
+}
+\`\`\`
+
+### Variables and Types
+
+\`\`\`rads
+blast main() {
+    // Integer
+    turbo int age = 25;
+    
+    // Float
+    turbo float price = 19.99;
+    
+    // String
+    str name = "RADS";
+    
+    // Boolean
+    turbo bool active = true;
+    
+    // Array
+    array<int> numbers = [1, 2, 3, 4, 5];
+    
+    // Struct
+    struct Point {
+        int x;
+        int y;
+    }
+    turbo Point origin = { x: 0, y: 0 };
+    
+    echo("Age: " + age);
+    echo("Price: $" + price);
+    echo("Name: " + name);
+    echo("Active: " + active);
+    echo("Count: " + length(numbers));
+    echo("Origin: " + origin.x + ", " + origin.y);
+}
+\`\`\`
+
+### Control Flow
+
+\`\`\`rads
+blast main() {
+    turbo int x = 10;
+    
+    // If-else
+    if (x > 5) {
+        echo("x is greater than 5");
+    } else {
+        echo("x is 5 or less");
+    }
+    
+    // For loop
+    for (int i = 0; i < 5; i = i + 1) {
+        echo("Count: " + i);
+    }
+    
+    // While loop
+    turbo int count = 0;
+    while (count < 3) {
+        echo("While count: " + count);
+        count = count + 1;
+    }
+    
+    // Switch statement
+    enum Day {
+        Monday,
+        Tuesday,
+        Wednesday,
+        Thursday,
+        Friday
+    }
+    turbo Day today = Day.Wednesday;
+    
+    switch (today) {
+        case Monday:
+            echo("It's Monday");
+            break;
+        case Wednesday:
+            echo("It's Wednesday");
+            break;
+        default:
+            echo("It's another day");
+    }
+}
+\`\`\`
+
+### Functions
+
+\`\`\`rads
+blast int add(int a, int b) {
+    return a + b;
+}
+
+blast int multiply(int x, int y) {
+    return x * y;
+}
+
+blast main() {
+    turbo int result = add(5, 3);
+    echo("5 + 3 = " + result);
+    
+    // Anonymous function with default parameter
+    blast greet(str name = "World") {
+        echo("Hello, " + name + "!");
+    }
+    
+    greet("RADS");
+    greet("Programmer");
+}
+\`\`\`
+
+### HTTP Server
+
+\`\`\`rads
+import web;
+
+blast main() {
+    web_init();
+    
+    // Start HTTP server on port 8080
+    web_serve("0.0.0", 8080);
+    
+    echo("Server started on http://localhost:8080");
+    echo("Press Ctrl+C to stop");
+}
+\`\`\`
+
+### WebSocket Server
+
+\`\`\`rads
+import websocket;
+
+blast void handle_message(str msg) {
+    echo("Received: " + msg);
+}
+
+blast main() {
+    websocket_start("0.0.0", 8080, handle_message);
+    echo("WebSocket server running on port 8080");
+}
+\`\`\`
+
+### Database Operations
+
+\`\`\`rads
+import db;
+
+blast main() {
+    db_init(":memory:");
+    
+    // Create table
+    db_exec("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT);");
+    
+    // Insert data
+    db_exec("INSERT INTO users (name, email) VALUES ('Alice', 'alice@example.com');");
+    
+    // Query data
+    db_result result = db_query("SELECT * FROM users;");
+    
+    while (db_next_row(result)) {
+        echo("User: " + db_get_string(result, 1));
+    }
+    
+    db_close();
+}
+\`\`\`
+
+### Testing
+
+\`\`\`rads
+blast main() {
+    test("Addition works", 2 + 2 == 4);
+    test("String comparison", "hello" == "hello");
+    test("Array length", length([1,2,3]) == 3);
+    
+    echo("All tests passed!");
+}
+\`\`\`
+
+### Asynchronous Operations
+
+\`\`\`rads
+import async;
+
+blast void callback(int result) {
+    echo("Operation completed. Result: " + result);
+}
+
+blast main() {
+    async_exec(callback);
+    echo("Async operation started...");
+}
+\`\`\`
+
+## REPL Usage
+
+Start the interactive REPL:
+
+\`\`\`bash
+rads
+\`\`\`
+
+REPL Commands:
+- `.help` - Show available commands
+- `.exit` or `.quit` - Exit REPL
+- `.bytecode` - Compile to bytecode mode
+- `.disassemble` - Show bytecode disassembly
+- `.profile` - Show execution statistics
+- Type RADS code directly to execute
+
+REPL Example:
+\`\`\`rads
+rads[1]> turbo int x = 10
+rads[2]> echo("Value: " + x)
+rads[3]> .exit
+\`\`\`
+
+## Package Management
+
+### Install a Package
+
+\`\`\`bash
+# Using rstar
+rstar install package-name
+
+# List installed packages
+rstar list
+
+# Get package info
+rstar info package-name
+
+# Search packages
+rstar search database
+\`\`\`
+
+### Create a Package
+
+1. Create package directory:
+\`\`\`bash
+mkdir my-rads-package
+cd my-rads-package
+\`\`\`
+
+2. Create package manifest (\`rads.json\`):
+\`\`\`json
+{
+  "name": "my-package",
+  "version": "1.0.0",
+  "description": "A useful RADS package",
+  "main": "src/main.rads",
+  "keywords": ["rads", "library"],
+  "author": "Your Name",
+  "license": "MIT",
+  "rads_version": "0.0.7"
+}
+\`\`\`
+
+3. Add your RADS source files:
+\`\`\`
+my-rads-package/
+├── rads.json
+└── src/
+    └── main.rads
+\`\`\`
+
+4. Publish your package:
+\`\`\`bash
+rstar publish
+\`\`\`
+
+## API Reference
+
+### Standard Library Functions
+
+#### String Operations
+\`\`\`rads
+str concat(str a, str b)           // Concatenate strings
+str len(str s)                    // Get string length
+str substring(str s, int start, int end)  // Extract substring
+str to_upper(str s)              // Convert to uppercase
+str to_lower(str s)              // Convert to lowercase
+str trim(str s)                   // Remove whitespace
+\`\`\`
+
+#### Math Functions
+\`\`\`rads
+float math_abs(float x)           // Absolute value
+float math_floor(float x)         // Round down
+float math_ceil(float x)          // Round up
+float math_sqrt(float x)          // Square root
+float math_pow(float base, float exp)  // Power
+float math_sin(float x)            // Sine
+float math_cos(float x)            // Cosine
+\`\`\`
+
+#### Array Functions
+\`\`\`rads
+int length(array arr)           // Get array length
+int push(array arr, value)     // Add element to end
+int pop(array arr)              // Remove and return last element
+array sort(array arr)           // Sort array
+array reverse(array arr)          // Reverse array
+\`\`\`
+
+#### I/O Functions
+\`\`\`rads
+void echo(str message)           // Print to stdout
+void error(str message)          // Print to stderr
+void input(str prompt)           // Read from stdin
+int read_file(str path)         // Read file contents
+void write_file(str path, str content)  // Write file
+\`\`\`
+
+#### Async Functions
+\`\`\`rads
+void async_exec(void (*callback)(int))  // Execute function asynchronously
+void async_wait(int timeout_ms)     // Wait for async operations
+\`\`\`
+
+#### Network Functions
+\`\`\`rads
+void http_request(str url)        // Make HTTP request
+void ws_send(str message)         // Send WebSocket message
+void ws_connect(str url)          // Connect to WebSocket server
+\`\`\`
+
+#### Database Functions
+\`\`\`rads
+void db_init(str path)            // Initialize database
+void db_exec(str sql)             // Execute SQL
+db_result db_query(str sql)        // Query database
+bool db_next_row(db_result res)     // Move to next row
+str db_get_string(db_result res, int col)  // Get string value
+void db_close()                     // Close database
+\`\`\`
+
+### Compiler Options
+
+\`\`\`bash
+# Basic compilation
+rads program.rads
+
+# Compile to bytecode
+rads --bytecode program.rads
+
+# Enable optimization
+rads -O2 program.rads
+
+# Output assembly
+rads --asm program.rads
+
+# Run tests during compilation
+rads --test program.rads
+\`\`\`
+
+### Environment Variables
+
+\`\`\`bash
+RADS_PATH=/usr/local/lib/rads     # Additional library path
+RADS_LOG_LEVEL=info            # Logging level (debug, info, warn, error)
+RADS_ASYNC_THREADS=4           # Number of async threads
+\`\`\`
+
+### Project Structure
+
+\`\`\`
+Rads/
+├── bin/                    # Compiled tools
+│   ├── rads             # Main compiler
+│   ├── rstar           # Package manager
+│   ├── rpm             # Resource package manager
+│   └── rads-mask       # Python transpiler
+├── src/
+│   ├── core/            # Compiler components (lexer, parser, AST, bytecode, interpreter, profiler, debugger)
+│   ├── stdlib/          # Standard library (strings, arrays, math, I/O, async, network, DB, etc.)
+│   └── vm/             # Bytecode VM
+├── tests/                # Test suites
+├── examples/             # Example programs
+├── docs/                # Documentation
+└── tools/                # Additional tools (LSP server, etc.)
+\`\`\`
+
+### Build from Source
+
+\`\`\`bash
+# Prerequisites
 - GCC or Clang compiler
 - Make
 - libuv development libraries
 
-On Debian/Ubuntu:
-```bash
+# On Debian/Ubuntu:
+\`\`\`bash
 sudo apt-get install build-essential libuv1-dev
-```
+\`\`\`
 
-On Fedora/RHEL:
-```bash
+# On Fedora/RHEL:
+\`\`\`bash
 sudo dnf install gcc make libuv-devel
-```
+\`\`\`
 
-On macOS:
-```bash
+# On macOS:
+\`\`\`bash
 brew install libuv
-```
+\`\`\`
 
-**Build:**
-```bash
-# Clone the repository
-git clone https://github.com/zarigata/rads.git
-cd rads
+## Project Structure
 
-# Run the installer (builds and optionally installs)
-./install.sh
+\`\`\`
+Rads/
+├── bin/                    # Compiled tools
+├── src/
+│   ├── core/            # Compiler components
+│   ├── stdlib/          # Standard library
+│   └── vm/             # Bytecode VM
+├── tests/                # Test suites
+├── examples/             # Example programs
+└── docs/                # Documentation
+\`\`\`
 
-# Or build manually
-make
-```
+### Troubleshooting
 
-### Your First RADS Program
+### Build Issues
 
-#### Using the REPL (Interactive Mode)
+**Problem**: \`readline/readline.h\` No such file or directory
 
-```bash
-$ rads
-  🚀 RADS Interactive REPL v0.1.0-alpha
-  ═══════════════════════════════════════
-  Rapid Asynchronous Data Server Language
+**Solution**: Install readline development library
+\`\`\`bash
+# Debian/Ubuntu
+sudo apt-get install libreadline-dev
 
-  Type .help for help, .exit to quit
+# Fedora/RHEL
+sudo dnf install readline-devel
 
-rads[1]> echo("Hello, RADS World! 🌐")
-Hello, RADS World! 🌐
+# macOS
+brew install readline
+\`\`\`
 
-rads[2]> turbo x = 42
-rads[3]> echo(x * 2)
-84
+### Runtime Issues
 
-rads[4]> .exit
-👋 Goodbye!
-```
+**Problem**: "command not found" error
 
-#### Running a File
+**Solution**: Ensure RADS is in your PATH: \`export PATH=$PATH:/usr/local/bin\`
 
-Create `hello.rads`:
-```rads
-blast main() {
-    echo("Hello, RADS World! 🌐");
+### Import Errors
 
-    turbo name = "Developer";
-    echo("Welcome, " + name + "!");
-}
-```
+**Problem**: Cannot find module declarations
 
-Run it:
-```bash
-rads hello.rads
-```
+**Solution**: Check that source files exist and that imports match file structure. Run \`make clean && make\` after fixing import issues.
 
-#### Try the Examples
+## Contributing
 
-```bash
-# Basic examples
-rads examples/01-basics/hello_world.rads
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-# HTTP server
-rads examples/02-networking/http_server.rads
+- Code should follow existing style
+- Add tests for new features
+- Update documentation
+- Keep changes minimal and focused
 
-# See all examples
-ls examples/
-```
+## License
 
-## 📦 Package Manager (RADStar)
+MIT License - see [LICENSE](LICENSE) file for details.
 
-RADS comes with `rstar`, a built-in package manager for plugins:
+## Acknowledgments
 
-```bash
-# List installed plugins
-rstar list
-
-# Install a plugin (coming soon - full implementation)
-rstar install media-kit
-
-# Run a plugin
-rstar run my-plugin
-
-# Get help
-rstar help
-```
-
-Plugins are stored in `~/.rads/plugins/`. See [docs/PACKAGE_MANAGER.md](docs/PACKAGE_MANAGER.md) for details.
-
-## 📚 Documentation
-
-### Latest Documentation
-- **[CHANGELOG.md](CHANGELOG.md)** - Complete version history and changes
-- **[REPL Guide](docs/REPL_GUIDE.md)** - Interactive shell tutorial
-- **[Package Manager](docs/PACKAGE_MANAGER.md)** - Plugin system guide
-- **[Examples](examples/)** - Code examples by category
-
-### Release Archives
-- **[v0.0.5 "CHAMELEON" Archive](release/rads-0.0.5/)** - Python transpilation release (Jan 19, 2026)
-- **[v0.0.6 "FIGHTER JET" Summary](V0.0.6_FIGHTER_JET_SUMMARY.md)** - Current release details (Jan 27, 2026)
-
-## 🗺️ Roadmap
-
-### 🛩️ v0.0.6 "FIGHTER JET" (Current - Released) ✅
-- ✅ Bytecode Compiler with VM and disassembler
-- ✅ Sampling Profiler with flamegraph generation
-- ✅ WebSocket server and client APIs
-- ✅ GraphQL server with queries/mutations
-- ✅ LSP server (Rust-based) with completion and navigation
-- ✅ Debug protocol (DAP) with breakpoints and inspection
-- See [CHANGELOG.md](CHANGELOG.md) for full details
-
-### v0.0.7 (Next) 🔜
-- 🔜 JIT Compilation: LLVM-based JIT for hot paths
-- 🔜 Advanced LSP: Full refactoring and code actions
-- 🔜 Enhanced Debugger: Conditional breakpoints, watch expressions
-- 🔜 Full GraphQL Spec: Subscriptions and live queries
-- 🔜 ECMAScript Transpiler: JavaScript → RADS conversion
-
-### v0.0.5 "CHAMELEON" (Completed) ✅
-- ✅ Python to RADS transpiler (95%+ accuracy)
-- ✅ Language-agnostic AST for multi-language support
-- ✅ Write Your Way, Run RADS: Zero learning curve for Python developers
-- ✅ Core compiler and interpreter
-- ✅ Interactive REPL mode
-- ✅ Beautiful error messages with suggestions
-- ✅ RADStar package manager foundation
-- ✅ HTTP/Web server support
-- ✅ Async I/O with libuv
-- ✅ Cross-platform build system
-
-### v0.6.0 (Next) - Package Registry Launch
-- 🚧 **Production Package Registry**: Full npmjs.com-style registry at registry.rads-lang.org
-- 🔧 **rstar CLI Integration**: Install/search/publish packages from command line
-- 📊 **Download Analytics**: Package statistics and download counts
-- 📝 **Documentation**: Complete user and package author guides
-- 🧪 **Automated Publishing**: GitHub Actions workflow for package publishing
-
-### v1.0.0 (Future)
-- 🔜 Language Server Protocol (LSP)
-- 🔜 Debugger
-- 🔜 Native compilation
-- 🔜 Production-ready stdlib
-
-## 🤝 Contributing
-
-We welcome contributions from the community! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
-
-## 📜 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 💜 Authors
-
-Created by **zarigata** and the RADS Community.
-
----
-*"Keep it turbo, keep it radical!"* 🚀
+- libuv for excellent async I/O
+- GNU readline for command-line editing
+- SQLite for embedded database
+- LLVM for compilation infrastructure
+- The RADS community

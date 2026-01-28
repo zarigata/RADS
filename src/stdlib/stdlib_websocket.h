@@ -1,6 +1,7 @@
 #ifndef RADS_WEBSOCKET_H
 #define RADS_WEBSOCKET_H
 
+#include "../core/interpreter.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -55,6 +56,7 @@ void websocket_on_message(struct WebSocket* ws, WSMessageHandler handler, void* 
 void websocket_on_connect(struct WebSocket* ws, WSConnectHandler handler, void* user_data);
 void websocket_on_close(struct WebSocket* ws, WSCloseHandler handler, void* user_data);
 void websocket_close(struct WebSocket* ws);
+void stdlib_websocket_register(void);
 void websocket_broadcast(struct WebSocket* server, const char* message, size_t length, struct WebSocket* exclude);
 int websocket_poll(struct WebSocket* ws, int timeout_ms);
 const char* websocket_get_remote_address(struct WebSocket* ws);

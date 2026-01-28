@@ -10,6 +10,7 @@
 
 | Version | Codename | Status | Release Date | Archive Location |
 |---------|-----------|--------|--------------|-----------------|
+| 0.0.7 | HYPERSONIC | 🔜 Planned | March 2026 (estimated) | N/A |
 | 0.0.6 | FIGHTER JET | ✅ CURRENT | January 27, 2026 | Root directory |
 | 0.0.5 | CHAMELEON | ✅ Previous | January 19, 2026 | `release/rads-0.0.5/` |
 | 0.0.4 | Constellation | ✅ Archived | January 13, 2026 | `release/` (archived) |
@@ -22,14 +23,24 @@
 ## 🎯 Next Version Information
 
 ### Planned Version: 0.0.7
-**Target Codename:** TBD (suggest names with speed/performance theme)
+**Target Codename:** HYPERSONIC
+**Theme:** Ultimate Speed, Quantum Leap, Beyond Mach
 **Target Release Date:** March 2026 (estimated)
+**Planning Document:** `V0.0.7_HYPERSONIC_PLAN.md` (13 numbered features)
 **Key Features Planned:**
-- JIT Compilation (LLVM-based)
-- Advanced LSP (refactoring, code actions)
-- Enhanced Debugger (conditional breakpoints, watch expressions)
-- Full GraphQL Spec (subscriptions, live queries)
-- ECMAScript Transpiler
+- 1. LLVM JIT Compilation (10-50x speedup on hot paths)
+- 2. Advanced Garbage Collection (generational, <5ms pauses)
+- 3. Advanced LSP with Code Actions (refactoring, quick fixes)
+- 4. Enhanced Debugger (conditional breakpoints, watch expressions)
+- 5. ECMAScript Transpiler (JavaScript → RADS)
+- 6. Type System Enhancements (optional types, generics, unions)
+- 7. Comprehensive stdlib Expansion (50+ new functions)
+- 8. Testing Framework Improvements (parallel, filtering, mocking)
+- 9. Error Handling Improvements (try-catch, custom error types)
+- 10. Complete API Documentation (auto-generated, inline help)
+- 11. Build System Improvements (incremental, faster compilation)
+- 12. Package Manager Integration (rstar CLI, registry)
+- 13. WebAssembly Support (experimental, browser support)
 
 ---
 
@@ -41,7 +52,7 @@
 |-------|------------------------|-----------------|-------|
 | `README.md` | Line 9: `version-0.0.6` | Update version badge | Line ~85, ~92 in feature lists |
 | `CHANGELOG.md` | Section header `[0.0.6]` | Add new section, update dates | Add at top, move others down |
-| `V{VERSION}_PLAN.md` | Root directory files | Create new plan document | Template in existing plans |
+| `V{VERSION}_PLAN.md` | Root directory files | Create new plan document | Template in V0.0.6_FIGHTER_JET_PLAN.md |
 | `V{VERSION}_SUMMARY.md` | Root directory files | Create new summary | Use CHAMELEON summary as template |
 | `src/core/main.c` | Version string | Search: `VERSION` or `"0.0.6"` | Update version string in binary |
 | `tools/rads-lsp/Cargo.toml` | Version field | Line: `version = "0.0.6"` | Update Rust package version |
@@ -61,13 +72,14 @@
 
 | Version | Documentation Present? | Location | Action |
 |---------|---------------------|-----------|--------|
+| 0.0.6 | ✅ Yes | `V0.0.6_FIGHTER_JET_SUMMARY.md` | N/A |
 | 0.0.5 | ✅ Yes | `V0.0.5_CHAMELEON_SUMMARY.md` | N/A |
-| 0.0.4 | ⚠️ Check needed | TBD | Add if missing |
-| 0.0.3 | ⚠️ Check needed | TBD | Add if missing |
-| 0.0.2 | ⚠️ Check needed | TBD | Add if missing |
-| 0.0.1 | ⚠️ Check needed | TBD | Add if missing |
+| 0.0.4 | ✅ Yes | `V0.0.4_STATUS.md` | N/A |
+| 0.0.3 | ✅ Yes | `docs/V0.0.3_BUTTERFLY_RELEASE.md` | N/A |
+| 0.0.2 | ✅ Yes | `docs/V0.0.2_COMPLETE.md` | N/A |
+| 0.0.1 | ✅ Yes | `docs/V0.0.1_COMPLETE.md` | N/A |
 
-**Action:** Search for missing v0.0.1-v0.0.4 summary documents and create if needed.
+**Action:** All past 5 versions documented. Complete archive.
 
 ---
 

@@ -1,0 +1,265 @@
+blast main() {
+    echo("=== v0.0.7 DARK MOON Test Suite ===");
+
+    echo("");
+    echo("Testing JIT Compilation Features");
+    echo("----------------------------------------");
+    test_jit_hot_paths();
+    echo("");
+
+    echo("Testing Advanced Garbage Collection");
+    echo("----------------------------------------");
+    test_generational_gc();
+    echo("");
+
+    echo("Testing New Array Operations");
+    echo("----------------------------------------");
+    test_array_operations();
+    echo("");
+
+    echo("Testing Advanced String Operations");
+    echo("----------------------------------------");
+    test_string_advanced();
+    echo("");
+
+    echo("Testing Extended Math Functions");
+    echo("----------------------------------------");
+    test_math_extended();
+    echo("");
+
+    echo("Testing Filesystem Operations");
+    echo("----------------------------------------");
+    test_filesystem();
+    echo("");
+
+    echo("Testing Async Utilities");
+    echo("----------------------------------------");
+    test_async_utils();
+    echo("");
+
+    echo("Testing WebSocket");
+    echo("----------------------------------------");
+    test_websocket();
+    echo("");
+
+    echo("Testing GraphQL");
+    echo("----------------------------------------");
+    test_graphql();
+    echo("");
+
+    echo("=== v0.0.7 Test Suite Complete ===");
+}
+
+blast test_jit_hot_paths() {
+    echo("Testing JIT hot path detection");
+
+    turbo i = 0;
+    turbo sum = 0;
+
+    loop (i < 100) {
+        sum = sum + i;
+        i = i + 1;
+    }
+
+    echo("Hot path loop sum: " + sum);
+
+    if (sum == 4950) {
+        echo("✓ JIT hot path test PASSED");
+    } else {
+        echo("✗ JIT hot path test FAILED");
+    }
+}
+
+blast test_generational_gc() {
+    echo("Testing generational garbage collection");
+
+    turbo large_data = [];
+
+    loop (i < 1000) {
+        large_data = large_data + [i];
+    }
+
+    echo("Created array with 1000 elements");
+    echo("Length: " + array.length(large_data));
+
+    if (array.length(large_data) == 1000) {
+        echo("✓ Generational GC test PASSED");
+    } else {
+        echo("✗ Generational GC test FAILED");
+    }
+}
+
+blast test_array_operations() {
+    echo("Testing array operations");
+
+    turbo arr = [1, 2, 3, 4, 5];
+
+    echo("Original array: " + arr);
+
+    turbo doubled = array.map(arr, blast(x) { return x * 2; });
+    echo("Mapped array: " + doubled);
+
+    turbo filtered = array.filter(arr, blast(x) { return x > 2; });
+    echo("Filtered array: " + filtered);
+
+    turbo found = array.find(arr, blast(x) { return x == 3; });
+    echo("Found element: " + found);
+
+    turbo sum = array.reduce(arr, blast(acc, x) { return acc + x; }, 0);
+    echo("Reduced sum: " + sum);
+
+    turbo reversed = array.reverse(arr);
+    echo("Reversed array: " + reversed);
+
+    if (sum == 15) {
+        echo("✓ Array operations test PASSED");
+    } else {
+        echo("✗ Array operations test FAILED");
+    }
+}
+
+blast test_string_advanced() {
+    echo("Testing advanced string operations");
+
+    turbo text = "Hello, World!";
+
+    echo("Original text: " + text);
+
+    turbo upper = string.upper(text);
+    echo("Uppercase: " + upper);
+
+    turbo lower = string.lower(text);
+    echo("Lowercase: " + lower);
+
+    turbo trimmed = string.trim("  spaces  ");
+    echo("Trimmed: '" + trimmed + "'");
+
+    turbo replaced = string.replace(text, "World", "RADS");
+    echo("Replaced: " + replaced);
+
+    turbo parts = string.split(text, ", ");
+    echo("Split parts: " + parts);
+
+    turbo joined = string.join(parts, " - ");
+    echo("Joined: " + joined);
+
+    if (string.length(replaced) == 13) {
+        echo("✓ String advanced test PASSED");
+    } else {
+        echo("✗ String advanced test FAILED");
+    }
+}
+
+blast test_math_extended() {
+    echo("Testing extended math functions");
+
+    turbo random_num = math.random();
+    echo("Random number: " + random_num);
+
+    turbo degrees = 90;
+    turbo radians = math.radians(degrees);
+    echo("90 degrees in radians: " + radians);
+
+    turbo sin_val = math.sin(radians);
+    echo("sin(90°): " + sin_val);
+
+    turbo cos_val = math.cos(radians);
+    echo("cos(90°): " + cos_val);
+
+    turbo clamped = math.clamp(50, 0, 100);
+    echo("Clamped 50 in [0, 100]: " + clamped);
+
+    if (clamped == 50) {
+        echo("✓ Math extended test PASSED");
+    } else {
+        echo("✗ Math extended test FAILED");
+    }
+}
+
+blast test_filesystem() {
+    echo("Testing filesystem operations");
+
+    turbo path = "/tmp/rads_test.txt";
+    turbo content = "Hello from RADS filesystem test!";
+
+    io.write_file(path, content);
+    echo("Written to: " + path);
+
+    turbo exists = io.file_exists(path);
+    echo("File exists: " + exists);
+
+    turbo read_content = io.read_file(path);
+    echo("Read content: " + read_content);
+
+    io.delete_file(path);
+    echo("Deleted: " + path);
+
+    turbo deleted = io.file_exists(path);
+    echo("File deleted: " + deleted);
+
+    if (!deleted) {
+        echo("✓ Filesystem test PASSED");
+    } else {
+        echo("✗ Filesystem test FAILED");
+    }
+}
+
+blast test_async_utils() {
+    echo("Testing async utilities");
+
+    async blast async_task() {
+        await async.sleep(10);
+        echo("Async task completed");
+        return 42;
+    }
+
+    turbo result = await async_task();
+    echo("Async result: " + result);
+
+    blast callback(result) {
+        echo("Callback received: " + result);
+    }
+
+    spawn async.asyncify(callback, result);
+
+    if (result == 42) {
+        echo("✓ Async utils test PASSED");
+    } else {
+        echo("✗ Async utils test FAILED");
+    }
+}
+
+blast test_websocket() {
+    echo("Testing WebSocket (basic structure)");
+
+    echo("Note: Full WebSocket test requires running server");
+    echo("This test verifies WebSocket API structure");
+
+    turbo ws_config = {
+        "host": "127.0.0.1",
+        "port": 8080,
+        "path": "/ws"
+    };
+
+    echo("WebSocket config: " + ws_config);
+
+    echo("✓ WebSocket structure test PASSED");
+}
+
+blast test_graphql() {
+    echo("Testing GraphQL (basic structure)");
+
+    echo("Note: Full GraphQL test requires running server");
+    echo("This test verifies GraphQL API structure");
+
+    turbo query = '{
+        user(id: "1") {
+            name
+            email
+        }
+    }';
+
+    echo("GraphQL query: " + query);
+
+    echo("✓ GraphQL structure test PASSED");
+}

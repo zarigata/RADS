@@ -4,7 +4,215 @@ All notable changes to RADS programming language will be documented in this file
 
 ---
 
-## 🛩️ [0.0.6] - 2026-01-27 (Current Release) ✅
+## 🌑 [0.0.7] - 2026-01-27 (In Development) 🔜
+
+### Codename: DARK MOON
+
+**Theme:** Dark Eclipsed Velocity, Lunar Ascent, Midnight Code
+
+**Summary:** Quantum leap in performance with JIT compilation, advanced LSP with code actions, enhanced debugger, ECMAScript transpiler, and comprehensive stdlib expansion.
+
+### 🌙 Lunar Eclipse Performance Engine
+
+- **LLVM JIT Compilation**: 10-50x speedup on hot code paths
+  - Profile-guided optimization (PGO)
+  - Hot path detection and compilation
+  - Fallback to bytecode interpreter for cold paths
+  - Dynamic recompilation for adaptive performance
+  - Files: `src/jit/llvm_backend.c`, `src/jit/jit_compiler.c`, `src/jit/code_cache.c`
+  - Dependencies: LLVM 15+ libraries, CMake build system
+  - Success: 10-50x speedup on benchmarks, <20% memory overhead
+
+- **Advanced Garbage Collection**: Generational GC with incremental pauses
+  - Young/old generation separation
+  - Write barrier implementation
+  - <5ms GC pause time
+  - 30% reduction in memory usage
+  - Files: `src/gc/generational.c`, `src/gc/write_barrier.c`
+  - Success: No memory leaks in benchmarks
+
+### 🎯 Midnight Precision (Advanced LSP)
+
+- **Code Actions and Refactoring**: Full VS Code/IDE experience
+  - Rename symbol (local, global, file)
+  - Extract function/method
+  - Inline variable
+  - Extract to constant
+  - Quick fix suggestions
+  - Import organization and sorting
+  - Auto-fix for common errors
+  - Files: `tools/rads-lsp/src/refactor.rs`, `tools/rads-lsp/src/code_actions.rs`
+  - Success: 10+ refactor/code actions, zero false positives
+
+- **Enhanced Diagnostics**: Real-time type checking
+  - Unused variable detection
+  - Dead code highlighting
+  - Type errors with suggestions
+  - Code suggestions
+  - File: `tools/rads-lsp/src/diagnostics.rs`
+  - Success: Sub-second response times
+
+### 🌙 Dark Side of the Moon (Enhanced Debugger)
+
+- **Advanced Debug Protocol**: Full-featured debugging experience
+  - Conditional breakpoints: break when expression evaluates to true
+  - Break count limits and ignore counts
+  - Watch expressions: watch variables and expressions
+  - Automatic refresh on step
+  - Advanced stepping: step into/over/out
+  - Call stack inspection: full stack trace, navigate frames, view locals
+  - Exception handling: break on uncaught errors
+  - Files: `src/debug/conditional_breakpoints.c`, `src/debug/watch_expressions.c`, `src/debug/call_stack.c`
+  - Success: VS Code debugger integration complete
+
+### 🌐 Lunar Transmissions (Language Features)
+
+- **ECMAScript Transpiler**: JavaScript → RADS conversion
+  - Parse JavaScript (ES2022+ subset)
+  - Convert to RADS AST
+  - Generate RADS code
+  - Handle: variables, functions, closures, objects, arrays, async/await, classes, arrow functions, template literals, destructuring
+  - Files: `tools/rads-js/src/js_parser.c`, `tools/rads-js/src/ast_converter.c`, `tools/rads-js/src/code_gen.c`
+  - Dependencies: Reuse `tools/rads-mask/src/ast.h` (shared AST)
+  - Success: 90%+ accuracy on test corpus, handle 80%+ of common JS patterns
+
+- **Type System Enhancements**: Better type safety and expressiveness
+  - Optional type annotations (`x: turbo`, `name: string`)
+  - Generic types (`List<T>`, `Option<T>`)
+  - Union types (`string | number`)
+  - Improved type inference
+  - Type checking phase with suggestions
+  - Files: `src/typecheck/optional_types.c`, `src/typecheck/generics.c`, `src/typecheck/inference.c`
+  - Success: Backward compatible (types optional), <10% performance impact
+
+### 📚 Moonlit Library (stdlib Expansion)
+
+- **Comprehensive stdlib Expansion**: 50+ new functions
+  - **String Operations**: `string.split()`, `string.join()`, `string.trim()`, `string.upper()`, `string.lower()`, `string.replace()`, `string.substring()`
+  - **Array Operations**: `array.map()`, `array.filter()`, `array.reduce()`, `array.find()`, `array.some()`, `array.every()`, `array.sort()`, `array.reverse()`
+  - **Math Functions**: `math.min()`, `math.max()`, `math.clamp()`, `math.floor()`, `math.ceil()`, `math.round()`, `math.random()` (seeded)
+  - **Filesystem**: `fs.readdir()`, `fs.stat()`, `fs.unlink()`, path manipulation utilities
+  - **Async Utilities**: `async.parallel()`, `async.series()`, `async.retry()`, `async.timeout()`
+  - Files: `src/stdlib/stdlib_string_advanced.c`, `src/stdlib/stdlib_array.c`, `src/stdlib/stdlib_math_extended.c`, `src/stdlib/stdlib_filesystem.c`, `src/stdlib/stdlib_async_utils.c`
+  - Success: All functions documented, unit tests, performance benchmarks
+
+### 🧪 Lunar Testing & Quality
+
+- **Testing Framework Improvements**: Professional testing experience
+  - Test discovery with auto-discover (`*_test.rads`)
+  - Test filtering (`--pattern`, `--exclude`, tags like `@slow`, `@integration`)
+  - Parallel execution with worker pool (2-5x faster)
+  - JUnit XML and JSON output for CI integration
+  - Coverage reports
+  - Mocking framework for stdlib functions
+  - Files: `src/test/test_discovery.c`, `src/test/test_runner_parallel.c`, `src/test/test_output.c`, `src/test/mocking.c`
+  - Success: CI/CD integration tested
+
+- **Error Handling Improvements**: Better error messages and handling
+  - Custom error types (IO, Network, Database, etc.)
+  - Try-catch blocks: `try { ... } catch (e) { ... }`
+  - Finally blocks
+  - Error suggestions and links to documentation
+  - Error recovery (automatic retry, circuit breaker)
+  - Files: `src/runtime/error_types.c`, `src/parser/try_catch.c`
+  - Success: Try-catch works correctly, error messages are helpful
+
+### 📖 Moon Documentation
+
+- **Complete API Documentation**: Auto-generated and comprehensive
+  - Extract function signatures
+  - Generate Markdown/HTML with examples
+  - Function descriptions, parameters, return values, cross-references
+  - Inline help: `rads --help function_name`, `rstar docs <package>`
+  - Files: `tools/docs_gen/doc_extractor.c`, `tools/docs_gen/generator.c`, `docs/API_REFERENCE.md`
+  - Success: All stdlib functions documented, HTML generation works, docs pass linter
+
+### 🏗️ Lunar Infrastructure (Build & Tooling)
+
+- **Build System Improvements**: Faster and more reliable builds
+  - Incremental builds (only rebuild changed files)
+  - Dependency tracking
+  - Parallel compilation with CCACHE integration
+  - Better error messages with suggestions
+  - Build targets: `make debug`, `make release`, `make test`, `make clean`
+  - Files: `Makefile`, `build/dep_tracker.c`, `build/incremental.c`
+  - Success: 2-3x faster builds, incremental builds work
+
+- **Package Manager Integration**: Full rstar CLI functionality
+  - Commands: `rstar search`, `rstar install`, `rstar update`, `rstar publish`, `rstar list`
+  - Registry integration: registry.rads-lang.org
+  - Package structure: `package.rads`, `src/`, `README.md`
+  - Files: `rstar/rstar.c`, `rstar/registry.c`, `rstar/package_manager.c`
+  - Success: Can search and install packages, registry integration works
+
+### 📊 Feature Priority Matrix
+
+| Priority | Feature | Impact | Complexity | Est. Effort | Timeline |
+|----------|----------|---------|------------|-----------|
+| 1 | JIT Compilation | ⭐⭐⭐ HIGH | HIGH | 60-80 hrs | Week 1-2 |
+| 2 | Advanced GC | ⭐⭐⭐ HIGH | MEDIUM | 40-60 hrs | Week 2 |
+| 3 | Advanced LSP | ⭐⭐ HIGH | MEDIUM | 50-70 hrs | Week 2-3 |
+| 4 | Enhanced Debugger | ⭐⭐ HIGH | MEDIUM | 40-60 hrs | Week 3 |
+| 5 | ECMAScript Transpiler | ⭐⭐ MEDIUM | HIGH | 80-100 hrs | Week 3-4 |
+| 6 | Type System | ⭐⭐ MEDIUM | HIGH | 50-70 hrs | Week 4 |
+| 7 | stdlib Expansion | ⭐⭐ HIGH | LOW | 30-50 hrs | Week 4 |
+| 8 | Testing Framework | ⭐⭐ HIGH | MEDIUM | 40-60 hrs | Week 4 |
+| 9 | Error Handling | ⭐⭐ HIGH | MEDIUM | 30-50 hrs | Week 5 |
+| 10 | API Documentation | ⭐⭐ MEDIUM | LOW | 20-40 hrs | Week 5 |
+| 11 | Build System | ⭐⭐ LOW | MEDIUM | 20-40 hrs | Week 5 |
+| 12 | Package Manager | ⭐⭐ MEDIUM | MEDIUM | 40-60 hrs | Week 5-6 |
+| 13 | WebAssembly | ⭐ LOW | HIGH | 60-80 hrs | Week 6-8 |
+
+### 📝 Notes
+
+**Design Decisions:**
+1. **JIT Approach:** Use LLVM for mature, well-tested JIT backend
+2. **LSP Priority:** Focus on code actions over advanced features (completion already good)
+3. **Transpiler:** Start with ES2022 subset, expand in future versions
+4. **Type System:** Optional types to maintain backward compatibility
+5. **stdlib:** Prioritize most-used functions (strings, arrays, async)
+
+**Risks & Mitigations:**
+1. **JIT Complexity:** High risk. Mitigation: Start with simple functions, test thoroughly
+2. **LSP Scope:** Too many features. Mitigation: Implement top 10 actions first
+3. **Transpiler Accuracy:** May not be perfect. Mitigation: Clearly document limitations
+4. **Performance Regression:** JIT may have overhead. Mitigation: Profile extensively, fallback to interpreter
+5. **Timeline Pressure:** 6 weeks is aggressive. Mitigation: Cut WebAssembly if needed, prioritize P1 features
+
+**Alternatives Considered:**
+1. **JIT Backend:** LLVM vs. Cranelift. Chose LLVM for maturity and ecosystem
+2. **LSP Implementation:** Extend Rust LSP vs. Rewrite. Chose extend for speed
+3. **Transpiler Language:** JavaScript vs. TypeScript vs. Python. Chose JS for largest user base
+4. **Build System:** CMake vs. Meson vs. Make. Chose enhanced Make for compatibility
+
+### 🔗 Related Documents
+
+- [V0.0.7_DARK_MOON_PLAN.md](./V0.0.7_DARK_MOON_PLAN.md) - Development plan
+- [CHANGELOG.md](./CHANGELOG.md) - Version history
+- [VERSION_TRACKING.md](./.local/VERSION_TRACKING.md) - Version management
+- [RELEASE_CHECKLIST.md](./.local/RELEASE_CHECKLIST.md) - Release process
+
+### 📞 Questions & Decisions Needed
+
+1. **JIT Scope:** Should v0.0.7 include full JIT or MVP? (Recommend: MVP with top functions)
+2. **LSP Features:** Prioritize refactoring or advanced diagnostics? (Recommend: Refactoring first)
+3. **Type Safety:** How strict? (Recommend: Optional types, gradual adoption)
+4. **Transpiler Accuracy:** 80% or 90% target? (Recommend: 90% for common patterns, 80% overall)
+5. **Release Timeline:** Is March realistic? (Recommend: 6-8 weeks needed, target April)
+6. **WebAssembly:** Include in v0.0.7 or defer to v0.0.8? (Recommend: Defer, focus on core features)
+
+**Created:** January 27, 2026
+**Last Updated:** January 27, 2026
+**Status:** Planning Phase
+**Next Step:** Get answers to questions above, begin Week 1 development
+
+---
+
+*"From FIGHTER JET to DARK MOON - The lunar eclipse continues!"* 🌑
+
+---
+
+## 🛩️ [0.0.6] - 2026-01-27 (Released) ✅
 
 ### Codename: FIGHTER JET
 

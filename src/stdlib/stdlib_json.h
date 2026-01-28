@@ -1,7 +1,7 @@
 #ifndef RADS_STDLIB_JSON_H
 #define RADS_STDLIB_JSON_H
 
-#include "interpreter.h"
+#include "../core/interpreter.h"
 
 void stdlib_json_register(void);
 

@@ -12,11 +12,18 @@
 #include "stdlib_net.h"
 #include "stdlib_ffi.h"
 #include "stdlib_string.h"
+#include "stdlib_string_advanced.h"
 #include "stdlib_math.h"
+#include "stdlib_math_extended.h"
+#include "stdlib_array.h"
 #include "stdlib_fs.h"
 #include "stdlib_json.h"
 #include "stdlib_db.h"
 #include "stdlib_webengine.h"
+#include "stdlib_filesystem.h"
+#include "stdlib_async_utils.h"
+#include "stdlib_websocket.h"
+#include "stdlib_graphql.h"
 
 // ANSI Color Codes for Chroma Effects
 #define COLOR_RESET     "\033[0m"
@@ -49,7 +56,7 @@
 #define CURSOR_BAR_STEADY       "\033[6 q"  // Steady bar
 
 void print_usage() {
-    printf("RADS Programming Language v0.0.6 \"FIGHTER JET\"\n");
+    printf("RADS Programming Language v0.0.7 \"DARK MOON\"\n");
     printf("Usage: rads [options] [file]\n\n");
     printf("Options:\n");
     printf("  -h, --help     Show this help message\n");
@@ -63,15 +70,15 @@ void print_usage() {
 void print_version() {
     printf("\n");
     printf("%s┌────────────────────────────────────────┐%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
-    printf("%s│ %sRADS v0.0.6 \"FIGHTER JET\" 🛩%s          %s│%s\n",
-           COLOR_BRIGHT_CYAN, COLOR_BRIGHT_MAGENTA,
-           COLOR_WHITE, COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s│ %sRADS v0.0.7 \"DARK MOON\" 🌑%s          %s│%s\n",
+            COLOR_BRIGHT_CYAN, COLOR_BRIGHT_MAGENTA,
+            COLOR_WHITE, COLOR_BRIGHT_CYAN, COLOR_RESET);
     printf("%s│ %sRapid Asynchronous Data Server%s     %s│%s\n",
-           COLOR_BRIGHT_CYAN, COLOR_BRIGHT_BLUE,
-           COLOR_WHITE, COLOR_BRIGHT_CYAN, COLOR_RESET);
+            COLOR_BRIGHT_CYAN, COLOR_BRIGHT_BLUE,
+            COLOR_WHITE, COLOR_BRIGHT_CYAN, COLOR_RESET);
     printf("%s│ %sBuilt:%s %s %s                %s│%s\n",
-           COLOR_BRIGHT_CYAN, COLOR_BRIGHT_YELLOW, COLOR_WHITE,
-           __DATE__, __TIME__, COLOR_BRIGHT_CYAN, COLOR_RESET);
+            COLOR_BRIGHT_CYAN, COLOR_BRIGHT_YELLOW, COLOR_WHITE,
+            __DATE__, __TIME__, COLOR_BRIGHT_CYAN, COLOR_RESET);
     printf("%s└────────────────────────────────────────┘%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
     printf("\n");
 }
@@ -174,7 +181,7 @@ void print_repl_welcome() {
 
     printf(COLOR_BRIGHT_CYAN "  ╠═══════════════════════════════════════════════════════════╣\n" COLOR_RESET);
     printf(COLOR_BRIGHT_CYAN "  ║  " COLOR_RESET);
-    printf(COLOR_CYAN "🛩 Interactive REPL v0.0.6 FIGHTER JET" COLOR_RESET);
+    printf(COLOR_CYAN "🌑 Interactive REPL v0.0.7 DARK MOON" COLOR_RESET);
     printf(COLOR_DIM " - " COLOR_RESET);
     printf(COLOR_BRIGHT_CYAN "TURBO" COLOR_RESET);
     printf(COLOR_DIM " & " COLOR_RESET);
@@ -435,22 +442,29 @@ int main(int argc, char* argv[]) {
     }
     
     // Normal execution mode
-    printf("%s🛩 RADS v0.0.6 Fighter Jet%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s🌑 RADS v0.0.7 Dark Moon%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
     printf("%sExecuting:%s %s%s%s\n\n",
            COLOR_BRIGHT_YELLOW, COLOR_RESET,
            COLOR_BRIGHT_MAGENTA, filename, COLOR_RESET);
-    
     // Initialize standard library
     stdlib_io_register();
     stdlib_media_register();
     stdlib_net_register();
     stdlib_ffi_register();
     stdlib_string_register();
+    stdlib_string_advanced_register();
     stdlib_math_register();
+    // TODO: stdlib_math_extended_register();
+    stdlib_array_register();
     stdlib_fs_register();
     stdlib_json_register();
     stdlib_db_register();
     stdlib_webengine_register();
+    // TODO: stdlib_filesystem_register();
+    // TODO: stdlib_async_utils_register();
+    // TODO: stdlib_websocket_register();
+    // TODO: stdlib_graphql_register();
+    
 
     // Tokenize
     Lexer lexer;

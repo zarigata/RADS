@@ -1,0 +1,134 @@
+blast main() {
+    echo("=== Type Checking Test Suite ===");
+
+    echo("");
+    echo("Testing Optional Types");
+    echo("----------------------------------------");
+    test_optional_types();
+    echo("");
+
+    echo("Testing Generics");
+    echo("----------------------------------------");
+    test_generics();
+    echo("");
+
+    echo("Testing Type Inference");
+    echo("----------------------------------------");
+    test_type_inference();
+    echo("");
+
+    echo("=== Type Checking Test Suite Complete ===");
+}
+
+blast test_optional_types() {
+    echo("Testing optional types");
+
+    turbo definite = 42;
+    turbo optional = null;
+
+    echo("Definite value: " + definite);
+    echo("Optional value: " + optional);
+
+    blast handle_optional(value) {
+        if (value != null) {
+            echo("Value present: " + value);
+            return value * 2;
+        } else {
+            echo("Value is null");
+            return 0;
+        }
+    }
+
+    turbo result1 = handle_optional(definite);
+    echo("Doubled: " + result1);
+
+    turbo result2 = handle_optional(optional);
+    echo("Null doubled: " + result2);
+
+    if (result1 == 84 && result2 == 0) {
+        echo("✓ Optional types test PASSED");
+    } else {
+        echo("✗ Optional types test FAILED");
+    }
+}
+
+blast test_generics() {
+    echo("Testing generics");
+
+    turbo numbers = [1, 2, 3, 4, 5];
+    turbo strings = ["a", "b", "c"];
+
+    echo("Number array: " + numbers);
+    echo("String array: " + strings);
+
+    blast get_first(arr) {
+        return arr[0];
+    }
+
+    turbo first_num = get_first(numbers);
+    turbo first_str = get_first(strings);
+
+    echo("First number: " + first_num);
+    echo("First string: " + first_str);
+
+    if (first_num == 1 && first_str == "a") {
+        echo("✓ Generics test PASSED");
+    } else {
+        echo("✗ Generics test FAILED");
+    }
+}
+
+blast test_type_inference() {
+    echo("Testing type inference");
+
+    turbo x = 42;
+    turbo y = 3.14;
+    turbo z = "hello";
+
+    echo("x: " + x + " (inferred as integer)");
+    echo("y: " + y + " (inferred as float)");
+    echo("z: " + z + " (inferred as string)");
+
+    turbo sum = x + 5;
+    echo("sum: " + sum);
+
+    turbo combined = z + " world";
+    echo("combined: " + combined);
+
+    if (sum == 47 && combined == "hello world") {
+        echo("✓ Type inference test PASSED");
+    } else {
+        echo("✗ Type inference test FAILED");
+    }
+}
+
+blast test_union_types() {
+    echo("Testing union types");
+
+    turbo value = 42;
+
+    blast process_value(val) {
+        if (typeof val == "integer") {
+            echo("Integer value: " + val);
+            return val * 2;
+        } elif (typeof val == "string") {
+            echo("String value: " + val);
+            return string.length(val);
+        } else {
+            echo("Other type: " + val);
+            return 0;
+        }
+    }
+
+    turbo int_result = process_value(21);
+    echo("21 * 2 = " + int_result);
+
+    turbo str_result = process_value("test");
+    echo("length of 'test': " + str_result);
+
+    if (int_result == 42 && str_result == 4) {
+        echo("✓ Union types test PASSED");
+    } else {
+        echo("✗ Union types test FAILED");
+    }
+}

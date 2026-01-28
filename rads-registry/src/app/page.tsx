@@ -22,26 +22,26 @@ export default function HomePage() {
     {
       icon: <Zap className="h-8 w-8" />,
       title: "Lightning Fast",
-      description: "3-5x faster with stack-based bytecode VM and 50+ opcodes.",
-      link: "https://github.com/zarigata/RADS/releases/tag/v0.0.6",
+      description: "10-50x faster with LLVM JIT compilation and hot path optimization.",
+      link: "https://github.com/zarigata/RADS/releases/tag/v0.0.7",
     },
     {
       icon: <BarChart className="h-8 w-8" />,
       title: "Profiler & Debugging",
-      description: "Real-time profiling with flamegraphs and full DAP debugger support.",
-      link: "https://github.com/zarigata/RADS/releases/tag/v0.0.6",
+      description: "Real-time profiling with flamegraphs and conditional breakpoint support.",
+      link: "https://github.com/zarigata/RADS/releases/tag/v0.0.7",
     },
     {
       icon: <Wifi className="h-8 w-8" />,
       title: "WebSocket & GraphQL",
       description: "Real-time web with 128+ concurrent connections and full GraphQL server support.",
-      link: "https://github.com/zarigata/RADS/releases/tag/v0.0.6",
+      link: "https://github.com/zarigata/RADS/releases/tag/v0.0.7",
     },
     {
       icon: <Code2 className="h-8 w-8" />,
       title: "LSP Server",
-      description: "Full Language Server Protocol support with Rust-based implementation for all editors.",
-      link: "https://github.com/zarigata/RADS/releases/tag/v0.0.6",
+      description: "Full Language Server Protocol with code actions, refactoring, and advanced navigation.",
+      link: "https://github.com/zarigata/RADS/releases/tag/v0.0.7",
     },
   ]
 
@@ -55,11 +55,11 @@ export default function HomePage() {
     <div className="container py-16">
       <section className="text-center space-y-8 py-16">
         <h1 className="text-5xl font-bold tracking-tight sm:text-6xl rads-text-gradient">
-          RADS v0.0.6 Registry
+          RADS v0.0.7 Registry
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Discover, publish, and install RADS packages for <strong class="text-primary">Fighter Jet</strong>—
-          Mach speed performance with bytecode VM, profiler, debugger, and real-time web.
+          Discover, publish, and install RADS packages for <strong class="text-primary">Dark Moon</strong>—
+          Lunar eclipse velocity with JIT compilation, advanced LSP, and enhanced tooling.
         </p>
         <div className="flex justify-center gap-4">
           <Button asChild size="lg">

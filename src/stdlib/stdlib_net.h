@@ -1,8 +1,8 @@
 #ifndef RADS_STDLIB_NET_H
 #define RADS_STDLIB_NET_H
 
-#include "interpreter.h"
-#include "platform.h"
+#include "../core/interpreter.h"
+#include "../core/platform.h"
 #include <uv.h>
 
 typedef struct RadsTcpServer {

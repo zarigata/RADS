@@ -1,7 +1,7 @@
 #ifndef RADS_STDLIB_MEDIA_H
 #define RADS_STDLIB_MEDIA_H
 
-#include "interpreter.h"
+#include "../core/interpreter.h"
 
 // Media Module registration
 void stdlib_media_register(void);
