@@ -1,0 +1,3 @@
+blast main() {
+    echo("Hello from my package!");
+}
