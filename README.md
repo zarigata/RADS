@@ -5,7 +5,7 @@
 ## ⚡ ONE COMMAND INSTALLATION
 
 \`\`\`bash
-curl -fsSL https://install.rads-lang.org | bash
+curl -fsSL https://raw.githubusercontent.com/zarigata/RADS/main/install.sh | bash
 \`\`\`
 
 That is it! RADS downloads, builds itself, and installs automatically.
@@ -551,8 +551,8 @@ rads --profile program.rads
 
 ## 📚 LEARN MORE
 
-- **Package Registry**: https://rads.rads-lang.org - Browse and install RADS packages
-- **Documentation**: https://docs.rads-lang.org - Complete API reference and tutorials
+- **Package Registry**: https://zarigata.github.io/RADS/ - Browse and install RADS packages
+- **Documentation**: https://zarigata.github.io/RADS/documentation.html - Complete API reference and tutorials
 - **GitHub Repository**: https://github.com/zarigata/RADS - Source code, issues, discussions
 
 ---

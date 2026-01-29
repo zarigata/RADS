@@ -1,197 +1,194 @@
 #!/bin/bash
+#
+# RADS Release Build Script
+# Builds release packages for distribution
+#
+# Usage: ./scripts/build-release.sh [version]
+#
+
 set -e
 
-# RADS Release Build Script
-# Creates distributable packages for RADS
-
-VERSION="0.1.0-alpha"
-PROJECT_NAME="rads"
-BUILD_DATE=$(date +%Y%m%d)
+VERSION="${1:-0.0.7}"
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+RELEASE_DIR="${PROJECT_ROOT}/release/rads-${VERSION}"
+DIST_DIR="${PROJECT_ROOT}/dist"
 
 # Colors
+RED='\033[0;31m'
 GREEN='\033[0;32m'
-BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m'
 
-info() { echo -e "${BLUE}ℹ${NC} $1"; }
-success() { echo -e "${GREEN}✓${NC} $1"; }
-warning() { echo -e "${YELLOW}⚠${NC} $1"; }
+info()    { echo -e "${BLUE}[INFO]${NC} $1"; }
+success() { echo -e "${GREEN}[OK]${NC} $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${NC} $1"; }
+error()   { echo -e "${RED}[ERROR]${NC} $1" >&2; }
 
 # Detect platform
 detect_platform() {
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        PLATFORM="linux"
-        ARCH=$(uname -m)
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        PLATFORM="macos"
-        ARCH=$(uname -m)
-    else
-        PLATFORM="unknown"
-        ARCH=$(uname -m)
+    local os=""
+    local arch=$(uname -m)
+
+    case "$(uname -s)" in
+        Linux*)  os="linux" ;;
+        Darwin*) os="macos" ;;
+        MINGW*|MSYS*|CYGWIN*) os="windows" ;;
+        *) error "Unsupported OS"; exit 1 ;;
+    esac
+
+    case "$arch" in
+        x86_64|amd64) arch="x86_64" ;;
+        aarch64|arm64) arch="aarch64" ;;
+        armv7l) arch="armv7" ;;
+    esac
+
+    echo "${os}-${arch}"
+}
+
+# Clean previous build
+clean_release() {
+    info "Cleaning previous release..."
+    rm -rf "${RELEASE_DIR}"
+    mkdir -p "${RELEASE_DIR}"
+    mkdir -p "${DIST_DIR}"
+}
+
+# Build the project
+build_project() {
+    info "Building RADS v${VERSION}..."
+    cd "${PROJECT_ROOT}"
+
+    make clean || true
+
+    local jobs=2
+    if command -v nproc &>/dev/null; then
+        jobs=$(nproc)
+    elif command -v sysctl &>/dev/null; then
+        jobs=$(sysctl -n hw.ncpu 2>/dev/null || echo 2)
     fi
 
-    info "Platform: $PLATFORM-$ARCH"
+    if make -j"$jobs"; then
+        success "Build completed"
+    else
+        error "Build failed"
+        exit 1
+    fi
 }
 
-# Clean and build
-build_clean() {
-    info "Cleaning previous builds..."
-    make clean > /dev/null 2>&1 || true
+# Copy files to release directory
+prepare_release() {
+    info "Preparing release directory..."
 
-    info "Building RADS (release mode)..."
-    make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)
-
-    success "Build complete"
-}
-
-# Create release directory structure
-create_release_structure() {
-    RELEASE_DIR="release/${PROJECT_NAME}-${VERSION}-${PLATFORM}-${ARCH}"
-
-    info "Creating release structure..."
-
-    rm -rf "$RELEASE_DIR"
-    mkdir -p "$RELEASE_DIR"/{bin,docs,examples,tools}
+    # Create directory structure
+    mkdir -p "${RELEASE_DIR}/bin"
+    mkdir -p "${RELEASE_DIR}/docs"
+    mkdir -p "${RELEASE_DIR}/examples"
 
     # Copy binaries
-    cp bin/rads "$RELEASE_DIR/bin/"
-    cp bin/rstar "$RELEASE_DIR/bin/"
-
-    # Strip binaries (reduce size)
-    strip "$RELEASE_DIR/bin/rads" 2>/dev/null || true
-    strip "$RELEASE_DIR/bin/rstar" 2>/dev/null || true
+    for bin in rads rstar rpm rads-mask; do
+        if [[ -f "${PROJECT_ROOT}/bin/${bin}" ]]; then
+            cp "${PROJECT_ROOT}/bin/${bin}" "${RELEASE_DIR}/bin/"
+            success "Copied ${bin}"
+        else
+            warn "Binary not found: ${bin}"
+        fi
+    done
 
     # Copy documentation
-    cp README.md "$RELEASE_DIR/" 2>/dev/null || echo "# RADS v$VERSION" > "$RELEASE_DIR/README.md"
-    cp LICENSE "$RELEASE_DIR/" 2>/dev/null || true
-    cp -r docs "$RELEASE_DIR/"
+    cp "${PROJECT_ROOT}/README.md" "${RELEASE_DIR}/"
+    cp "${PROJECT_ROOT}/LICENSE" "${RELEASE_DIR}/" 2>/dev/null || echo "MIT License" > "${RELEASE_DIR}/LICENSE"
+    cp "${PROJECT_ROOT}/CHANGELOG.md" "${RELEASE_DIR}/" 2>/dev/null || true
+    cp "${PROJECT_ROOT}/install.sh" "${RELEASE_DIR}/"
+    chmod +x "${RELEASE_DIR}/install.sh"
+
+    # Copy essential docs
+    for doc in LANGUAGE_SPEC.md REPL_GUIDE.md PACKAGE_MANAGER.md; do
+        if [[ -f "${PROJECT_ROOT}/docs/${doc}" ]]; then
+            cp "${PROJECT_ROOT}/docs/${doc}" "${RELEASE_DIR}/docs/"
+        fi
+    done
 
     # Copy examples
-    cp -r examples "$RELEASE_DIR/"
+    if [[ -d "${PROJECT_ROOT}/examples" ]]; then
+        cp -r "${PROJECT_ROOT}/examples/"* "${RELEASE_DIR}/examples/" 2>/dev/null || true
+    fi
 
-    # Copy installation script
-    cp install.sh "$RELEASE_DIR/"
-
-    # Create version file
-    cat > "$RELEASE_DIR/VERSION" <<EOF
-RADS Version: $VERSION
-Platform: $PLATFORM-$ARCH
-Build Date: $(date '+%Y-%m-%d %H:%M:%S')
-Build Host: $(hostname)
-Compiler: $(gcc --version | head -n1 || clang --version | head -n1)
-EOF
-
-    success "Release structure created: $RELEASE_DIR"
+    success "Release directory prepared"
 }
 
-# Create tarball
+# Create release tarball
 create_tarball() {
-    TARBALL_NAME="${PROJECT_NAME}-${VERSION}-${PLATFORM}-${ARCH}.tar.gz"
+    local platform=$(detect_platform)
+    local tarball_name="rads-${VERSION}-${platform}.tar.gz"
+    local tarball_path="${DIST_DIR}/${tarball_name}"
 
-    info "Creating tarball..."
+    info "Creating tarball: ${tarball_name}"
 
-    cd release
-    tar -czf "$TARBALL_NAME" "$(basename "$RELEASE_DIR")"
-    cd ..
+    cd "${PROJECT_ROOT}/release"
+    tar -czvf "${tarball_path}" "rads-${VERSION}"
 
-    TARBALL_PATH="release/$TARBALL_NAME"
-    TARBALL_SIZE=$(du -h "$TARBALL_PATH" | cut -f1)
-    TARBALL_SHA256=$(sha256sum "$TARBALL_PATH" | cut -d' ' -f1)
-
-    success "Tarball created: $TARBALL_PATH ($TARBALL_SIZE)"
-    info "SHA256: $TARBALL_SHA256"
-
-    # Create checksum file
-    echo "$TARBALL_SHA256  $TARBALL_NAME" > "$TARBALL_PATH.sha256"
+    success "Created: ${tarball_path}"
+    echo "${tarball_path}"
 }
 
-# Create installation instructions
-create_install_instructions() {
-    TARBALL_NAME="${PROJECT_NAME}-${VERSION}-${PLATFORM}-${ARCH}.tar.gz"
+# Generate checksums
+generate_checksums() {
+    info "Generating checksums..."
 
-    cat > "release/INSTALL.txt" <<EOF
-RADS v$VERSION - Installation Instructions
-==========================================
+    cd "${DIST_DIR}"
 
-Quick Install:
---------------
-1. Extract the tarball:
-   tar -xzf $TARBALL_NAME
+    # SHA256 checksums
+    if command -v sha256sum &>/dev/null; then
+        sha256sum rads-*.tar.gz > CHECKSUMS-SHA256.txt
+    elif command -v shasum &>/dev/null; then
+        shasum -a 256 rads-*.tar.gz > CHECKSUMS-SHA256.txt
+    fi
 
-2. Run the installer:
-   cd ${PROJECT_NAME}-${VERSION}-${PLATFORM}-${ARCH}
-   ./install.sh
+    # Individual binary checksums
+    cd "${RELEASE_DIR}/bin"
+    if command -v sha256sum &>/dev/null; then
+        sha256sum * > "${DIST_DIR}/BIN-CHECKSUMS-SHA256.txt"
+    elif command -v shasum &>/dev/null; then
+        shasum -a 256 * > "${DIST_DIR}/BIN-CHECKSUMS-SHA256.txt"
+    fi
 
-3. Verify installation:
-   rads --version
-   rstar help
-
-Manual Install:
----------------
-1. Extract the tarball
-2. Copy binaries to your PATH:
-   sudo cp bin/rads /usr/local/bin/
-   sudo cp bin/rstar /usr/local/bin/
-
-3. Create plugin directory:
-   mkdir -p ~/.rads/plugins
-
-Getting Started:
-----------------
-- Start REPL: rads
-- Run example: rads examples/01-basics/hello_world.rads
-- View docs: docs/REPL_GUIDE.md
-
-For more information, visit:
-https://github.com/yourusername/rads
-
-SHA256 Checksum:
-----------------
-To verify the download integrity:
-  sha256sum -c $TARBALL_NAME.sha256
-
-Build Information:
-------------------
-Platform: $PLATFORM-$ARCH
-Version: $VERSION
-Build Date: $(date '+%Y-%m-%d')
-
-Enjoy RADS! 🚀
-EOF
-
-    success "Created INSTALL.txt"
+    success "Checksums generated"
 }
 
-# Main release build process
+# Print release info
+print_summary() {
+    echo ""
+    echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
+    echo -e "${GREEN} Release v${VERSION} Build Complete!${NC}"
+    echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
+    echo ""
+    echo "Release files:"
+    ls -la "${DIST_DIR}/"
+    echo ""
+    echo "Release contents:"
+    ls -la "${RELEASE_DIR}/"
+    ls -la "${RELEASE_DIR}/bin/"
+    echo ""
+    echo "To upload to GitHub:"
+    echo "  gh release create v${VERSION} ${DIST_DIR}/rads-*.tar.gz --title \"RADS v${VERSION} DARK MOON\" --notes-file RELEASE_NOTES.md"
+    echo ""
+}
+
+# Main
 main() {
     echo ""
-    echo "╔═══════════════════════════════════════╗"
-    echo "║   RADS Release Builder v$VERSION      ║"
-    echo "╚═══════════════════════════════════════╝"
+    echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║${NC}  RADS Release Builder v${VERSION}                             ${BLUE}║${NC}"
+    echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
     echo ""
 
-    detect_platform
-    build_clean
-    create_release_structure
+    clean_release
+    build_project
+    prepare_release
     create_tarball
-    create_install_instructions
-
-    echo ""
-    echo "╔═══════════════════════════════════════╗"
-    echo "║   Release Build Complete! 🎉         ║"
-    echo "╚═══════════════════════════════════════╝"
-    echo ""
-    echo "Release package:"
-    echo "  📦 release/${PROJECT_NAME}-${VERSION}-${PLATFORM}-${ARCH}.tar.gz"
-    echo ""
-    echo "To test installation:"
-    echo "  cd release"
-    echo "  tar -xzf ${PROJECT_NAME}-${VERSION}-${PLATFORM}-${ARCH}.tar.gz"
-    echo "  cd ${PROJECT_NAME}-${VERSION}-${PLATFORM}-${ARCH}"
-    echo "  ./install.sh"
-    echo ""
+    generate_checksums
+    print_summary
 }
 
-# Run
 main "$@"

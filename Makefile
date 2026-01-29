@@ -53,7 +53,8 @@ CORE_SOURCES = $(wildcard $(SRC_CORE_DIR)/*.c)
 STDLIB_SOURCES = $(wildcard $(SRC_STDLIB_DIR)/*.c)
 VM_SOURCES = $(wildcard src/vm/*.c)
 PROFILER_SOURCES = $(wildcard src/profiler/*.c)
-DEBUG_SOURCES = $(wildcard src/debug/*.c)
+# Exclude debug_protocol.c to avoid duplicate symbols with conditional_breakpoints.c
+DEBUG_SOURCES = $(filter-out src/debug/debug_protocol.c, $(wildcard src/debug/*.c))
 SOURCES = $(CORE_SOURCES) $(STDLIB_SOURCES) $(VM_SOURCES) $(PROFILER_SOURCES) $(DEBUG_SOURCES)
 
 OBJECTS = $(patsubst $(SRC_CORE_DIR)/%.c,$(BUILD_DIR)/core/%.o,$(CORE_SOURCES)) \
