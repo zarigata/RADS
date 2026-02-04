@@ -65,11 +65,11 @@ OBJECTS = $(patsubst $(SRC_CORE_DIR)/%.c,$(BUILD_DIR)/core/%.o,$(CORE_SOURCES)) 
 
 # Tools
 RSTAR = bin/rstar
-RPM = bin/rpm
+RADPKG = bin/radpkg
 RADS_MASK = bin/rads-mask
 
 # Default target
-all: $(TARGET) $(RSTAR) $(RPM) $(RADS_MASK)
+all: $(TARGET) $(RSTAR) $(RADPKG) $(RADS_MASK)
 
 # Create build and bin directories
 $(BUILD_DIR):
@@ -107,11 +107,11 @@ $(RSTAR): tools/rstar/rstar.c | $(BUILD_DIR)
 	@ln -sf bin/rstar rstar
 	@echo "✅ RADStar package manager built successfully in bin/rstar"
 
-# Build RPM (Resource Package Manager)
-$(RPM): tools/rpm/rpm.c | $(BIN_DIR)
-	$(CC) -D_POSIX_C_SOURCE=200809L -Wall -Wextra -std=c11 -O2 -Isrc tools/rpm/rpm.c -o $(RPM)
-	@ln -sf bin/rpm rpm
-	@echo "✅ RPM built successfully in bin/rpm"
+# Build RADPKG (RADS Package Manager)
+$(RADPKG): tools/radpkg/radpkg.c | $(BIN_DIR)
+	$(CC) -D_POSIX_C_SOURCE=200809L -Wall -Wextra -std=c11 -O2 -Isrc tools/radpkg/radpkg.c -o $(RADPKG)
+	@ln -sf bin/radpkg radpkg
+	@echo "✅ RADPKG built successfully in bin/radpkg"
 
 # Build rads-mask transpiler
 $(RADS_MASK): tools/rads-mask/src/*.c tools/rads-mask/src/converter/*.c | $(BIN_DIR)
@@ -126,17 +126,17 @@ debug: clean $(TARGET)
 
 # Clean build artifacts
 clean:
-	rm -rf $(BUILD_DIR) $(BIN_DIR) $(TARGET) rstar rpm rads-mask
+	rm -rf $(BUILD_DIR) $(BIN_DIR) $(TARGET) rstar radpkg rads-mask
 	$(MAKE) -C tools/rads-mask clean
 	@echo "🧹 Cleaned build artifacts"
 
 # Install (copy to /usr/local/bin)
-install: $(TARGET) $(RSTAR) $(RPM) $(RADS_MASK)
+install: $(TARGET) $(RSTAR) $(RADPKG) $(RADS_MASK)
 	install -m 755 $(BIN_DIR)/$(TARGET) /usr/local/bin/$(TARGET)
 	install -m 755 $(RSTAR) /usr/local/bin/rstar
-	install -m 755 $(RPM) /usr/local/bin/rpm
+	install -m 755 $(RADPKG) /usr/local/bin/radpkg
 	install -m 755 $(RADS_MASK) /usr/local/bin/rads-mask
-	@echo "✅ RADS, RStar, RPM, and rads-mask installed to /usr/local/bin/"
+	@echo "✅ RADS, RStar, RADPKG, and rads-mask installed to /usr/local/bin/"
 
 # Platform targets
 linux: all
@@ -144,14 +144,14 @@ macos: all
 windows: all
 
 # Build all tools
-all-tools: $(TARGET) $(RSTAR) $(RPM) $(RADS_MASK)
+all-tools: $(TARGET) $(RSTAR) $(RADPKG) $(RADS_MASK)
 	@echo "✅ All RADS tools built successfully"
 
 # Uninstall
 uninstall:
 	rm -f /usr/local/bin/$(TARGET)
 	rm -f /usr/local/bin/rstar
-	rm -f /usr/local/bin/rpm
+	rm -f /usr/local/bin/radpkg
 	rm -f /usr/local/bin/rads-mask
 	@echo "🗑️  RADS and all tools uninstalled"
 

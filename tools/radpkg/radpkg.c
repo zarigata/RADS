@@ -4,15 +4,15 @@
 #include <string.h>
 #include <stdbool.h>
 
-// RPM - RADS Package Manager
+// RADPKG - RADS Package Manager
 // "Blast your projects with plugins!"
 
 void print_usage() {
-    printf("RPM - RADS Package Manager v0.1.0\n");
-    printf("Usage: rpm <command> [args]\n\n");
+    printf("RADPKG - RADS Package Manager v0.1.0\n");
+    printf("Usage: radpkg <command> [args]\n\n");
     printf("Commands:\n");
     printf("  init       Initialize a new RADS package\n");
-    printf("  install    Install a package (e.g. rpm install media-kit)\n");
+    printf("  install    Install a package (e.g. radpkg install media-kit)\n");
     printf("  list       List installed packages\n");
     printf("  help       Show this help\n");
 }
@@ -23,12 +23,12 @@ void cmd_init() {
         fprintf(stderr, "Error: Could not create package.rads\n");
         return;
     }
-    
+
     fprintf(f, "name = \"my-rads-project\"\n");
     fprintf(f, "version = \"0.1.0\"\n");
     fprintf(f, "dependencies = []\n");
     fclose(f);
-    
+
     printf("🚀 Initialized new RADS package environment!\n");
     printf("Created package.rads\n");
 }
@@ -38,12 +38,12 @@ void cmd_install(const char* package) {
         fprintf(stderr, "Error: Package name required\n");
         return;
     }
-    
+
     printf("📦 Downloading %s...\n", package);
     // Dummy download simulation
     printf("⚡ Extracting...\n");
     printf("✅ Installed %s successfully!\n", package);
-    
+
     // Append to package.rads if exists
     FILE* f = fopen("package.rads", "a");
     if (f) {
@@ -59,7 +59,7 @@ void cmd_list() {
         printf("(No package.rads found)\n");
         return;
     }
-    
+
     char line[256];
     while (fgets(line, sizeof(line), f)) {
         if (strstr(line, "# Dependency:")) {
@@ -74,14 +74,14 @@ int main(int argc, char* argv[]) {
         print_usage();
         return 1;
     }
-    
+
     const char* cmd = argv[1];
-    
+
     if (strcmp(cmd, "init") == 0) {
         cmd_init();
     } else if (strcmp(cmd, "install") == 0) {
         if (argc < 3) {
-            fprintf(stderr, "Usage: rpm install <package>\n");
+            fprintf(stderr, "Usage: radpkg install <package>\n");
             return 1;
         }
         cmd_install(argv[2]);
@@ -91,6 +91,6 @@ int main(int argc, char* argv[]) {
         print_usage();
         return 1;
     }
-    
+
     return 0;
 }

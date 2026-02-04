@@ -485,7 +485,7 @@ install_binaries() {
     $SUDO mkdir -p "$INSTALL_DIR"
 
     # Install each binary
-    local binaries=("rads" "rstar" "rpm" "rads-mask")
+    local binaries=("rads" "rstar" "radpkg" "rads-mask")
     local installed=()
 
     for bin in "${binaries[@]}"; do
