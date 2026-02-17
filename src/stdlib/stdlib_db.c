@@ -424,6 +424,4 @@ void stdlib_db_register(void) {
     register_native("db.commit", native_db_commit);
     register_native("db.rollback", native_db_rollback);
     register_native("db.close", native_db_close);
-
-    printf("\033[1;36m[DB]\033[0m stdlib_db_register\n");
 }

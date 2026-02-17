@@ -401,6 +401,4 @@ void stdlib_webengine_register(void) {
     register_native("pkg_load", native_web_plugin_load);
     register_native("pkg_list", native_web_plugin_list);
     register_native("pkg_install", native_web_plugin_install);
-
-    printf("\033[1;36m[WEB]\033[0m stdlib_webengine_register\n");
 }

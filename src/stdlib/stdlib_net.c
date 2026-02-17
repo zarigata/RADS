@@ -153,16 +153,15 @@ typedef struct SessionStore {
     int count;
 } SessionStore;
 
-static Value make_string(const char* s);
-static Value make_bool(bool v);
-static Value make_null(void);
+extern Value make_string(const char* val);
+extern Value make_bool(bool val);
+extern Value make_null(void);
+extern Value make_int(long long val);
+extern Array* array_create(size_t capacity);
+extern void array_push(Array* arr, Value v);
 static Value make_response_tuple(int status, const char* body, const char* ctype);
-static Value make_int(long long v);
 static Value make_json_response(const char* body);
 static Value clone_value(Value v);
-// Local array helpers (interpreter internals not exposed here)
-static Array* array_create_local(size_t capacity);
-static void array_push_local(Array* arr, Value v);
 Value native_net_serve(struct Interpreter* interp, int argc, Value* args);
 static TcpHandleCtx* register_tcp_ctx(struct Interpreter* interp, uv_tcp_t* handle, const char* prefix, bool is_listener, bool owns_handle, bool is_http, const char* explicit_id);
 static void buffer_free(RadsBufferNode* head);
@@ -235,13 +234,6 @@ static void on_http_client_timeout(uv_timer_t* timer);
 static void on_http_client_close(uv_handle_t* handle);
 static bool should_keep_alive(HttpClientResponse* resp);
 
-static Value make_string(const char* s) {
-    Value v;
-    v.type = VAL_STRING;
-    v.string_val = strdup(s ? s : "");
-    return v;
-}
-
 static Value clone_value(Value v) {
     Value out = v;
     if (v.type == VAL_STRING && v.string_val) {
@@ -250,25 +242,6 @@ static Value clone_value(Value v) {
         v.array_val->refcount++;
     }
     return out;
-}
-
-static Array* array_create_local(size_t capacity) {
-    Array* arr = malloc(sizeof(Array));
-    if (!arr) return NULL;
-    arr->refcount = 1;
-    arr->count = 0;
-    arr->capacity = capacity > 0 ? capacity : 4;
-    arr->items = calloc(arr->capacity, sizeof(Value));
-    return arr;
-}
-
-static void array_push_local(Array* arr, Value v) {
-    if (!arr) return;
-    if (arr->count >= arr->capacity) {
-        arr->capacity = arr->capacity > 0 ? arr->capacity * 2 : 4;
-        arr->items = realloc(arr->items, arr->capacity * sizeof(Value));
-    }
-    arr->items[arr->count++] = clone_value(v);
 }
 
 static HttpRequest* http_request_create(void) {
@@ -1789,10 +1762,10 @@ static void http_handle_request(uv_stream_t* client, const char* data, ssize_t l
 
     // args[4] = params object (as array of key-value pairs)
     if (params && params->count > 0) {
-        Array* params_arr = array_create_local(params->count * 2);
+        Array* params_arr = array_create(params->count * 2);
         for (int i = 0; i < params->count; i++) {
-            array_push_local(params_arr, make_string(params->keys[i]));
-            array_push_local(params_arr, make_string(params->values[i]));
+            array_push(params_arr, make_string(params->keys[i]));
+            array_push(params_arr, make_string(params->values[i]));
         }
         args[4].type = VAL_ARRAY;
         args[4].array_val = params_arr;
@@ -1802,10 +1775,10 @@ static void http_handle_request(uv_stream_t* client, const char* data, ssize_t l
 
     // args[5] = headers object (as array of key-value pairs)
     if (req->header_count > 0) {
-        Array* headers_arr = array_create_local(req->header_count * 2);
+        Array* headers_arr = array_create(req->header_count * 2);
         for (int i = 0; i < req->header_count; i++) {
-            array_push_local(headers_arr, make_string(req->header_names[i]));
-            array_push_local(headers_arr, make_string(req->header_values[i]));
+            array_push(headers_arr, make_string(req->header_names[i]));
+            array_push(headers_arr, make_string(req->header_values[i]));
         }
         args[5].type = VAL_ARRAY;
         args[5].array_val = headers_arr;
@@ -1867,34 +1840,15 @@ static void http_handle_request(uv_stream_t* client, const char* data, ssize_t l
     http_request_free(req);
     http_response_free(resp);
 }
-static Value make_bool(bool v) {
-    Value val;
-    val.type = VAL_BOOL;
-    val.bool_val = v;
-    return val;
-}
-
-static Value make_null(void) {
-    Value v;
-    v.type = VAL_NULL;
-    return v;
-}
-
-static Value make_int(long long v) {
-    Value val;
-    val.type = VAL_INT;
-    val.int_val = v;
-    return val;
-}
 
 static Value make_response_tuple(int status, const char* body, const char* ctype) {
-    Array* arr = array_create_local(3);
+    Array* arr = array_create(3);
     Value code = make_int(status);
     Value bodyv = make_string(body ? body : "");
     Value ctypev = make_string(ctype ? ctype : "text/plain");
-    array_push_local(arr, code);
-    array_push_local(arr, bodyv);
-    array_push_local(arr, ctypev);
+    array_push(arr, code);
+    array_push(arr, bodyv);
+    array_push(arr, ctypev);
     value_free(&code);
     value_free(&bodyv);
     value_free(&ctypev);
@@ -2260,7 +2214,6 @@ Value native_net_param_get(struct Interpreter* interp, int argc, Value* args) {
 
 
 void stdlib_net_register(void) {
-    fprintf(stderr, "[NET] stdlib_net_register\n");
     register_native("net.http_server", native_net_http_server);
     register_native("net.route", native_net_route);
     register_native("net.static", native_net_static);
