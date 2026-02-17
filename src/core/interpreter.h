@@ -87,8 +87,16 @@ typedef enum {
 void register_native(const char* name, NativeFn fn);
 uv_loop_t* interpreter_init_event_loop(void);
 void interpreter_cleanup_event_loop(void);
-void interpreter_cleanup_environment(void);  // Clean up global environment (for REPL exit)
+void interpreter_cleanup_environment(void);
 void interpreter_run_event_loop(void);
 Value interpreter_execute_callback(Value callback, int argc, Value* args);
+
+Value make_int(long long val);
+Value make_float(double val);
+Value make_string(const char* val);
+Value make_bool(bool val);
+Value make_null(void);
+Array* array_create(size_t capacity);
+void array_push(Array* arr, Value v);
 
 #endif // RADS_INTERPRETER_H

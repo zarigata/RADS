@@ -187,6 +187,7 @@ static ASTNode* parse_expression(Parser* parser);
 ASTNode* parse_statement(Parser* parser);  // Public for REPL
 static ASTNode* parse_declaration(Parser* parser);
 static ASTNode* parse_comparison(Parser* parser);
+static ASTNode* parse_block(Parser* parser);
 
 // Parse primary expressions
 static ASTNode* parse_primary(Parser* parser) {
@@ -233,6 +234,18 @@ static ASTNode* parse_primary(Parser* parser) {
         free(name);
         return node;
     }
+
+    // Module names that are also type keywords (array, string, etc.)
+    // These can be used as identifiers when followed by '.' for method calls
+    if (match(parser, TOKEN_ARRAY) || match(parser, TOKEN_STR)) {
+        const char* module_name = token_type_to_string(parser->previous.type);
+        char* name = strdup(module_name);
+        // Convert to lowercase for consistency (STR -> str, ARRAY -> array)
+        for (char* p = name; *p; p++) *p = tolower(*p);
+        ASTNode* node = ast_create_identifier(name, parser->previous.line, parser->previous.column);
+        free(name);
+        return node;
+    }
     
     if (match(parser, TOKEN_LEFT_BRACKET)) {
         int line = parser->previous.line;
@@ -252,6 +265,32 @@ static ASTNode* parse_primary(Parser* parser) {
         ASTNode* expr = parse_expression(parser);
         consume(parser, TOKEN_RIGHT_PAREN, "Expected ')' after expression");
         return expr;
+    }
+
+    // Anonymous function: blast(params) { body }
+    if (match(parser, TOKEN_BLAST)) {
+        int line = parser->previous.line;
+        int column = parser->previous.column;
+
+        consume(parser, TOKEN_LEFT_PAREN, "Expected '(' after 'blast' for anonymous function");
+        ASTList* params = ast_list_create();
+        if (!check(parser, TOKEN_RIGHT_PAREN)) {
+            do {
+                consume(parser, TOKEN_IDENTIFIER, "Expected parameter name");
+                char* param_name = malloc(parser->previous.length + 1);
+                memcpy(param_name, parser->previous.start, parser->previous.length);
+                param_name[parser->previous.length] = '\0';
+                ASTNode* param = ast_create_identifier(param_name, parser->previous.line, parser->previous.column);
+                ast_list_append(params, param);
+                free(param_name);
+            } while (match(parser, TOKEN_COMMA));
+        }
+        consume(parser, TOKEN_RIGHT_PAREN, "Expected ')' after parameters");
+
+        consume(parser, TOKEN_LEFT_BRACE, "Expected '{' before function body");
+        ASTNode* body = parse_block(parser);
+
+        return ast_create_function_decl(NULL, params, NULL, body, false, line, column);
     }
     
     error(parser, "Expected expression");
@@ -324,7 +363,7 @@ static ASTNode* parse_call(Parser* parser) {
     return expr;
 }
 
-// Parse unary operators (!, -)
+// Parse unary operators (!, -, typeof)
 static ASTNode* parse_unary(Parser* parser) {
     if (match(parser, TOKEN_BANG) || match(parser, TOKEN_MINUS)) {
         Token op = parser->previous;
@@ -333,6 +372,13 @@ static ASTNode* parse_unary(Parser* parser) {
         ASTNode* right = parse_unary(parser);  // Right-associative
         OperatorType op_type = (op.type == TOKEN_BANG) ? OP_NOT : OP_NEG;
         return ast_create_unary_op(op_type, right, line, column);
+    }
+
+    if (match(parser, TOKEN_TYPEOF)) {
+        int line = parser->previous.line;
+        int column = parser->previous.column;
+        ASTNode* operand = parse_unary(parser);
+        return ast_create_typeof(operand, line, column);
     }
 
     return parse_call(parser);
@@ -388,12 +434,36 @@ static ASTNode* parse_comparison(Parser* parser) {
     return expr;
 }
 
-// Range has low precedence: <add> .. <add>
-static ASTNode* parse_range(Parser* parser) {
+static ASTNode* parse_and(Parser* parser) {
     ASTNode* expr = parse_comparison(parser);
-    if (match(parser, TOKEN_DOT_DOT)) {
+
+    while (match(parser, TOKEN_AND_AND)) {
         Token op = parser->previous;
         ASTNode* right = parse_comparison(parser);
+        expr = ast_create_binary_op(OP_AND, expr, right, op.line, op.column);
+    }
+
+    return expr;
+}
+
+static ASTNode* parse_or(Parser* parser) {
+    ASTNode* expr = parse_and(parser);
+
+    while (match(parser, TOKEN_OR_OR)) {
+        Token op = parser->previous;
+        ASTNode* right = parse_and(parser);
+        expr = ast_create_binary_op(OP_OR, expr, right, op.line, op.column);
+    }
+
+    return expr;
+}
+
+// Range has low precedence: <add> .. <add>
+static ASTNode* parse_range(Parser* parser) {
+    ASTNode* expr = parse_or(parser);
+    if (match(parser, TOKEN_DOT_DOT)) {
+        Token op = parser->previous;
+        ASTNode* right = parse_or(parser);
         expr = ast_create_binary_op(OP_RANGE, expr, right, op.line, op.column);
     }
     return expr;
@@ -477,22 +547,90 @@ static ASTNode* parse_break_or_continue(Parser* parser, bool is_break) {
     return is_break ? ast_create_break(line, column) : ast_create_continue(line, column);
 }
 
-// Parse cruise (for-range) statement: cruise (<id> in <iterable>) <statement>
+// Parse cruise (for-range or C-style for) statement
+// cruise (id in iterable) <body> - for-range
+// cruise (init; condition; update) <body> - C-style for
 static ASTNode* parse_cruise_statement(Parser* parser) {
     int line = parser->previous.line;
     int column = parser->previous.column;
     consume(parser, TOKEN_LEFT_PAREN, "Expected '(' after 'cruise'");
-    consume(parser, TOKEN_IDENTIFIER, "Expected iterator name after '('");
-    char* iter_name = malloc(parser->previous.length + 1);
-    memcpy(iter_name, parser->previous.start, parser->previous.length);
-    iter_name[parser->previous.length] = '\0';
-    consume(parser, TOKEN_IN, "Expected 'in' after iterator");
-    ASTNode* iterable = parse_expression(parser);
-    consume(parser, TOKEN_RIGHT_PAREN, "Expected ')' after cruise iterable");
-    ASTNode* body = parse_statement(parser);
-    ASTNode* cruise = ast_create_cruise(iter_name, iterable, body, line, column);
-    free(iter_name);
-    return cruise;
+    
+    // Check if this is for-range (id in iterable) or C-style for (init; cond; update)
+    // Peek at what follows the identifier
+    consume(parser, TOKEN_IDENTIFIER, "Expected variable name after '('");
+    char* var_name = malloc(parser->previous.length + 1);
+    memcpy(var_name, parser->previous.start, parser->previous.length);
+    var_name[parser->previous.length] = '\0';
+    
+    if (match(parser, TOKEN_IN)) {
+        // For-range: cruise (id in iterable)
+        ASTNode* iterable = parse_expression(parser);
+        consume(parser, TOKEN_RIGHT_PAREN, "Expected ')' after cruise iterable");
+        ASTNode* body = parse_statement(parser);
+        ASTNode* cruise = ast_create_cruise(var_name, iterable, body, line, column);
+        free(var_name);
+        return cruise;
+    } else {
+        // C-style for: cruise (init; condition; update)
+        // var_name is actually the first part of init (variable name)
+        // We've already consumed the identifier, now expect = for assignment
+        ASTNode* init = NULL;
+        
+        if (match(parser, TOKEN_EQUAL)) {
+            // Simple assignment: var_name = expr
+            ASTNode* ident = ast_create_identifier(var_name, line, column);
+            ASTNode* value = parse_expression(parser);
+            init = ast_create_assign(ident, value, line, column);
+        } else {
+            // Just a variable reference (init is just expr;)
+            free(var_name);
+            // We need to back up - the identifier we consumed might be part of an expression
+            // For simplicity, we require cruise (init; cond; update) where init is an assignment
+            error(parser, "Expected '=' for cruise initializer or 'in' for for-range");
+            return NULL;
+        }
+        free(var_name);
+        
+        consume(parser, TOKEN_SEMICOLON, "Expected ';' after cruise initializer");
+        
+        // Parse condition
+        ASTNode* condition = parse_expression(parser);
+        consume(parser, TOKEN_SEMICOLON, "Expected ';' after cruise condition");
+        
+        // Parse update - this is an expression statement (without semicolon at end)
+        ASTNode* update = parse_expression(parser);
+        
+        consume(parser, TOKEN_RIGHT_PAREN, "Expected ')' after cruise clauses");
+        ASTNode* body = parse_statement(parser);
+        
+        // Desugar into: { init; loop (condition) { body; update; } }
+        // Create update statement
+        ASTList* update_stmts = ast_list_create();
+        ast_list_append(update_stmts, update);
+        ASTNode* update_block = ast_create_block(update_stmts, line, column);
+        
+        // Create body with update: { body_stmts... update; }
+        // body should be a block, we need to add update at the end
+        if (body->type == AST_BLOCK) {
+            ast_list_append(body->block.statements, update);
+        } else {
+            // Single statement body - create a new block
+            ASTList* body_stmts = ast_list_create();
+            ast_list_append(body_stmts, body);
+            ast_list_append(body_stmts, update);
+            body = ast_create_block(body_stmts, line, column);
+        }
+        
+        // Create loop: loop (condition) { body_with_update }
+        ASTNode* loop = ast_create_loop(condition, body, line, column);
+        
+        // Create block: { init; loop; }
+        ASTList* block_stmts = ast_list_create();
+        ast_list_append(block_stmts, init);
+        ast_list_append(block_stmts, loop);
+        
+        return ast_create_block(block_stmts, line, column);
+    }
 }
 
 // Parse block
@@ -762,10 +900,6 @@ static ASTNode* parse_enum_declaration(Parser* parser) {
 
 // Parse declaration
 static ASTNode* parse_declaration(Parser* parser) {
-    fprintf(stderr, "[PARSE] decl start token=%s line=%d col=%d\n",
-            token_type_to_string(parser->current.type),
-            parser->current.line,
-            parser->current.column);
     // Import statement: import "filename.rads";
     if (match(parser, TOKEN_IMPORT)) {
         int line = parser->previous.line;
@@ -904,7 +1038,18 @@ ASTNode* parse_statement(Parser* parser) {
     if (match(parser, TOKEN_TURBO) || match(parser, TOKEN_STR) || match(parser, TOKEN_I32) || match(parser, TOKEN_BOOL)) {
         return parse_variable(parser);
     }
-    
+
+    // Nested function declarations: async blast or plain blast
+    if (check(parser, TOKEN_ASYNC) || check(parser, TOKEN_BLAST)) {
+        bool is_async = match(parser, TOKEN_ASYNC);
+        if (is_async) {
+            consume(parser, TOKEN_BLAST, "Expected 'blast' after 'async'");
+        } else {
+            consume(parser, TOKEN_BLAST, "Expected 'blast' for function");
+        }
+        return parse_function(parser, is_async);
+    }
+
     // Expression statement
     ASTNode* expr = parse_expression(parser);
     consume(parser, TOKEN_SEMICOLON, "Expected ';' after expression");

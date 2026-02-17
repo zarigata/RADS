@@ -48,6 +48,7 @@ typedef enum {
     AST_ARRAY_LITERAL,
     AST_INDEX_EXPR,
     AST_MEMBER_EXPR,
+    AST_TYPEOF_EXPR,
     AST_STRUCT_LITERAL,
     
     // Types
@@ -136,6 +137,11 @@ struct ASTNode {
             OperatorType op;
             ASTNode* operand;
         } unary_op;
+        
+        // Typeof expression
+        struct {
+            ASTNode* operand;
+        } typeof_expr;
         
         // Function declaration
         struct {
@@ -257,6 +263,7 @@ ASTNode* ast_create_null(int line, int column);
 ASTNode* ast_create_identifier(const char* name, int line, int column);
 ASTNode* ast_create_binary_op(OperatorType op, ASTNode* left, ASTNode* right, int line, int column);
 ASTNode* ast_create_unary_op(OperatorType op, ASTNode* operand, int line, int column);
+ASTNode* ast_create_typeof(ASTNode* operand, int line, int column);
 ASTNode* ast_create_function_decl(const char* name, ASTList* params, TypeInfo* return_type, ASTNode* body, bool is_async, int line, int column);
 ASTNode* ast_create_variable_decl(const char* name, TypeInfo* type, ASTNode* initializer, bool is_turbo, int line, int column);
 ASTNode* ast_create_struct_decl(const char* name, ASTList* fields, int line, int column);

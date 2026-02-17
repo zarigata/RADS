@@ -11,6 +11,7 @@
 static Value eval_expression(ASTNode* node);
 static ExecResult exec_statement(ASTNode* node);
 static void exec_function(ASTNode* node);
+static bool is_truthy(Value v);
 
 uv_loop_t* global_event_loop = NULL;
 static struct Interpreter global_interpreter_instance = {0};
@@ -54,19 +55,18 @@ void interpreter_cleanup_event_loop(void) {
 #endif
 }
 
-// Value functions
-static Value make_null() {
+Value make_null() {
     Value v;
     v.type = VAL_NULL;
     return v;
 }
 
-static Value make_bool(bool val) { Value v = { .type = VAL_BOOL, .bool_val = val }; return v; }
-static Value make_int(long long val) { Value v = { .type = VAL_INT, .int_val = val }; return v; }
-static Value make_float(double val) { Value v = { .type = VAL_FLOAT, .float_val = val }; return v; }
-static Value make_string(const char* val) { Value v = { .type = VAL_STRING, .string_val = strdup(val) }; return v; }
+Value make_bool(bool val) { Value v = { .type = VAL_BOOL, .bool_val = val }; return v; }
+Value make_int(long long val) { Value v = { .type = VAL_INT, .int_val = val }; return v; }
+Value make_float(double val) { Value v = { .type = VAL_FLOAT, .float_val = val }; return v; }
+Value make_string(const char* val) { Value v = { .type = VAL_STRING, .string_val = strdup(val) }; return v; }
 
-static Array* array_create(size_t capacity) {
+Array* array_create(size_t capacity) {
     Array* arr = malloc(sizeof(Array));
     arr->refcount = 1;
     arr->count = 0;
@@ -78,7 +78,7 @@ static Array* array_create(size_t capacity) {
 static Value value_clone(Value v);
 static void value_release(Value* v);
 
-static void array_push(Array* arr, Value v) {
+void array_push(Array* arr, Value v) {
     if (arr->count >= arr->capacity) {
         arr->capacity = arr->capacity * 2;
         arr->items = realloc(arr->items, arr->capacity * sizeof(Value));
@@ -206,7 +206,11 @@ void value_print(Value* value) {
             break;
         }
         case VAL_FUNCTION:
-            printf("<blast function %s>", value->func_node->function_decl.name);
+            if (value->func_node->function_decl.name) {
+                printf("<blast function %s>", value->func_node->function_decl.name);
+            } else {
+                printf("<blast anonymous function>");
+            }
             break;
         case VAL_STRUCT_DEF:
             printf("<struct def %s>", value->struct_def->name);
@@ -581,6 +585,36 @@ static Value eval_binary_op(ASTNode* node) {
                     snprintf(left_buf, sizeof(left_buf), "%g", left.float_val);
                 } else if (left.type == VAL_BOOL) {
                     snprintf(left_buf, sizeof(left_buf), "%s", left.bool_val ? "true" : "false");
+                } else if (left.type == VAL_ARRAY) {
+                    // Convert array to string representation
+                    if (left.array_val) {
+                        char* arr_str = malloc(1024);
+                        strcpy(arr_str, "[");
+                        for (size_t i = 0; i < left.array_val->count && strlen(arr_str) < 1000; i++) {
+                            if (i > 0) strcat(arr_str, ", ");
+                            Value* item = &left.array_val->items[i];
+                            char item_buf[64];
+                            if (item->type == VAL_INT) {
+                                snprintf(item_buf, sizeof(item_buf), "%lld", item->int_val);
+                            } else if (item->type == VAL_FLOAT) {
+                                snprintf(item_buf, sizeof(item_buf), "%g", item->float_val);
+                            } else if (item->type == VAL_STRING) {
+                                snprintf(item_buf, sizeof(item_buf), "%s", item->string_val);
+                            } else if (item->type == VAL_BOOL) {
+                                strcpy(item_buf, item->bool_val ? "true" : "false");
+                            } else {
+                                strcpy(item_buf, "null");
+                            }
+                            strcat(arr_str, item_buf);
+                        }
+                        strcat(arr_str, "]");
+                        left_str = left_buf;
+                        strncpy(left_buf, arr_str, sizeof(left_buf) - 1);
+                        left_buf[sizeof(left_buf) - 1] = '\0';
+                        free(arr_str);
+                    } else {
+                        strcpy(left_buf, "[]");
+                    }
                 } else {
                     strcpy(left_buf, "null");
                 }
@@ -594,6 +628,36 @@ static Value eval_binary_op(ASTNode* node) {
                     snprintf(right_buf, sizeof(right_buf), "%g", right.float_val);
                 } else if (right.type == VAL_BOOL) {
                     snprintf(right_buf, sizeof(right_buf), "%s", right.bool_val ? "true" : "false");
+                } else if (right.type == VAL_ARRAY) {
+                    // Convert array to string representation
+                    if (right.array_val) {
+                        char* arr_str = malloc(1024);
+                        strcpy(arr_str, "[");
+                        for (size_t i = 0; i < right.array_val->count && strlen(arr_str) < 1000; i++) {
+                            if (i > 0) strcat(arr_str, ", ");
+                            Value* item = &right.array_val->items[i];
+                            char item_buf[64];
+                            if (item->type == VAL_INT) {
+                                snprintf(item_buf, sizeof(item_buf), "%lld", item->int_val);
+                            } else if (item->type == VAL_FLOAT) {
+                                snprintf(item_buf, sizeof(item_buf), "%g", item->float_val);
+                            } else if (item->type == VAL_STRING) {
+                                snprintf(item_buf, sizeof(item_buf), "%s", item->string_val);
+                            } else if (item->type == VAL_BOOL) {
+                                strcpy(item_buf, item->bool_val ? "true" : "false");
+                            } else {
+                                strcpy(item_buf, "null");
+                            }
+                            strcat(arr_str, item_buf);
+                        }
+                        strcat(arr_str, "]");
+                        right_str = right_buf;
+                        strncpy(right_buf, arr_str, sizeof(right_buf) - 1);
+                        right_buf[sizeof(right_buf) - 1] = '\0';
+                        free(arr_str);
+                    } else {
+                        strcpy(right_buf, "[]");
+                    }
                 } else {
                     strcpy(right_buf, "null");
                 }
@@ -696,6 +760,12 @@ static Value eval_binary_op(ASTNode* node) {
                 result = make_bool(left.float_val >= right.float_val);
             }
             break;
+        case OP_AND:
+            result = make_bool(is_truthy(left) && is_truthy(right));
+            break;
+        case OP_OR:
+            result = make_bool(is_truthy(left) || is_truthy(right));
+            break;
         default:
             break;
     }
@@ -753,6 +823,24 @@ static Value eval_expression(ASTNode* node) {
 
         case AST_UNARY_OP:
             return eval_unary_op(node);
+
+        case AST_TYPEOF_EXPR: {
+            Value val = eval_expression(node->typeof_expr.operand);
+            const char* type_str = "unknown";
+            switch (val.type) {
+                case VAL_INT: type_str = "integer"; break;
+                case VAL_FLOAT: type_str = "float"; break;
+                case VAL_STRING: type_str = "string"; break;
+                case VAL_BOOL: type_str = "bool"; break;
+                case VAL_NULL: type_str = "null"; break;
+                case VAL_ARRAY: type_str = "array"; break;
+                case VAL_FUNCTION: type_str = "function"; break;
+                case VAL_STRUCT_DEF: type_str = "struct_def"; break;
+                case VAL_STRUCT_INSTANCE: type_str = "struct"; break;
+            }
+            value_free(&val);
+            return make_string(type_str);
+        }
 
         case AST_BINARY_OP:
             return eval_binary_op(node);
@@ -892,6 +980,13 @@ static Value eval_expression(ASTNode* node) {
             Value v;
             v.type = VAL_STRUCT_INSTANCE;
             v.struct_instance = instance;
+            return v;
+        }
+
+        case AST_FUNCTION_DECL: {
+            Value v;
+            v.type = VAL_FUNCTION;
+            v.func_node = node;
             return v;
         }
 

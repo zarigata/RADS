@@ -123,12 +123,21 @@ ASTNode* ast_create_unary_op(OperatorType op, ASTNode* operand, int line, int co
     return node;
 }
 
+ASTNode* ast_create_typeof(ASTNode* operand, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_TYPEOF_EXPR;
+    node->line = line;
+    node->column = column;
+    node->typeof_expr.operand = operand;
+    return node;
+}
+
 ASTNode* ast_create_function_decl(const char* name, ASTList* params, TypeInfo* return_type, ASTNode* body, bool is_async, int line, int column) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_FUNCTION_DECL;
     node->line = line;
     node->column = column;
-    node->function_decl.name = strdup(name);
+    node->function_decl.name = name ? strdup(name) : NULL;
     node->function_decl.parameters = params;
     node->function_decl.return_type = return_type;
     node->function_decl.body = body;
