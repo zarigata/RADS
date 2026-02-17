@@ -46,6 +46,7 @@ typedef enum {
     TOKEN_EXPORT,       // export
     TOKEN_PLUGIN,       // plugin
     TOKEN_ECHO,         // print
+    TOKEN_TYPEOF,       // typeof operator
     TOKEN_XTREME,       // unsafe/fast mode
     TOKEN_ALLOC,        // allocate
     TOKEN_FREE,         // free memory

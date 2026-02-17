@@ -240,6 +240,7 @@ static TokenType identifier_type(Lexer* lexer) {
                 switch (lexer->start[1]) {
                     case 'r': return check_keyword(lexer, 2, 2, "ue", TOKEN_TRUE);
                     case 'u': return check_keyword(lexer, 2, 3, "rbo", TOKEN_TURBO);
+                    case 'y': return check_keyword(lexer, 2, 4, "peof", TOKEN_TYPEOF);
                 }
             }
             break;
@@ -434,6 +435,7 @@ const char* token_type_to_string(TokenType type) {
         case TOKEN_EXPORT: return "EXPORT";
         case TOKEN_PLUGIN: return "PLUGIN";
         case TOKEN_ECHO: return "ECHO";
+        case TOKEN_TYPEOF: return "TYPEOF";
         case TOKEN_XTREME: return "XTREME";
         case TOKEN_ALLOC: return "ALLOC";
         case TOKEN_FREE: return "FREE";

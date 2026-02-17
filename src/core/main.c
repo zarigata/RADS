@@ -454,14 +454,14 @@ int main(int argc, char* argv[]) {
     stdlib_string_register();
     stdlib_string_advanced_register();
     stdlib_math_register();
-    // TODO: stdlib_math_extended_register();
+    stdlib_math_extended_register();
     stdlib_array_register();
     stdlib_fs_register();
     stdlib_json_register();
     stdlib_db_register();
     stdlib_webengine_register();
-    // TODO: stdlib_filesystem_register();
-    // TODO: stdlib_async_utils_register();
+    stdlib_filesystem_register();
+    stdlib_async_utils_register();
     // TODO: stdlib_websocket_register();
     // TODO: stdlib_graphql_register();
     
