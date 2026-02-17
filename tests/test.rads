@@ -1,5 +1,5 @@
 // Simple test program for lexer
-blast test() {
+blast main() {
     turbo i32 x = 42;
-    echo("Test");
+    echo("Test: x = " + x);
 }

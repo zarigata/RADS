@@ -1,0 +1,53 @@
+blast main() {
+    echo("=== Testing Filesystem Functions ===");
+    
+    echo("Testing fs.getcwd()...");
+    str cwd = fs.getcwd();
+    echo("Current directory: " + cwd);
+    
+    echo("Testing fs.exists()...");
+    if (fs.exists("/tmp")) {
+        echo("  /tmp exists: true");
+    }
+    
+    echo("Testing fs.readdir()...");
+    turbo files = fs.readdir("/tmp");
+    echo("  Files in /tmp count: " + files.length);
+    
+    echo("Testing fs.mkdir() and fs.rmdir()...");
+    if (fs.mkdir("/tmp/rads_test_dir")) {
+        echo("  Created /tmp/rads_test_dir");
+        if (fs.rmdir("/tmp/rads_test_dir")) {
+            echo("  Removed /tmp/rads_test_dir");
+        }
+    }
+    
+    echo("=== Testing Async Functions ===");
+    
+    blast async_task1() {
+        return "Task 1 complete";
+    }
+    
+    blast async_task2() {
+        return "Task 2 complete";
+    }
+    
+    blast done_callback(results) {
+        echo("  All tasks completed!");
+    }
+    
+    echo("Testing async_utils.parallel()...");
+    turbo tasks = [async_task1, async_task2];
+    async_utils.parallel(tasks, done_callback);
+    
+    echo("Testing async_utils.series()...");
+    async_utils.series(tasks, done_callback);
+    
+    echo("Testing async_utils.delay()...");
+    blast after_delay() {
+        echo("  Delayed message!");
+    }
+    async_utils.delay(100, after_delay);
+    
+    echo("=== All tests completed ===");
+}

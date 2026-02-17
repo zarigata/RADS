@@ -1,3 +1,0 @@
-blast test(stream x) {
-    echo("test");
-}
