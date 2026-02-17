@@ -1,10 +1,22 @@
-# 🚀 RADS v0.0.71 "DARK MOON"
+# 🚀 RADS v0.0.8 "SUPERNOVA"
 
 ---
 
-## 🆕 What's New in v0.0.71
+## 🆕 What's New in v0.0.8
 
-### ✨ New Standard Library Functions (30+)
+### ✨ New Language Features
+
+**Error Handling:**
+- `try-catch-finally` - Full exception handling support
+- `throw` - Throw custom exceptions
+
+**Import System:**
+- `import "file.rads"` - Import and use external modules
+
+**Type Inspection:**
+- `typeof` operator - Get runtime type information
+
+### ✨ New Standard Library Functions (40+)
 
 **Array Operations:**
 - `array.map()`, `array.filter()`, `array.reduce()` - Functional programming
@@ -38,6 +50,7 @@
 - Fixed anonymous function crash (NULL name handling)
 - Fixed `array.sort()`/`array.reverse()` memory corruption
 - Fixed duplicate function definitions in stdlib modules
+- Fixed lexer keyword detection for try/catch/finally/throw
 
 ---
 
@@ -88,7 +101,7 @@ blast main() {
 
 ---
 
-## ✨ v0.0.7 "DARK MOON" FEATURES
+## ✨ v0.0.8 "SUPERNOVA" FEATURES
 
 ### 🛩️ Core Engine
 - **Bytecode VM** - Stack-based virtual machine with 3-5x performance boost
@@ -503,7 +516,7 @@ cat > rads.json << 'EOF'
   "keywords": ["rads", "library"],
   "author": "Your Name",
   "license": "MIT",
-  "rads_version": "0.0.71"
+  "rads_version": "0.0.8"
 }
 EOF
 

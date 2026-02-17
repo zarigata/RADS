@@ -1007,6 +1007,8 @@ static void exec_echo(ASTNode* node) {
 
 static Value current_return_value;
 static bool has_return_value = false;
+static Value thrown_value;
+static bool has_thrown_value = false;
 
 static bool is_truthy(Value v) {
     switch (v.type) {
@@ -1088,7 +1090,7 @@ static ExecResult exec_statement(ASTNode* node) {
         case AST_BLOCK:
             for (size_t i = 0; i < node->block.statements->count; i++) {
                 ExecResult r = exec_statement(node->block.statements->nodes[i]);
-                if (r == EXEC_BREAK || r == EXEC_CONTINUE || r == EXEC_RETURN) {
+                if (r == EXEC_BREAK || r == EXEC_CONTINUE || r == EXEC_RETURN || r == EXEC_THROW) {
                     return r;
                 }
             }
@@ -1125,6 +1127,9 @@ static ExecResult exec_statement(ASTNode* node) {
                 if (r == EXEC_RETURN) {
                     return EXEC_RETURN;
                 }
+                if (r == EXEC_THROW) {
+                    return EXEC_THROW;
+                }
             }
             return EXEC_OK;
         }
@@ -1152,6 +1157,12 @@ static ExecResult exec_statement(ASTNode* node) {
                     if (r == EXEC_CONTINUE) {
                         continue;
                     }
+                    if (r == EXEC_RETURN) {
+                        return EXEC_RETURN;
+                    }
+                    if (r == EXEC_THROW) {
+                        return EXEC_THROW;
+                    }
                 }
             }
             return EXEC_OK;
@@ -1173,6 +1184,47 @@ static ExecResult exec_statement(ASTNode* node) {
             has_return_value = true;
             value_free(&rv);
             return EXEC_RETURN;
+        }
+        
+        case AST_THROW_STMT: {
+            Value tv = make_null();
+            if (node->throw_stmt.expression) {
+                tv = eval_expression(node->throw_stmt.expression);
+            }
+            if (has_thrown_value) {
+                value_free(&thrown_value);
+            }
+            thrown_value = value_clone(tv);
+            has_thrown_value = true;
+            value_free(&tv);
+            return EXEC_THROW;
+        }
+        
+        case AST_TRY_STMT: {
+            ExecResult r = exec_statement(node->try_stmt.try_block);
+            
+            if (r == EXEC_THROW && node->try_stmt.catch_block) {
+                if (has_thrown_value) {
+                    if (node->try_stmt.catch_var) {
+                        env_set(node->try_stmt.catch_var, thrown_value);
+                    }
+                    value_free(&thrown_value);
+                    has_thrown_value = false;
+                }
+                r = exec_statement(node->try_stmt.catch_block);
+            }
+            
+            if (node->try_stmt.finally_block) {
+                ExecResult fr = exec_statement(node->try_stmt.finally_block);
+                if (fr == EXEC_RETURN) {
+                    return EXEC_RETURN;
+                }
+                if (fr == EXEC_THROW) {
+                    return EXEC_THROW;
+                }
+            }
+            
+            return r;
         }
         
         case AST_VARIABLE_DECL: {

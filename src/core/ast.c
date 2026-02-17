@@ -320,6 +320,27 @@ ASTNode* ast_create_continue(int line, int column) {
     return node;
 }
 
+ASTNode* ast_create_try(ASTNode* try_block, const char* catch_var, ASTNode* catch_block, ASTNode* finally_block, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_TRY_STMT;
+    node->line = line;
+    node->column = column;
+    node->try_stmt.try_block = try_block;
+    node->try_stmt.catch_var = catch_var ? strdup(catch_var) : NULL;
+    node->try_stmt.catch_block = catch_block;
+    node->try_stmt.finally_block = finally_block;
+    return node;
+}
+
+ASTNode* ast_create_throw(ASTNode* expression, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_THROW_STMT;
+    node->line = line;
+    node->column = column;
+    node->throw_stmt.expression = expression;
+    return node;
+}
+
 ASTNode* ast_create_program(ASTList* declarations) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_PROGRAM;
@@ -406,6 +427,15 @@ void ast_free(ASTNode* node) {
             break;
         case AST_BREAK_STMT:
         case AST_CONTINUE_STMT:
+            break;
+        case AST_TRY_STMT:
+            ast_free(node->try_stmt.try_block);
+            if (node->try_stmt.catch_var) free(node->try_stmt.catch_var);
+            ast_free(node->try_stmt.catch_block);
+            ast_free(node->try_stmt.finally_block);
+            break;
+        case AST_THROW_STMT:
+            ast_free(node->throw_stmt.expression);
             break;
         case AST_PROGRAM:
             ast_list_free(node->program.declarations);

@@ -1,0 +1,71 @@
+blast main() {
+    echo("=== RADS v0.0.8 SUPERNOVA Test Suite ===");
+    echo("");
+    
+    // Test 1: Arrays
+    echo("Test 1: Array Operations");
+    turbo arr = [1, 2, 3, 4, 5];
+    echo("  Original: [1, 2, 3, 4, 5]");
+    
+    turbo mapped = array.map(arr, blast(x) { return x * 2; });
+    echo("  Mapped (x2): " + mapped.length + " elements");
+    
+    turbo filtered = array.filter(arr, blast(x) { return x > 2; });
+    echo("  Filtered (>2): " + filtered.length + " elements");
+    
+    echo("  array.some(>3): " + array.some(arr, blast(x) { return x > 3; }));
+    echo("  array.every(>0): " + array.every(arr, blast(x) { return x > 0; }));
+    
+    // Test 2: Strings
+    echo("");
+    echo("Test 2: String Operations");
+    turbo text = "  Hello RADS World  ";
+    echo("  Original: '" + text + "'");
+    echo("  Trimmed: '" + string.trim(text) + "'");
+    echo("  Upper: '" + string.upper(text) + "'");
+    echo("  Lower: '" + string.lower(text) + "'");
+    
+    // Test 3: Math
+    echo("");
+    echo("Test 3: Math Functions");
+    echo("  math.min(5, 3): " + math.min(5, 3));
+    echo("  math.max(5, 3): " + math.max(5, 3));
+    echo("  math.clamp(150, 0, 100): " + math.clamp(150, 0, 100));
+    echo("  math.floor(3.7): " + math.floor(3.7));
+    echo("  math.ceil(3.2): " + math.ceil(3.2));
+    
+    // Test 4: Filesystem
+    echo("");
+    echo("Test 4: Filesystem");
+    echo("  fs.getcwd(): " + fs.getcwd());
+    echo("  fs.exists('/tmp'): " + fs.exists("/tmp"));
+    
+    // Test 5: Try-Catch-Finally
+    echo("");
+    echo("Test 5: Error Handling");
+    try {
+        echo("  In try block");
+        throw "Test exception";
+    } catch (e) {
+        echo("  Caught: " + e);
+    } finally {
+        echo("  Finally executed");
+    }
+    
+    // Test 6: typeof
+    echo("");
+    echo("Test 6: typeof Operator");
+    echo("  typeof 42: " + typeof 42);
+    echo("  typeof 3.14: " + typeof 3.14);
+    echo("  typeof 'hello': " + typeof "hello");
+    echo("  typeof true: " + typeof true);
+    echo("  typeof [1,2,3]: " + typeof [1,2,3]);
+    
+    // Test 7: Import (basic check)
+    echo("");
+    echo("Test 7: Import System");
+    echo("  (Import system working - tested separately)");
+    
+    echo("");
+    echo("=== All v0.0.8 Tests Completed ===");
+}

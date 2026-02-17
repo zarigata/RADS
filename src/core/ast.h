@@ -40,6 +40,8 @@ typedef enum {
     AST_CONTINUE_STMT,
     AST_ECHO_STMT,
     AST_IMPORT_STMT,
+    AST_TRY_STMT,
+    AST_THROW_STMT,
     AST_BLOCK,
     
     // Expressions
@@ -207,6 +209,19 @@ struct ASTNode {
             char* filename;
         } import_stmt;
 
+        // Try statement
+        struct {
+            ASTNode* try_block;
+            char* catch_var;
+            ASTNode* catch_block;
+            ASTNode* finally_block;
+        } try_stmt;
+
+        // Throw statement
+        struct {
+            ASTNode* expression;
+        } throw_stmt;
+
         // Block
         struct {
             ASTList* statements;
@@ -283,6 +298,8 @@ ASTNode* ast_create_assign(ASTNode* target, ASTNode* value, int line, int column
 ASTNode* ast_create_cruise(const char* iterator, ASTNode* iterable, ASTNode* body, int line, int column);
 ASTNode* ast_create_break(int line, int column);
 ASTNode* ast_create_continue(int line, int column);
+ASTNode* ast_create_try(ASTNode* try_block, const char* catch_var, ASTNode* catch_block, ASTNode* finally_block, int line, int column);
+ASTNode* ast_create_throw(ASTNode* expression, int line, int column);
 ASTNode* ast_create_program(ASTList* declarations);
 
 // AST list functions

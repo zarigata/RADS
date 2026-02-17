@@ -47,6 +47,10 @@ typedef enum {
     TOKEN_PLUGIN,       // plugin
     TOKEN_ECHO,         // print
     TOKEN_TYPEOF,       // typeof operator
+    TOKEN_TRY,          // try
+    TOKEN_CATCH,        // catch
+    TOKEN_FINALLY,      // finally
+    TOKEN_THROW,        // throw
     TOKEN_XTREME,       // unsafe/fast mode
     TOKEN_ALLOC,        // allocate
     TOKEN_FREE,         // free memory

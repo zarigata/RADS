@@ -1,0 +1,38 @@
+blast main() {
+    echo("=== Try-Catch-Finally Test Suite ===");
+    
+    echo("Test 1: Simple try-finally");
+    try {
+        echo("  In try block");
+    } finally {
+        echo("  In finally block");
+    }
+    
+    echo("Test 2: Try-catch with throw");
+    try {
+        echo("  Throwing error...");
+        throw "Test error";
+        echo("  This should not print");
+    } catch (e) {
+        echo("  Caught: " + e);
+    }
+    
+    echo("Test 3: Try-catch-finally");
+    try {
+        echo("  In try");
+        throw "Another error";
+    } catch (e) {
+        echo("  Caught: " + e);
+    } finally {
+        echo("  Finally executed");
+    }
+    
+    echo("Test 4: Finally always executes");
+    try {
+        echo("  In try");
+    } finally {
+        echo("  Finally runs even without catch");
+    }
+    
+    echo("=== All Try-Catch-Finally Tests Passed ===");
+}

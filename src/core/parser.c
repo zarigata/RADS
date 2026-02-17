@@ -1034,6 +1034,43 @@ ASTNode* parse_statement(Parser* parser) {
         return ast_create_if(condition, then_branch, else_branch, line, column);
     }
     
+    if (match(parser, TOKEN_TRY)) {
+        int line = parser->previous.line;
+        int column = parser->previous.column;
+        
+        consume(parser, TOKEN_LEFT_BRACE, "Expected '{' after 'try'");
+        ASTNode* try_block = parse_block(parser);
+        
+        char* catch_var = NULL;
+        ASTNode* catch_block = NULL;
+        if (match(parser, TOKEN_CATCH)) {
+            consume(parser, TOKEN_LEFT_PAREN, "Expected '(' after 'catch'");
+            consume(parser, TOKEN_IDENTIFIER, "Expected variable name in catch");
+            catch_var = malloc(parser->previous.length + 1);
+            memcpy(catch_var, parser->previous.start, parser->previous.length);
+            catch_var[parser->previous.length] = '\0';
+            consume(parser, TOKEN_RIGHT_PAREN, "Expected ')' after catch variable");
+            consume(parser, TOKEN_LEFT_BRACE, "Expected '{' before catch body");
+            catch_block = parse_block(parser);
+        }
+        
+        ASTNode* finally_block = NULL;
+        if (match(parser, TOKEN_FINALLY)) {
+            consume(parser, TOKEN_LEFT_BRACE, "Expected '{' after 'finally'");
+            finally_block = parse_block(parser);
+        }
+        
+        return ast_create_try(try_block, catch_var, catch_block, finally_block, line, column);
+    }
+    
+    if (match(parser, TOKEN_THROW)) {
+        int line = parser->previous.line;
+        int column = parser->previous.column;
+        ASTNode* expr = parse_expression(parser);
+        consume(parser, TOKEN_SEMICOLON, "Expected ';' after throw expression");
+        return ast_create_throw(expr, line, column);
+    }
+    
     // Variable declaration checks
     if (match(parser, TOKEN_TURBO) || match(parser, TOKEN_STR) || match(parser, TOKEN_I32) || match(parser, TOKEN_BOOL)) {
         return parse_variable(parser);

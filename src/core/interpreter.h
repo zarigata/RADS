@@ -9,7 +9,8 @@ typedef enum {
     EXEC_OK = 0,
     EXEC_BREAK,
     EXEC_CONTINUE,
-    EXEC_RETURN
+    EXEC_RETURN,
+    EXEC_THROW
 } ExecResult;
 
 // Value types for runtime
