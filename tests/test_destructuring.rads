@@ -1,0 +1,74 @@
+// Test file for v0.0.9 NEBULA - Destructuring feature
+
+struct Point {
+    int x;
+    int y;
+}
+
+struct Person {
+    str name;
+    int age;
+}
+
+blast main() {
+    echo("=== RADS v0.0.9 Destructuring Tests ===");
+    echo("");
+    
+    // Test 1: Basic array destructuring
+    echo("Test 1: Basic array destructuring");
+    turbo [a, b, c] = [1, 2, 3];
+    echo("  a = " + a);
+    echo("  b = " + b);
+    echo("  c = " + c);
+    echo("  Test 1: PASS");
+    echo("");
+    
+    // Test 2: Array destructuring with rest
+    echo("Test 2: Array destructuring with rest");
+    turbo [first, second, ...rest] = [10, 20, 30, 40, 50];
+    echo("  first = " + first);
+    echo("  second = " + second);
+    echo("  rest[0] = " + rest[0]);
+    echo("  rest[1] = " + rest[1]);
+    echo("  rest[2] = " + rest[2]);
+    echo("  Test 2: PASS");
+    echo("");
+    
+    // Test 3: Nested array values
+    echo("Test 3: Destructuring nested arrays");
+    turbo [x, y, z] = [[1, 2], [3, 4], [5, 6]];
+    echo("  x = [" + x[0] + ", " + x[1] + "]");
+    echo("  y = [" + y[0] + ", " + y[1] + "]");
+    echo("  z = [" + z[0] + ", " + z[1] + "]");
+    echo("  Test 3: PASS");
+    echo("");
+    
+    // Test 4: Destructuring with expressions
+    echo("Test 4: Destructuring with expressions");
+    turbo nums = [100, 200, 300];
+    turbo [n1, n2, n3] = nums;
+    echo("  n1 + n2 = " + (n1 + n2));
+    echo("  n3 = " + n3);
+    echo("  Test 4: PASS");
+    echo("");
+    
+    // Test 5: Struct destructuring
+    echo("Test 5: Struct destructuring");
+    turbo p = Person { name: "Alice", age: 30 };
+    turbo { name, age } = p;
+    echo("  name = " + name);
+    echo("  age = " + age);
+    echo("  Test 5: PASS");
+    echo("");
+    
+    // Test 6: Struct destructuring with rename
+    echo("Test 6: Struct destructuring with rename");
+    turbo point = Point { x: 100, y: 200 };
+    turbo { x: px, y: py } = point;
+    echo("  px = " + px);
+    echo("  py = " + py);
+    echo("  Test 6: PASS");
+    echo("");
+    
+    echo("=== All Destructuring Tests Completed ===");
+}

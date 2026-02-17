@@ -52,6 +52,15 @@ typedef enum {
     AST_MEMBER_EXPR,
     AST_TYPEOF_EXPR,
     AST_STRUCT_LITERAL,
+    AST_SPREAD_EXPR,
+    AST_OPTIONAL_CHAIN,
+    AST_NULLISH_COALESCING,
+    
+    // Destructuring patterns
+    AST_DESTRUCTURE_ARRAY,
+    AST_DESTRUCTURE_STRUCT,
+    AST_DESTRUCTURE_REST,
+    AST_DESTRUCTURE_SKIP,
     
     // Types
     AST_TYPE,
@@ -160,6 +169,7 @@ struct ASTNode {
             TypeInfo* var_type;
             ASTNode* initializer;
             bool is_turbo;
+            ASTNode* destructure_pattern;
         } variable_decl;
         
         // Struct declaration
@@ -262,6 +272,40 @@ struct ASTNode {
             ASTList* fields;
         } struct_literal;
         
+        // Spread expression (for spread in arrays/literals)
+        struct {
+            ASTNode* expression;
+        } spread_expr;
+        
+        // Array destructuring pattern: [a, b, ...rest]
+        struct {
+            ASTList* elements;
+        } destructure_array;
+        
+        // Struct destructuring pattern: { name, age: a }
+        struct {
+            ASTList* fields;
+        } destructure_struct;
+        
+        // Rest element in destructuring: ...rest
+        struct {
+            char* name;
+        } destructure_rest;
+        
+        // Optional chaining: obj?.property or arr?[index]
+        struct {
+            ASTNode* object;
+            bool is_member;
+            char* member;
+            ASTNode* index;
+        } optional_chain;
+        
+        // Nullish coalescing: x ?? default
+        struct {
+            ASTNode* left;
+            ASTNode* right;
+        } nullish_coalescing;
+        
         // Program
         struct {
             ASTList* declarations;
@@ -301,6 +345,14 @@ ASTNode* ast_create_continue(int line, int column);
 ASTNode* ast_create_try(ASTNode* try_block, const char* catch_var, ASTNode* catch_block, ASTNode* finally_block, int line, int column);
 ASTNode* ast_create_throw(ASTNode* expression, int line, int column);
 ASTNode* ast_create_program(ASTList* declarations);
+ASTNode* ast_create_spread(ASTNode* expression, int line, int column);
+ASTNode* ast_create_destructure_array(ASTList* elements, int line, int column);
+ASTNode* ast_create_destructure_struct(ASTList* fields, int line, int column);
+ASTNode* ast_create_destructure_rest(const char* name, int line, int column);
+ASTNode* ast_create_destructure_skip(int line, int column);
+ASTNode* ast_create_optional_chain_member(ASTNode* object, const char* member, int line, int column);
+ASTNode* ast_create_optional_chain_index(ASTNode* object, ASTNode* index, int line, int column);
+ASTNode* ast_create_nullish_coalescing(ASTNode* left, ASTNode* right, int line, int column);
 
 // AST list functions
 ASTList* ast_list_create();

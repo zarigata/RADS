@@ -381,8 +381,14 @@ Token lexer_next_token(Lexer* lexer) {
             return make_token(lexer, match(lexer, '&') ? TOKEN_AND_AND : TOKEN_AMPERSAND);
         case '|':
             return make_token(lexer, match(lexer, '|') ? TOKEN_OR_OR : TOKEN_PIPE);
+        case '?':
+            if (match(lexer, '.')) return make_token(lexer, TOKEN_QUESTION_DOT);
+            return make_token(lexer, match(lexer, '?') ? TOKEN_QUESTION_QUESTION : TOKEN_ERROR);
         case '.':
-            return make_token(lexer, match(lexer, '.') ? TOKEN_DOT_DOT : TOKEN_DOT);
+            if (match(lexer, '.')) {
+                return make_token(lexer, match(lexer, '.') ? TOKEN_DOT_DOT_DOT : TOKEN_DOT_DOT);
+            }
+            return make_token(lexer, TOKEN_DOT);
         case ':':
             return make_token(lexer, match(lexer, ':') ? TOKEN_DOUBLE_COLON : TOKEN_COLON);
         case '/':
@@ -488,6 +494,9 @@ const char* token_type_to_string(TokenType type) {
         case TOKEN_ARROW: return "ARROW";
         case TOKEN_DOT: return "DOT";
         case TOKEN_DOT_DOT: return "DOT_DOT";
+        case TOKEN_DOT_DOT_DOT: return "DOT_DOT_DOT";
+        case TOKEN_QUESTION_DOT: return "QUESTION_DOT";
+        case TOKEN_QUESTION_QUESTION: return "QUESTION_QUESTION";
         case TOKEN_COLON: return "COLON";
         case TOKEN_DOUBLE_COLON: return "DOUBLE_COLON";
 

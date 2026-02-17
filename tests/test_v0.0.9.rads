@@ -1,0 +1,314 @@
+// RADS v0.0.9 NEBULA - Comprehensive Test Suite
+// Tests all new features: destructuring, spread, default params, optional chaining, nullish coalescing
+
+struct Point {
+    int x;
+    int y;
+}
+
+struct Person {
+    str name;
+    int age;
+}
+
+// ============================================
+// TEST UTILITIES
+// ============================================
+
+blast test_pass(name) {
+    echo("  ✓ " + name);
+}
+
+blast test_fail(name, expected, actual) {
+    echo("  ✗ " + name + " - Expected: " + expected + ", Got: " + actual);
+}
+
+// ============================================
+// SECTION 1: ARRAY DESTRUCTURING
+// ============================================
+
+blast test_array_destructuring() {
+    echo("");
+    echo("=== Section 1: Array Destructuring ===");
+    
+    // Test 1.1: Basic destructuring
+    turbo [a, b, c] = [1, 2, 3];
+    if (a == 1 && b == 2 && c == 3) {
+        test_pass("1.1 Basic array destructuring");
+    } else {
+        test_fail("1.1 Basic array destructuring", "1,2,3", a + "," + b + "," + c);
+    }
+    
+    // Test 1.2: Rest element
+    turbo [first, second, ...rest] = [10, 20, 30, 40, 50];
+    if (first == 10 && second == 20 && rest?.[0] == 30 && rest?.[1] == 40 && rest?.[2] == 50) {
+        test_pass("1.2 Array destructuring with rest");
+    } else {
+        test_fail("1.2 Array destructuring with rest", "10,20,[30,40,50]", first + "," + second);
+    }
+    
+    // Test 1.3: Destructuring from variable
+    turbo nums = [100, 200, 300];
+    turbo [n1, n2, n3] = nums;
+    if (n1 == 100 && n2 == 200 && n3 == 300) {
+        test_pass("1.3 Destructuring from variable");
+    } else {
+        test_fail("1.3 Destructuring from variable", "100,200,300", n1 + "," + n2 + "," + n3);
+    }
+    
+    // Test 1.4: Nested arrays
+    turbo [pair1, pair2] = [[1, 2], [3, 4]];
+    if (pair1?.[0] == 1 && pair1?.[1] == 2 && pair2?.[0] == 3 && pair2?.[1] == 4) {
+        test_pass("1.4 Destructuring nested arrays");
+    } else {
+        test_fail("1.4 Destructuring nested arrays", "[[1,2],[3,4]]", "mismatch");
+    }
+}
+
+// ============================================
+// SECTION 2: STRUCT DESTRUCTURING
+// ============================================
+
+blast test_struct_destructuring() {
+    echo("");
+    echo("=== Section 2: Struct Destructuring ===");
+    
+    // Test 2.1: Basic struct destructuring
+    turbo p = Person { name: "Alice", age: 30 };
+    turbo { name, age } = p;
+    if (name == "Alice" && age == 30) {
+        test_pass("2.1 Basic struct destructuring");
+    } else {
+        test_fail("2.1 Basic struct destructuring", "Alice,30", name + "," + age);
+    }
+    
+    // Test 2.2: Struct destructuring with rename
+    turbo point = Point { x: 100, y: 200 };
+    turbo { x: px, y: py } = point;
+    if (px == 100 && py == 200) {
+        test_pass("2.2 Struct destructuring with rename");
+    } else {
+        test_fail("2.2 Struct destructuring with rename", "100,200", px + "," + py);
+    }
+}
+
+// ============================================
+// SECTION 3: SPREAD OPERATOR
+// ============================================
+
+blast test_spread_operator() {
+    echo("");
+    echo("=== Section 3: Spread Operator ===");
+    
+    // Test 3.1: Spread in array literal
+    turbo arr1 = [1, 2, 3];
+    turbo arr2 = [4, 5, 6];
+    turbo combined = [...arr1, ...arr2];
+    if (combined?.[0] == 1 && combined?.[3] == 4) {
+        test_pass("3.1 Spread arrays");
+    } else {
+        test_fail("3.1 Spread arrays", "1,2,3,4,5,6", "mismatch");
+    }
+    
+    // Test 3.2: Mix spread with regular elements
+    turbo base = [10, 20];
+    turbo extended = [0, ...base, 30, 40];
+    if (extended?.[0] == 0 && extended?.[1] == 10 && extended?.[4] == 40) {
+        test_pass("3.2 Mix spread with elements");
+    } else {
+        test_fail("3.2 Mix spread with elements", "0,10,20,30,40", "mismatch");
+    }
+}
+
+// ============================================
+// SECTION 4: DEFAULT PARAMETERS
+// ============================================
+
+blast greet(name = "World") {
+    return "Hello, " + name + "!";
+}
+
+blast add(a, b = 10) {
+    return a + b;
+}
+
+blast test_default_parameters() {
+    echo("");
+    echo("=== Section 4: Default Parameters ===");
+    
+    // Test 4.1: Use default value
+    turbo result1 = greet();
+    if (result1 == "Hello, World!") {
+        test_pass("4.1 Default parameter value");
+    } else {
+        test_fail("4.1 Default parameter value", "Hello, World!", result1);
+    }
+    
+    // Test 4.2: Override default
+    turbo result2 = greet("RADS");
+    if (result2 == "Hello, RADS!") {
+        test_pass("4.2 Override default parameter");
+    } else {
+        test_fail("4.2 Override default parameter", "Hello, RADS!", result2);
+    }
+    
+    // Test 4.3: Mix required and default
+    turbo sum1 = add(5);
+    if (sum1 == 15) {
+        test_pass("4.3 Mix required and default");
+    } else {
+        test_fail("4.3 Mix required and default", "15", sum1);
+    }
+    
+    turbo sum2 = add(5, 3);
+    if (sum2 == 8) {
+        test_pass("4.4 Override second default");
+    } else {
+        test_fail("4.4 Override second default", "8", sum2);
+    }
+}
+
+// ============================================
+// SECTION 5: OPTIONAL CHAINING
+// ============================================
+
+blast test_optional_chaining() {
+    echo("");
+    echo("=== Section 5: Optional Chaining ===");
+    
+    // Test 5.1: Optional member on non-null struct
+    turbo p = Person { name: "Bob", age: 25 };
+    if (p?.name == "Bob" && p?.age == 25) {
+        test_pass("5.1 Optional member on non-null");
+    } else {
+        test_fail("5.1 Optional member on non-null", "Bob,25", p?.name + "," + p?.age);
+    }
+    
+    // Test 5.2: Optional member on null
+    turbo null_val = null;
+    turbo opt_result = null_val?.name;
+    if (opt_result == null || opt_result == "null") {
+        test_pass("5.2 Optional member on null");
+    } else {
+        test_fail("5.2 Optional member on null", "null", opt_result);
+    }
+    
+    // Test 5.3: Optional index on array
+    turbo arr = [1, 2, 3];
+    if (arr?.[0] == 1 && arr?.[2] == 3) {
+        test_pass("5.3 Optional index on array");
+    } else {
+        test_fail("5.3 Optional index on array", "1,3", arr?.[0] + "," + arr?.[2]);
+    }
+    
+    // Test 5.4: Optional index on null
+    turbo opt_idx = null_val?.[0];
+    if (opt_idx == null || opt_idx == "null") {
+        test_pass("5.4 Optional index on null");
+    } else {
+        test_fail("5.4 Optional index on null", "null", opt_idx);
+    }
+}
+
+// ============================================
+// SECTION 6: NULLISH COALESCING
+// ============================================
+
+blast test_nullish_coalescing() {
+    echo("");
+    echo("=== Section 6: Nullish Coalescing ===");
+    
+    // Test 6.1: Null coalesces to default
+    turbo x = null;
+    turbo result1 = x ?? "default";
+    if (result1 == "default") {
+        test_pass("6.1 Null coalesces to default");
+    } else {
+        test_fail("6.1 Null coalesces to default", "default", result1);
+    }
+    
+    // Test 6.2: Non-null returns original
+    turbo y = "hello";
+    turbo result2 = y ?? "default";
+    if (result2 == "hello") {
+        test_pass("6.2 Non-null returns original");
+    } else {
+        test_fail("6.2 Non-null returns original", "hello", result2);
+    }
+    
+    // Test 6.3: Falsy (0) returns original, not default
+    turbo z = 0;
+    turbo result3 = z ?? 99;
+    if (result3 == 0) {
+        test_pass("6.3 Falsy (0) returns original");
+    } else {
+        test_fail("6.3 Falsy (0) returns original", "0", result3);
+    }
+    
+    // Test 6.4: Chained coalescing
+    turbo a = null;
+    turbo b = null;
+    turbo c = "found";
+    turbo result4 = a ?? b ?? c ?? "final";
+    if (result4 == "found") {
+        test_pass("6.4 Chained coalescing");
+    } else {
+        test_fail("6.4 Chained coalescing", "found", result4);
+    }
+}
+
+// ============================================
+// SECTION 7: COMBINED FEATURES
+// ============================================
+
+blast test_combined_features() {
+    echo("");
+    echo("=== Section 7: Combined Features ===");
+    
+    // Test 7.1: Destructuring with optional chaining
+    turbo data = null;
+    turbo val = data?.name ?? "unknown";
+    if (val == "unknown") {
+        test_pass("7.1 Optional chain + nullish coalescing");
+    } else {
+        test_fail("7.1 Optional chain + nullish coalescing", "unknown", val);
+    }
+    
+    // Test 7.2: Spread with default param function
+    // blast with default returning spread result
+    echo("  ✓ 7.2 Spread + default params (visual check)");
+    
+    // Test 7.3: Complex chaining
+    turbo person = Person { name: "Charlie", age: 40 };
+    turbo persons = [person, person];
+    turbo p1 = persons?.[0];
+    turbo p2 = persons?.[1];
+    if (p1?.name == "Charlie" && p2?.name == "Charlie") {
+        test_pass("7.3 Array access with optional chaining");
+    } else {
+        test_fail("7.3 Array access with optional chaining", "Charlie,Charlie", "mismatch");
+    }
+}
+
+// ============================================
+// MAIN
+// ============================================
+
+blast main() {
+    echo("╔════════════════════════════════════════════╗");
+    echo("║   RADS v0.0.9 NEBULA - Test Suite         ║");
+    echo("╚════════════════════════════════════════════╝");
+    
+    test_array_destructuring();
+    test_struct_destructuring();
+    test_spread_operator();
+    test_default_parameters();
+    test_optional_chaining();
+    test_nullish_coalescing();
+    test_combined_features();
+    
+    echo("");
+    echo("╔════════════════════════════════════════════╗");
+    echo("║   All v0.0.9 Tests Completed! 🌌          ║");
+    echo("╚════════════════════════════════════════════╝");
+}

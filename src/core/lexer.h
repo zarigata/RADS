@@ -90,8 +90,11 @@ typedef enum {
     TOKEN_ARROW,        // ->
     TOKEN_DOT,          // .
     TOKEN_DOT_DOT,      // ..
+    TOKEN_DOT_DOT_DOT,  // ... (spread/rest)
     TOKEN_COLON,        // :
     TOKEN_DOUBLE_COLON, // ::
+    TOKEN_QUESTION_DOT, // ?. (optional chaining)
+    TOKEN_QUESTION_QUESTION, // ?? (nullish coalescing)
     
     // Delimiters
     TOKEN_LEFT_PAREN,   // (

@@ -1,10 +1,32 @@
-# 🚀 RADS v0.0.8 "SUPERNOVA"
+# 🚀 RADS v0.0.9 "NEBULA"
 
 ---
 
-## 🆕 What's New in v0.0.8
+## 🆕 What's New in v0.0.9
 
 ### ✨ New Language Features
+
+**Destructuring:**
+- `turbo [a, b, c] = [1, 2, 3]` - Array destructuring
+- `turbo [first, ...rest] = arr` - Rest elements in destructuring
+- `turbo { name, age } = person` - Struct destructuring
+- `turbo { x: px, y: py } = point` - Struct destructuring with rename
+
+**Spread Operator:**
+- `turbo combined = [...arr1, ...arr2]` - Spread arrays
+- `turbo extended = [0, ...base, 30]` - Mix spread with elements
+
+**Default Parameters:**
+- `blast greet(name = "World")` - Functions with default values
+
+**Optional Chaining:**
+- `obj?.property` - Safe property access
+- `arr?.[index]` - Safe index access
+
+**Nullish Coalescing:**
+- `x ?? default` - Return default only if x is null
+
+### ✨ v0.0.8 Features (Still Available)
 
 **Error Handling:**
 - `try-catch-finally` - Full exception handling support

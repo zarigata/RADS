@@ -150,10 +150,11 @@ ASTNode* ast_create_variable_decl(const char* name, TypeInfo* type, ASTNode* ini
     node->type = AST_VARIABLE_DECL;
     node->line = line;
     node->column = column;
-    node->variable_decl.name = strdup(name);
+    node->variable_decl.name = name ? strdup(name) : NULL;
     node->variable_decl.var_type = type;
     node->variable_decl.initializer = initializer;
     node->variable_decl.is_turbo = is_turbo;
+    node->variable_decl.destructure_pattern = NULL;
     return node;
 }
 
@@ -350,6 +351,84 @@ ASTNode* ast_create_program(ASTList* declarations) {
     return node;
 }
 
+ASTNode* ast_create_spread(ASTNode* expression, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_SPREAD_EXPR;
+    node->line = line;
+    node->column = column;
+    node->spread_expr.expression = expression;
+    return node;
+}
+
+ASTNode* ast_create_destructure_array(ASTList* elements, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_DESTRUCTURE_ARRAY;
+    node->line = line;
+    node->column = column;
+    node->destructure_array.elements = elements;
+    return node;
+}
+
+ASTNode* ast_create_destructure_struct(ASTList* fields, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_DESTRUCTURE_STRUCT;
+    node->line = line;
+    node->column = column;
+    node->destructure_struct.fields = fields;
+    return node;
+}
+
+ASTNode* ast_create_destructure_rest(const char* name, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_DESTRUCTURE_REST;
+    node->line = line;
+    node->column = column;
+    node->destructure_rest.name = strdup(name);
+    return node;
+}
+
+ASTNode* ast_create_destructure_skip(int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_DESTRUCTURE_SKIP;
+    node->line = line;
+    node->column = column;
+    return node;
+}
+
+ASTNode* ast_create_optional_chain_member(ASTNode* object, const char* member, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_OPTIONAL_CHAIN;
+    node->line = line;
+    node->column = column;
+    node->optional_chain.object = object;
+    node->optional_chain.is_member = true;
+    node->optional_chain.member = strdup(member);
+    node->optional_chain.index = NULL;
+    return node;
+}
+
+ASTNode* ast_create_optional_chain_index(ASTNode* object, ASTNode* index, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_OPTIONAL_CHAIN;
+    node->line = line;
+    node->column = column;
+    node->optional_chain.object = object;
+    node->optional_chain.is_member = false;
+    node->optional_chain.member = NULL;
+    node->optional_chain.index = index;
+    return node;
+}
+
+ASTNode* ast_create_nullish_coalescing(ASTNode* left, ASTNode* right, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_NULLISH_COALESCING;
+    node->line = line;
+    node->column = column;
+    node->nullish_coalescing.left = left;
+    node->nullish_coalescing.right = right;
+    return node;
+}
+
 // AST cleanup
 void ast_free(ASTNode* node) {
     if (!node) return;
@@ -378,6 +457,7 @@ void ast_free(ASTNode* node) {
             free(node->variable_decl.name);
             type_info_free(node->variable_decl.var_type);
             ast_free(node->variable_decl.initializer);
+            ast_free(node->variable_decl.destructure_pattern);
             break;
         case AST_STRUCT_DECL:
             free(node->struct_decl.name);
@@ -439,6 +519,43 @@ void ast_free(ASTNode* node) {
             break;
         case AST_PROGRAM:
             ast_list_free(node->program.declarations);
+            break;
+        case AST_SPREAD_EXPR:
+            ast_free(node->spread_expr.expression);
+            break;
+        case AST_DESTRUCTURE_ARRAY:
+            ast_list_free(node->destructure_array.elements);
+            break;
+        case AST_DESTRUCTURE_STRUCT:
+            ast_list_free(node->destructure_struct.fields);
+            break;
+        case AST_DESTRUCTURE_REST:
+            free(node->destructure_rest.name);
+            break;
+        case AST_DESTRUCTURE_SKIP:
+            break;
+        case AST_TYPEOF_EXPR:
+            ast_free(node->typeof_expr.operand);
+            break;
+        case AST_ENUM_DECL:
+            free(node->enum_decl.name);
+            ast_list_free(node->enum_decl.values);
+            break;
+        case AST_MEMBER_EXPR:
+            ast_free(node->member_expr.object);
+            free(node->member_expr.member);
+            break;
+        case AST_IMPORT_STMT:
+            free(node->import_stmt.filename);
+            break;
+        case AST_OPTIONAL_CHAIN:
+            ast_free(node->optional_chain.object);
+            if (node->optional_chain.member) free(node->optional_chain.member);
+            ast_free(node->optional_chain.index);
+            break;
+        case AST_NULLISH_COALESCING:
+            ast_free(node->nullish_coalescing.left);
+            ast_free(node->nullish_coalescing.right);
             break;
         default:
             break;

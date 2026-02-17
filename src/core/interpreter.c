@@ -90,9 +90,20 @@ static Value make_array_from_list(ASTList* elements) {
     Array* arr = array_create(elements ? elements->count : 0);
     if (elements) {
         for (size_t i = 0; i < elements->count; i++) {
-            Value ev = eval_expression(elements->nodes[i]);
-            array_push(arr, ev);
-            value_release(&ev);
+            ASTNode* node = elements->nodes[i];
+            if (node->type == AST_SPREAD_EXPR) {
+                Value spread_val = eval_expression(node->spread_expr.expression);
+                if (spread_val.type == VAL_ARRAY && spread_val.array_val) {
+                    for (size_t j = 0; j < spread_val.array_val->count; j++) {
+                        array_push(arr, spread_val.array_val->items[j]);
+                    }
+                }
+                value_release(&spread_val);
+            } else {
+                Value ev = eval_expression(node);
+                array_push(arr, ev);
+                value_release(&ev);
+            }
         }
     }
     Value v;
@@ -990,6 +1001,51 @@ static Value eval_expression(ASTNode* node) {
             return v;
         }
 
+        case AST_OPTIONAL_CHAIN: {
+            Value object = eval_expression(node->optional_chain.object);
+            if (object.type == VAL_NULL) {
+                return make_null();
+            }
+            
+            Value result = make_null();
+            if (node->optional_chain.is_member) {
+                if (object.type == VAL_STRUCT_INSTANCE) {
+                    const char* member_name = node->optional_chain.member;
+                    FieldValue* current = object.struct_instance->fields;
+                    while (current) {
+                        if (strcmp(current->name, member_name) == 0) {
+                            result = value_clone(*current->value);
+                            break;
+                        }
+                        current = current->next;
+                    }
+                } else if (object.type == VAL_ARRAY) {
+                    if (strcmp(node->optional_chain.member, "length") == 0) {
+                        result = make_int((long long)object.array_val->count);
+                    }
+                }
+            } else {
+                Value idx = eval_expression(node->optional_chain.index);
+                if (object.type == VAL_ARRAY && idx.type == VAL_INT) {
+                    if (idx.int_val >= 0 && (size_t)idx.int_val < object.array_val->count) {
+                        result = value_clone(object.array_val->items[idx.int_val]);
+                    }
+                }
+                value_free(&idx);
+            }
+            value_free(&object);
+            return result;
+        }
+
+        case AST_NULLISH_COALESCING: {
+            Value left = eval_expression(node->nullish_coalescing.left);
+            if (left.type != VAL_NULL) {
+                return left;
+            }
+            value_free(&left);
+            return eval_expression(node->nullish_coalescing.right);
+        }
+
         default:
             return make_null();
     }
@@ -1232,8 +1288,73 @@ static ExecResult exec_statement(ASTNode* node) {
             if (node->variable_decl.initializer) {
                 val = eval_expression(node->variable_decl.initializer);
             }
-            env_set(node->variable_decl.name, val);
-            value_free(&val); // env_set makes a copy
+            
+            if (node->variable_decl.destructure_pattern) {
+                ASTNode* pattern = node->variable_decl.destructure_pattern;
+                if (pattern->type == AST_DESTRUCTURE_ARRAY) {
+                    if (val.type != VAL_ARRAY || !val.array_val) {
+                        fprintf(stderr, "Error: Cannot destructure non-array value\n");
+                    } else {
+                        Array* arr = val.array_val;
+                        ASTList* elements = pattern->destructure_array.elements;
+                        size_t array_index = 0;
+                        
+                        for (size_t i = 0; i < elements->count; i++) {
+                            ASTNode* elem = elements->nodes[i];
+                            
+                            if (elem->type == AST_DESTRUCTURE_REST) {
+                                Array* rest_arr = array_create(arr->count - array_index);
+                                while (array_index < arr->count) {
+                                    array_push(rest_arr, arr->items[array_index]);
+                                    array_index++;
+                                }
+                                Value rest_val;
+                                rest_val.type = VAL_ARRAY;
+                                rest_val.array_val = rest_arr;
+                                env_set(elem->destructure_rest.name, rest_val);
+                                value_free(&rest_val);
+                            } else if (elem->type == AST_IDENTIFIER) {
+                                if (array_index < arr->count) {
+                                    env_set(elem->identifier.name, arr->items[array_index]);
+                                } else {
+                                    env_set(elem->identifier.name, make_null());
+                                }
+                                array_index++;
+                            }
+                        }
+                    }
+                } else if (pattern->type == AST_DESTRUCTURE_STRUCT) {
+                    if (val.type != VAL_STRUCT_INSTANCE || !val.struct_instance) {
+                        fprintf(stderr, "Error: Cannot destructure non-struct value\n");
+                    } else {
+                        StructInstance* instance = val.struct_instance;
+                        ASTList* fields = pattern->destructure_struct.fields;
+                        
+                        for (size_t i = 0; i < fields->count; i++) {
+                            ASTNode* field_assign = fields->nodes[i];
+                            if (field_assign->type == AST_ASSIGN_EXPR) {
+                                const char* field_name = field_assign->assign_expr.target->identifier.name;
+                                const char* var_name = field_assign->assign_expr.value->identifier.name;
+                                
+                                FieldValue* fv = instance->fields;
+                                while (fv) {
+                                    if (strcmp(fv->name, field_name) == 0) {
+                                        env_set(var_name, *fv->value);
+                                        break;
+                                    }
+                                    fv = fv->next;
+                                }
+                                if (!fv) {
+                                    env_set(var_name, make_null());
+                                }
+                            }
+                        }
+                    }
+                }
+            } else if (node->variable_decl.name) {
+                env_set(node->variable_decl.name, val);
+            }
+            value_free(&val);
             return EXEC_OK;
         }
         
@@ -1269,8 +1390,23 @@ Value interpreter_execute_callback(Value callback, int argc, Value* args) {
     if (func->function_decl.parameters) {
         int param_count = (int)func->function_decl.parameters->count;
         for (int i = 0; i < param_count; i++) {
-            const char* pname = func->function_decl.parameters->nodes[i]->identifier.name;
-            Value arg = (i < argc && args) ? value_clone(args[i]) : make_null();
+            ASTNode* param_node = func->function_decl.parameters->nodes[i];
+            const char* pname;
+            Value arg;
+            
+            if (param_node->type == AST_VARIABLE_DECL) {
+                pname = param_node->variable_decl.name;
+                if (i < argc && args) {
+                    arg = value_clone(args[i]);
+                } else if (param_node->variable_decl.initializer) {
+                    arg = eval_expression(param_node->variable_decl.initializer);
+                } else {
+                    arg = make_null();
+                }
+            } else {
+                pname = param_node->identifier.name;
+                arg = (i < argc && args) ? value_clone(args[i]) : make_null();
+            }
             env_set(pname, arg);
             value_free(&arg);
         }

@@ -253,8 +253,16 @@ static ASTNode* parse_primary(Parser* parser) {
         ASTList* elements = ast_list_create();
         if (!check(parser, TOKEN_RIGHT_BRACKET)) {
             do {
-                ASTNode* elem = parse_expression(parser);
-                if (elem) ast_list_append(elements, elem);
+                if (match(parser, TOKEN_DOT_DOT_DOT)) {
+                    int spread_line = parser->previous.line;
+                    int spread_col = parser->previous.column;
+                    ASTNode* expr = parse_expression(parser);
+                    ASTNode* spread = ast_create_spread(expr, spread_line, spread_col);
+                    if (spread) ast_list_append(elements, spread);
+                } else {
+                    ASTNode* elem = parse_expression(parser);
+                    if (elem) ast_list_append(elements, elem);
+                }
             } while (match(parser, TOKEN_COMMA));
         }
         consume(parser, TOKEN_RIGHT_BRACKET, "Expected ']' after array literal");
@@ -344,6 +352,22 @@ static ASTNode* parse_call(Parser* parser) {
             
             consume(parser, TOKEN_RIGHT_PAREN, "Expected ')' after arguments");
             expr = ast_create_call(expr, args, parser->previous.line, parser->previous.column);
+        } else if (match(parser, TOKEN_QUESTION_DOT)) {
+            int line = parser->previous.line;
+            int column = parser->previous.column;
+            if (match(parser, TOKEN_IDENTIFIER)) {
+                char* name = malloc(parser->previous.length + 1);
+                memcpy(name, parser->previous.start, parser->previous.length);
+                name[parser->previous.length] = '\0';
+                expr = ast_create_optional_chain_member(expr, name, line, column);
+                free(name);
+            } else if (match(parser, TOKEN_LEFT_BRACKET)) {
+                ASTNode* index = parse_expression(parser);
+                consume(parser, TOKEN_RIGHT_BRACKET, "Expected ']' after optional index");
+                expr = ast_create_optional_chain_index(expr, index, line, column);
+            } else {
+                error(parser, "Expected property name or index after '?.'");
+            }
         } else if (match(parser, TOKEN_DOT)) {
             consume(parser, TOKEN_IDENTIFIER, "Expected property name after '.'");
             char* name = malloc(parser->previous.length + 1);
@@ -458,12 +482,25 @@ static ASTNode* parse_or(Parser* parser) {
     return expr;
 }
 
+static ASTNode* parse_nullish_coalescing(Parser* parser) {
+    ASTNode* expr = parse_or(parser);
+
+    while (match(parser, TOKEN_QUESTION_QUESTION)) {
+        int line = parser->previous.line;
+        int column = parser->previous.column;
+        ASTNode* right = parse_or(parser);
+        expr = ast_create_nullish_coalescing(expr, right, line, column);
+    }
+
+    return expr;
+}
+
 // Range has low precedence: <add> .. <add>
 static ASTNode* parse_range(Parser* parser) {
-    ASTNode* expr = parse_or(parser);
+    ASTNode* expr = parse_nullish_coalescing(parser);
     if (match(parser, TOKEN_DOT_DOT)) {
         Token op = parser->previous;
-        ASTNode* right = parse_or(parser);
+        ASTNode* right = parse_nullish_coalescing(parser);
         expr = ast_create_binary_op(OP_RANGE, expr, right, op.line, op.column);
     }
     return expr;
@@ -649,6 +686,93 @@ static ASTNode* parse_block(Parser* parser) {
     return ast_create_block(statements, line, column);
 }
 
+static ASTNode* parse_destructure_element(Parser* parser) {
+    int line = parser->current.line;
+    int column = parser->current.column;
+    
+    if (match(parser, TOKEN_DOT_DOT_DOT)) {
+        consume(parser, TOKEN_IDENTIFIER, "Expected identifier after '...' in destructuring");
+        char* name = malloc(parser->previous.length + 1);
+        memcpy(name, parser->previous.start, parser->previous.length);
+        name[parser->previous.length] = '\0';
+        return ast_create_destructure_rest(name, line, column);
+    }
+    
+    if (match(parser, TOKEN_COMMA)) {
+        return ast_create_destructure_skip(line, column);
+    }
+    
+    consume(parser, TOKEN_IDENTIFIER, "Expected identifier in destructuring pattern");
+    char* name = malloc(parser->previous.length + 1);
+    memcpy(name, parser->previous.start, parser->previous.length);
+    name[parser->previous.length] = '\0';
+    ASTNode* ident = ast_create_identifier(name, parser->previous.line, parser->previous.column);
+    free(name);
+    return ident;
+}
+
+static ASTNode* parse_array_destructure_pattern(Parser* parser) {
+    int line = parser->previous.line;
+    int column = parser->previous.column;
+    
+    ASTList* elements = ast_list_create();
+    
+    if (!check(parser, TOKEN_RIGHT_BRACKET)) {
+        do {
+            if (check(parser, TOKEN_RIGHT_BRACKET)) break;
+            ASTNode* elem = parse_destructure_element(parser);
+            if (elem) {
+                if (elem->type == AST_DESTRUCTURE_SKIP) {
+                    continue;
+                }
+                ast_list_append(elements, elem);
+            }
+        } while (match(parser, TOKEN_COMMA));
+    }
+    
+    consume(parser, TOKEN_RIGHT_BRACKET, "Expected ']' after destructuring pattern");
+    return ast_create_destructure_array(elements, line, column);
+}
+
+static ASTNode* parse_struct_destructure_pattern(Parser* parser) {
+    int line = parser->previous.line;
+    int column = parser->previous.column;
+    
+    ASTList* fields = ast_list_create();
+    
+    if (!check(parser, TOKEN_RIGHT_BRACE)) {
+        do {
+            if (check(parser, TOKEN_RIGHT_BRACE)) break;
+            consume(parser, TOKEN_IDENTIFIER, "Expected field name in struct destructuring");
+            char* field_name = malloc(parser->previous.length + 1);
+            memcpy(field_name, parser->previous.start, parser->previous.length);
+            field_name[parser->previous.length] = '\0';
+            
+            char* var_name = strdup(field_name);
+            
+            if (match(parser, TOKEN_COLON)) {
+                consume(parser, TOKEN_IDENTIFIER, "Expected variable name after ':'");
+                free(var_name);
+                var_name = malloc(parser->previous.length + 1);
+                memcpy(var_name, parser->previous.start, parser->previous.length);
+                var_name[parser->previous.length] = '\0';
+            }
+            
+            ASTNode* field_assign = ast_create_assign(
+                ast_create_identifier(field_name, parser->previous.line, parser->previous.column),
+                ast_create_identifier(var_name, parser->previous.line, parser->previous.column),
+                line, column
+            );
+            ast_list_append(fields, field_assign);
+            free(field_name);
+            free(var_name);
+        } while (match(parser, TOKEN_COMMA));
+    }
+    
+    consume(parser, TOKEN_RIGHT_BRACE, "Expected '}' after struct destructuring pattern");
+    return ast_create_destructure_struct(fields, line, column);
+}
+
 // Parse variable declaration
 static ASTNode* parse_variable(Parser* parser) {
     int line = parser->previous.line;
@@ -656,64 +780,50 @@ static ASTNode* parse_variable(Parser* parser) {
     bool is_turbo = (parser->previous.type == TOKEN_TURBO);
     
     TypeInfo* type = NULL;
-    
-    // Check for type if not just 'turbo' used as inference (optional feature, for now explicit types)
-    // If turbo is used, we might still expect a type or inference
-    // Simplified: turbo <type> <name> = <value>; OR <type> <name> = <value>;
-    
     char* name = NULL;
+    ASTNode* destructure_pattern = NULL;
 
     if (is_turbo) {
-        // Consume type
-        if (match(parser, TOKEN_I32) || match(parser, TOKEN_STR) || match(parser, TOKEN_BOOL)) {
-             // Basic types: turbo i32 x = ...
+        if (match(parser, TOKEN_LEFT_BRACKET)) {
+            destructure_pattern = parse_array_destructure_pattern(parser);
+        } else if (match(parser, TOKEN_LEFT_BRACE)) {
+            destructure_pattern = parse_struct_destructure_pattern(parser);
+        } else if (match(parser, TOKEN_I32) || match(parser, TOKEN_STR) || match(parser, TOKEN_BOOL)) {
              char* type_name = strdup(token_type_to_string(parser->previous.type));
              type = type_info_create(type_name, false, true);
              free(type_name);
-             // Variable name comes next
              consume(parser, TOKEN_IDENTIFIER, "Expected variable name after type");
              name = malloc(parser->previous.length + 1);
              memcpy(name, parser->previous.start, parser->previous.length);
              name[parser->previous.length] = '\0';
         } else if (check(parser, TOKEN_IDENTIFIER)) {
-             // Could be either:
-             // 1. turbo TypeName varName = ...  (custom type)
-             // 2. turbo varName = ...           (type inference)
-             // Consume the identifier and check what's next
              consume(parser, TOKEN_IDENTIFIER, "Expected type or variable name");
              Token first_ident = parser->previous;
 
              if (check(parser, TOKEN_IDENTIFIER)) {
-                 // Pattern: turbo TypeName varName
-                 // First identifier is the type
                  char* type_name = malloc(first_ident.length + 1);
                  memcpy(type_name, first_ident.start, first_ident.length);
                  type_name[first_ident.length] = '\0';
                  type = type_info_create(type_name, false, true);
                  free(type_name);
-                 // Consume the variable name
                  consume(parser, TOKEN_IDENTIFIER, "Expected variable name after type");
                  name = malloc(parser->previous.length + 1);
                  memcpy(name, parser->previous.start, parser->previous.length);
                  name[parser->previous.length] = '\0';
              } else {
-                 // Pattern: turbo varName = ... OR turbo varName;
-                 // First identifier is the variable name
                  name = malloc(first_ident.length + 1);
                  memcpy(name, first_ident.start, first_ident.length);
                  name[first_ident.length] = '\0';
-                 type = NULL;  // Type inference
+                 type = NULL;
              }
         } else {
-             error(parser, "Expected type or variable name after 'turbo'");
+             error(parser, "Expected type, variable name, or destructuring pattern after 'turbo'");
              return NULL;
         }
     } else {
-         // Non-turbo type (already consumed by caller)
          char* type_name = strdup(token_type_to_string(parser->previous.type));
          type = type_info_create(type_name, false, false);
          free(type_name);
-         // Variable name comes next
          consume(parser, TOKEN_IDENTIFIER, "Expected variable name after type");
          name = malloc(parser->previous.length + 1);
          memcpy(name, parser->previous.start, parser->previous.length);
@@ -728,7 +838,8 @@ static ASTNode* parse_variable(Parser* parser) {
     consume(parser, TOKEN_SEMICOLON, "Expected ';' after variable declaration");
     
     ASTNode* node = ast_create_variable_decl(name, type, initializer, is_turbo, line, column);
-    free(name);
+    if (name) free(name);
+    node->variable_decl.destructure_pattern = destructure_pattern;
     return node;
 }
 
@@ -758,9 +869,19 @@ static ASTNode* parse_function(Parser* parser, bool is_async) {
         char* pname = malloc(parser->previous.length + 1);
         memcpy(pname, parser->previous.start, parser->previous.length);
         pname[parser->previous.length] = '\0';
-        ASTNode* pid = ast_create_identifier(pname, parser->previous.line, parser->previous.column);
+        
+        int param_line = parser->previous.line;
+        int param_col = parser->previous.column;
+        
+        ASTNode* param;
+        if (match(parser, TOKEN_EQUAL)) {
+            ASTNode* default_val = parse_expression(parser);
+            param = ast_create_variable_decl(pname, NULL, default_val, false, param_line, param_col);
+        } else {
+            param = ast_create_identifier(pname, param_line, param_col);
+        }
         free(pname);
-        ast_list_append(params, pid);
+        ast_list_append(params, param);
         if (!match(parser, TOKEN_COMMA)) {
             break;
         }
