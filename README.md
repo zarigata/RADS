@@ -1,4 +1,43 @@
-# 🚀 RADS v0.0.7 "DARK MOON"
+# 🚀 RADS v0.0.71 "DARK MOON"
+
+---
+
+## 🆕 What's New in v0.0.71
+
+### ✨ New Standard Library Functions (30+)
+
+**Array Operations:**
+- `array.map()`, `array.filter()`, `array.reduce()` - Functional programming
+- `array.find()`, `array.some()`, `array.every()` - Search operations
+- `array.sort()`, `array.reverse()` - In-place mutations
+
+**String Operations:**
+- `string.split()`, `string.join()` - Split and join
+- `string.trim()`, `string.upper()`, `string.lower()` - Case manipulation
+- `string.replace()`, `string.substring()` - String transformation
+
+**Math Functions:**
+- `math.min()`, `math.max()`, `math.clamp()` - Value bounds
+- `math.floor()`, `math.ceil()`, `math.round()` - Rounding
+- `math.random()`, `math.srand()` - Random number generation
+
+**Filesystem Operations:**
+- `fs.readdir()`, `fs.stat()` - Directory and file info
+- `fs.mkdir()`, `fs.rmdir()`, `fs.unlink()` - Directory/file operations
+- `fs.exists()`, `fs.rename()`, `fs.chmod()` - File management
+- `fs.getcwd()` - Current directory
+
+**Async Utilities:**
+- `async_utils.parallel()`, `async_utils.series()` - Parallel/sequential execution
+- `async_utils.retry()` - Retry with exponential backoff
+- `async_utils.timeout()`, `async_utils.delay()` - Time-based operations
+- `async_utils.each()` - Async iteration
+
+### 🐛 Bug Fixes
+- Fixed array printing in string concatenation
+- Fixed anonymous function crash (NULL name handling)
+- Fixed `array.sort()`/`array.reverse()` memory corruption
+- Fixed duplicate function definitions in stdlib modules
 
 ---
 
@@ -83,7 +122,7 @@ blast main() {
 
 ### 🛠️ Package Ecosystem
 - **rstar** - Package manager for installing and managing RADS packages
-- **rpm** - Resource package manager for bundling assets
+- **radpkg** - Resource package manager for bundling assets
 - **rads-mask** - Python to RADS transpiler (95%+ accuracy)
 - **Registry** - Full npmjs.com-style package registry at https://rads.rads-lang.org
 
@@ -326,6 +365,9 @@ str substring(str s, int start, int end)  // Extract substring
 str to_upper(str s)              // Convert to uppercase
 str to_lower(str s)              // Convert to lowercase
 str trim(str s)                   // Remove whitespace
+str string.split(str s, str delim)    // Split into array
+str string.join(array arr, str delim) // Join array into string
+str string.replace(str s, str search, str replace) // Replace substrings
 \`\`\`
 
 ### Math Functions
@@ -338,6 +380,11 @@ float math_sqrt(float x)          // Square root
 float math_pow(float base, float exp)  // Power
 float math_sin(float x)            // Sine
 float math_cos(float x)            // Cosine
+float math_min(float a, float b)   // Minimum
+float math_max(float a, float b)   // Maximum
+float math_clamp(float val, float min, float max) // Clamp to range
+float math_random()                // Random float [0, 1)
+int math_random_int(int min, int max) // Random int in range
 \`\`\`
 
 ### Array Functions
@@ -346,8 +393,39 @@ float math_cos(float x)            // Cosine
 int length(array arr)           // Get array length
 int push(array arr, value)     // Add element to end
 int pop(array arr)              // Remove and return last element
-array sort(array arr)           // Sort array
-array reverse(array arr)          // Reverse array
+array array.sort(array arr)           // Sort array
+array array.reverse(array arr)          // Reverse array
+array array.map(array arr, fn callback)    // Transform elements
+array array.filter(array arr, fn predicate) // Filter elements
+value array.reduce(array arr, fn reducer, value initial) // Reduce to single value
+value array.find(array arr, fn predicate)  // Find first match
+bool array.some(array arr, fn predicate)   // Check if any match
+bool array.every(array arr, fn predicate)  // Check if all match
+\`\`\`
+
+### Filesystem Functions
+
+\`\`\`rads
+array fs.readdir(str path)      // List directory contents
+array fs.stat(str path)         // Get file info [size, is_dir, is_file, mode, mtime]
+bool fs.unlink(str path)        // Delete file
+bool fs.exists(str path)        // Check if path exists
+bool fs.mkdir(str path)         // Create directory
+bool fs.rmdir(str path)         // Remove empty directory
+bool fs.rename(str old, str new) // Rename/move file
+str fs.getcwd()                 // Get current working directory
+bool fs.chmod(str path, int mode) // Change file permissions
+\`\`\`
+
+### Async Functions
+
+\`\`\`rads
+void async_utils.parallel(array funcs, fn callback) // Execute in parallel
+void async_utils.series(array funcs, fn callback)   // Execute in sequence
+void async_utils.retry(fn func, int count, fn callback) // Retry with backoff
+void async_utils.timeout(fn func, int ms, fn callback)  // Timeout after time
+void async_utils.delay(int ms, fn callback)       // Delay execution
+void async_utils.each(array arr, fn iterator, fn callback) // Iterate async
 \`\`\`
 
 ### I/O Functions
@@ -358,13 +436,6 @@ void error(str message)          // Print to stderr
 void input(str prompt)           // Read from stdin
 int read_file(str path)         // Read file contents
 void write_file(str path, str content)  // Write file
-\`\`\`
-
-### Async Functions
-
-\`\`\`rads
-void async_exec(void (*callback)(int))  // Execute function asynchronously
-void async_wait(int timeout_ms)     // Wait for async operations
 \`\`\`
 
 ### Network Functions
@@ -432,7 +503,7 @@ cat > rads.json << 'EOF'
   "keywords": ["rads", "library"],
   "author": "Your Name",
   "license": "MIT",
-  "rads_version": "0.0.7"
+  "rads_version": "0.0.71"
 }
 EOF
 
@@ -485,7 +556,7 @@ Rads/
 ├── bin/                    # Compiled tools
 │   ├── rads             # Main compiler
 │   ├── rstar           # Package manager
-│   ├── rpm             # Resource manager
+│   ├── radpkg          # Resource package manager
 │   └── rads-mask       # Python transpiler
 ├── src/
 │   ├── core/            # Compiler components (lexer, parser, AST, bytecode, interpreter, profiler, debugger)
