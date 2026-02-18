@@ -7,7 +7,7 @@ total_passed=0
 total_failed=0
 
 echo "======================================"
-echo "RADS v0.0.7 Test Runner"
+echo "RADS v0.0.9 Test Runner"
 echo "======================================"
 echo ""
 

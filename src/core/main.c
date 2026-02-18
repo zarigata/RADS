@@ -56,7 +56,7 @@
 #define CURSOR_BAR_STEADY       "\033[6 q"  // Steady bar
 
 void print_usage() {
-    printf("RADS Programming Language v0.0.7 \"DARK MOON\"\n");
+    printf("RADS Programming Language v0.0.9 \"NEBULA\"\n");
     printf("Usage: rads [options] [file]\n\n");
     printf("Options:\n");
     printf("  -h, --help     Show this help message\n");
@@ -70,7 +70,7 @@ void print_usage() {
 void print_version() {
     printf("\n");
     printf("%s┌────────────────────────────────────────┐%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
-    printf("%s│ %sRADS v0.0.7 \"DARK MOON\" 🌑%s          %s│%s\n",
+    printf("%s│ %sRADS v0.0.9 \"NEBULA\" 🌌%s           %s│%s\n",
             COLOR_BRIGHT_CYAN, COLOR_BRIGHT_MAGENTA,
             COLOR_WHITE, COLOR_BRIGHT_CYAN, COLOR_RESET);
     printf("%s│ %sRapid Asynchronous Data Server%s     %s│%s\n",
@@ -181,7 +181,7 @@ void print_repl_welcome() {
 
     printf(COLOR_BRIGHT_CYAN "  ╠═══════════════════════════════════════════════════════════╣\n" COLOR_RESET);
     printf(COLOR_BRIGHT_CYAN "  ║  " COLOR_RESET);
-    printf(COLOR_CYAN "🌑 Interactive REPL v0.0.7 DARK MOON" COLOR_RESET);
+    printf(COLOR_CYAN "🌌 Interactive REPL v0.0.9 NEBULA" COLOR_RESET);
     printf(COLOR_DIM " - " COLOR_RESET);
     printf(COLOR_BRIGHT_CYAN "TURBO" COLOR_RESET);
     printf(COLOR_DIM " & " COLOR_RESET);
@@ -442,7 +442,7 @@ int main(int argc, char* argv[]) {
     }
     
     // Normal execution mode
-    printf("%s🌑 RADS v0.0.7 Dark Moon%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s🌌 RADS v0.0.9 NEBULA%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
     printf("%sExecuting:%s %s%s%s\n\n",
            COLOR_BRIGHT_YELLOW, COLOR_RESET,
            COLOR_BRIGHT_MAGENTA, filename, COLOR_RESET);

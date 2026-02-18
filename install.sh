@@ -20,7 +20,7 @@ set -e
 # ============================================================================
 # Configuration
 # ============================================================================
-VERSION="0.0.7"
+VERSION="0.0.9"
 REPO_OWNER="zarigata"
 REPO_NAME="RADS"
 GITHUB_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}"
