@@ -234,7 +234,7 @@
 
         <section>
             <div class="info-banner">
-                <p><strong>⚡ Mini RADS Interpreter</strong> - This is a simplified JavaScript-based interpreter that demonstrates RADS syntax and basic features. For full performance and capabilities, <a href="guide.html" style="color: var(--primary-blue); font-weight: 700;">install RADS locally</a>.</p>
+                <p><strong>⚡ Full RADS Interpreter v0.0.11</strong> - Complete JavaScript-based interpreter with tokenization, parsing, AST execution, and standard library. Supports functions, arrays, objects, loops, conditionals, modules, and more. <a href="guide.html" style="color: var(--primary-blue); font-weight: 700;">Install RADS locally</a> for native performance.</p>
             </div>
 
             <div class="playground-container">
@@ -249,26 +249,30 @@
                             <button class="run-button" onclick="runCode()">▶ Run Code</button>
                         </div>
                     </div>
-                    <textarea id="code-editor" spellcheck="false">// Welcome to RADS Playground! 🚀
-// Try editing and running this code
+                    <textarea id="code-editor" spellcheck="false">// Welcome to RADS Playground v0.0.11! 🚀
+// This uses a full JavaScript-based RADS interpreter
 
 blast greet(name) {
     return "Hello, " + name + "! 🎉";
 }
 
 blast main() {
-    print("=== RADS Demo ===");
+    print("=== RADS v0.0.11 PULSAR Demo ===");
     print(greet("World"));
     
-    // Variables
+    // Variables with turbo
     turbo x = 42;
     turbo y = 58;
     print("Sum: " + (x + y));
     
-    // Loops
+    // Loops with cruise
     cruise i in range(1, 4) {
         print("Count: " + i);
     }
+    
+    // Arrays
+    turbo arr = [1, 2, 3, 4, 5];
+    print("Array length: " + length(arr));
     
     print("✨ RADS is blazing fast!");
 }</textarea>
@@ -319,6 +323,16 @@ blast main() {
                         <h4>⚡ Functions</h4>
                         <p>Function declarations</p>
                     </div>
+                    
+                    <div class="example-card" onclick="loadExample('env_demo')">
+                        <h4>🌍 Environment</h4>
+                        <p>v0.0.11 env module</p>
+                    </div>
+                    
+                    <div class="example-card" onclick="loadExample('datetime_demo')">
+                        <h4>🕐 DateTime</h4>
+                        <p>Date and time handling</p>
+                    </div>
                 </div>
             </div>
 
@@ -347,8 +361,11 @@ blast main() {
         <p>&copy; 2026 RADS Dev Group. Crafted with precision and turbo speed.</p>
     </footer>
 
+    <!-- Load the full RADS compiler -->
+    <script src="rads-compiler.js"></script>
+    
     <script>
-        // Mini RADS Interpreter (Simplified JavaScript Implementation)
+        // Example programs for RADS Playground
         const examples = {
             hello: `// Simple Hello World
 blast main() {
@@ -410,7 +427,7 @@ blast main() {
 blast main() {
     print("=== Loop Examples ===");
     
-    print("\\nFor loop (cruise):");
+    print("\\nFor loop (cruise with range):");
     cruise i in range(1, 6) {
         print("  Iteration " + i);
     }
@@ -441,6 +458,36 @@ blast main() {
     print("Square of 5: " + square(5));
     print("Cube of 3: " + cube(3));
     print(greet("Alice", 25));
+}`,
+            
+            env_demo: `// Environment Variables Demo (v0.0.11)
+blast main() {
+    print("=== Environment Module ===");
+    print("Home: " + env.home());
+    print("User: " + env.user());
+    print("Shell: " + env.shell());
+    print("CWD: " + env.cwd());
+    
+    // Check if variable exists
+    if (env.has("PATH")) {
+        print("PATH is set!");
+    }
+}`,
+            
+            datetime_demo: `// DateTime Module Demo
+blast main() {
+    print("=== DateTime Module ===");
+    
+    // Get current time
+    turbo now = datetime.now();
+    print("Current year: " + now.year);
+    print("Current month: " + now.month);
+    print("Current day: " + now.day);
+    print("Current hour: " + now.hour);
+    
+    // Format date
+    turbo formatted = datetime.format(now, "YYYY-MM-DD");
+    print("Formatted: " + formatted);
 }`
         };
 
@@ -462,40 +509,23 @@ blast main() {
             output.className = '';
 
             try {
-                // Simple RADS to JavaScript transpiler
-                let jsCode = code;
-                
-                // Replace RADS keywords with JavaScript equivalents
-                jsCode = jsCode.replace(/blast\s+/g, 'function ');
-                jsCode = jsCode.replace(/turbo\s+/g, 'let ');
-                jsCode = jsCode.replace(/cruise\s+(\w+)\s+in\s+range\((\d+),\s*(\d+)\)/g, 
-                    'for (let $1 = $2; $1 < $3; $1++)');
-                jsCode = jsCode.replace(/cruise\s+(\w+)\s+in\s+(\w+)/g, 
-                    'for (let $1 of $2)');
-                jsCode = jsCode.replace(/loop\s*\(/g, 'while (');
-                
-                // Capture print statements
-                const outputs = [];
-                const print = (msg) => outputs.push(String(msg));
-                
-                // Execute the transpiled code
-                eval(jsCode);
-                
-                // Call main if it exists
-                if (typeof main === 'function') {
-                    main();
-                }
+                // Use the full RADS compiler
+                const compiler = new RADSCompiler();
+                const result = compiler.run(code);
                 
                 // Display output
-                if (outputs.length > 0) {
-                    output.textContent = outputs.join('\n');
+                if (result.output.length > 0) {
+                    output.textContent = result.output.join('\n');
+                } else if (result.error) {
+                    output.textContent = '❌ Error: ' + result.error + '\n\nLine ' + result.line + ': ' + result.message;
+                    output.className = 'output-error';
                 } else {
                     output.textContent = '✅ Code executed successfully! (No output)';
                     output.className = 'output-info';
                 }
                 
             } catch (error) {
-                output.textContent = '❌ Error: ' + error.message + '\n\nThis mini interpreter supports basic RADS syntax.\nFor full features, install RADS locally!';
+                output.textContent = '❌ Error: ' + error.message + '\n\nFor full features, install RADS locally!';
                 output.className = 'output-error';
             }
         }
@@ -524,6 +554,5 @@ blast main() {
             });
         });
     </script>
-
 </body>
 </html>
