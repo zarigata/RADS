@@ -24,6 +24,13 @@
 #include "stdlib_async_utils.h"
 #include "stdlib_websocket.h"
 #include "stdlib_graphql.h"
+#include "stdlib_datetime.h"
+#include "stdlib_regex.h"
+#include "stdlib_test.h"
+#include "stdlib_env.h"
+#include "stdlib_cli.h"
+#include "stdlib_csv.h"
+#include "stdlib_base64.h"
 
 // ANSI Color Codes for Chroma Effects
 #define COLOR_RESET     "\033[0m"
@@ -56,7 +63,7 @@
 #define CURSOR_BAR_STEADY       "\033[6 q"  // Steady bar
 
 void print_usage() {
-    printf("RADS Programming Language v0.0.9 \"NEBULA\"\n");
+    printf("RADS Programming Language v0.0.11 \"PULSAR\"\n");
     printf("Usage: rads [options] [file]\n\n");
     printf("Options:\n");
     printf("  -h, --help     Show this help message\n");
@@ -70,7 +77,7 @@ void print_usage() {
 void print_version() {
     printf("\n");
     printf("%s┌────────────────────────────────────────┐%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
-    printf("%s│ %sRADS v0.0.9 \"NEBULA\" 🌌%s           %s│%s\n",
+    printf("%s│ %sRADS v0.0.11 \"PULSAR\" 💫%s           %s│%s\n",
             COLOR_BRIGHT_CYAN, COLOR_BRIGHT_MAGENTA,
             COLOR_WHITE, COLOR_BRIGHT_CYAN, COLOR_RESET);
     printf("%s│ %sRapid Asynchronous Data Server%s     %s│%s\n",
@@ -181,7 +188,7 @@ void print_repl_welcome() {
 
     printf(COLOR_BRIGHT_CYAN "  ╠═══════════════════════════════════════════════════════════╣\n" COLOR_RESET);
     printf(COLOR_BRIGHT_CYAN "  ║  " COLOR_RESET);
-    printf(COLOR_CYAN "🌌 Interactive REPL v0.0.9 NEBULA" COLOR_RESET);
+    printf(COLOR_CYAN "🌌 Interactive REPL v0.0.11 PULSAR" COLOR_RESET);
     printf(COLOR_DIM " - " COLOR_RESET);
     printf(COLOR_BRIGHT_CYAN "TURBO" COLOR_RESET);
     printf(COLOR_DIM " & " COLOR_RESET);
@@ -259,10 +266,13 @@ int run_repl() {
     stdlib_json_register();
     stdlib_db_register();
     stdlib_webengine_register();
-
-    // Initialize event loop for REPL
-    interpreter_init_event_loop();
-
+    stdlib_datetime_register();
+    stdlib_regex_register();
+    stdlib_test_register();
+    stdlib_env_register();
+    stdlib_cli_register();
+    stdlib_csv_register();
+    stdlib_base64_register();
     int line_num = 1;
 
     // RGB Chroma color cycle for prompt (like RGB keyboard)
@@ -442,11 +452,10 @@ int main(int argc, char* argv[]) {
     }
     
     // Normal execution mode
-    printf("%s🌌 RADS v0.0.9 NEBULA%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s🌌 RADS v0.0.11 PULSAR%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
     printf("%sExecuting:%s %s%s%s\n\n",
            COLOR_BRIGHT_YELLOW, COLOR_RESET,
            COLOR_BRIGHT_MAGENTA, filename, COLOR_RESET);
-    // Initialize standard library
     stdlib_io_register();
     stdlib_media_register();
     stdlib_net_register();
@@ -462,9 +471,15 @@ int main(int argc, char* argv[]) {
     stdlib_webengine_register();
     stdlib_filesystem_register();
     stdlib_async_utils_register();
+    stdlib_datetime_register();
+    stdlib_regex_register();
+    stdlib_test_register();
+    stdlib_env_register();
+    stdlib_cli_register();
+    stdlib_csv_register();
+    stdlib_base64_register();
     // TODO: stdlib_websocket_register();
     // TODO: stdlib_graphql_register();
-    
 
     // Tokenize
     Lexer lexer;

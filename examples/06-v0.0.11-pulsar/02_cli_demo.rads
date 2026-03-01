@@ -1,0 +1,66 @@
+// RADS v0.0.11 PULSAR - CLI Arguments Demo
+// This example demonstrates the cli module
+
+blast main() {
+    echo("========================================");
+    echo("  CLI Arguments Demo - v0.0.11");
+    echo("========================================");
+    echo("");
+
+    // Get basic CLI info
+    echo("=== Basic CLI Info ===");
+    
+    turbo program = cli.program();
+    echo("Program: " + program);
+    
+    turbo count = cli.count();
+    echo("Argument count: " + count);
+    
+    echo("");
+
+    // Get all arguments
+    echo("=== All Arguments ===");
+    
+    turbo args = cli.args();
+    if (args != null) {
+        echo("Arguments received: " + length(args));
+    }
+    
+    echo("");
+
+    // Check for flags
+    echo("=== Flag Detection ===");
+    
+    if (cli.has_flag("--help") || cli.has_flag("-h")) {
+        echo("Help flag detected!");
+        echo("");
+        echo("Usage: " + program + " [options]");
+        echo("  --help, -h     Show this help");
+        echo("  --verbose, -v  Verbose output");
+        echo("  --file FILE    Input file");
+        echo("  --output FILE  Output file");
+        return 0;
+    }
+    
+    if (cli.has_flag("--verbose") || cli.has_flag("-v")) {
+        echo("Verbose mode enabled");
+    }
+    
+    // Get flag values
+    turbo input_file = cli.flag("--file");
+    if (input_file != null) {
+        echo("Input file: " + input_file);
+    }
+    
+    turbo output_file = cli.flag("--output");
+    if (output_file != null) {
+        echo("Output file: " + output_file);
+    }
+    
+    echo("");
+    echo("Tip: Try running with --help to see options");
+    echo("");
+    echo("Demo complete!");
+    
+    return 0;
+}

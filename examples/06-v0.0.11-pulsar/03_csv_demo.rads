@@ -1,0 +1,52 @@
+// RADS v0.0.11 PULSAR - CSV Handling Demo
+// This example demonstrates the csv module
+
+blast main() {
+    echo("========================================");
+    echo("  CSV Handling Demo - v0.0.11");
+    echo("========================================");
+    echo("");
+
+    // Parse CSV string
+    echo("=== Parsing CSV ===");
+    
+    turbo csv_data = "name,age,city\n";
+    csv_data = csv_data + "Alice,30,NYC\n";
+    csv_data = csv_data + "Bob,25,LA\n";
+    csv_data = csv_data + "Charlie,35,Chicago";
+    
+    echo("Input CSV:");
+    echo(csv_data);
+    echo("");
+    
+    turbo parsed = csv.parse(csv_data);
+    echo("CSV parsed into records");
+    
+    echo("");
+
+    // Stringify back to CSV
+    echo("=== Stringifying CSV ===");
+    
+    // Create sample data
+    turbo output = "product,price,quantity\n";
+    output = output + "Widget,19.99,100\n";
+    output = output + "Gadget,29.99,50\n";
+    output = output + "Gizmo,9.99,200";
+    
+    echo("Output CSV:");
+    echo(output);
+    
+    echo("");
+
+    // CSV with custom delimiter
+    echo("=== Custom Delimiter ===");
+    
+    turbo tsv_data = "name\tscore\tlevel\nAlice\t100\t5\nBob\t85\t3";
+    turbo tsv_parsed = csv.parse(tsv_data, { delimiter: "\t" });
+    echo("TSV parsed with tab delimiter");
+    
+    echo("");
+    echo("Demo complete!");
+    
+    return 0;
+}

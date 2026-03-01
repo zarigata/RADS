@@ -1,10 +1,109 @@
-# 🚀 RADS v0.0.9 "NEBULA"
+# 🚀 RADS v0.0.11 "PULSAR"
 
 ---
 
-## 🆕 What's New in v0.0.9
+## 🆕 What's New in v0.0.11
 
-### ✨ New Language Features
+### ✨ New Standard Library Modules
+
+**datetime Module 🕐:**
+- `datetime.now()` - Current timestamp as struct
+- `datetime.format(ts, fmt)` - Format timestamp to string
+- `datetime.parse(str, fmt)` - Parse string to timestamp
+- `datetime.unix(ts)` - Get Unix timestamp
+- `datetime.from_unix(unix)` - Create from Unix timestamp
+- `datetime.add(ts, days, hours, minutes, seconds)` - Add time
+- `datetime.diff(ts1, ts2)` - Time difference in seconds
+- `datetime.weekday(ts)` - Day of week (0=Sunday)
+
+**regex Module 🔍:**
+- `regex.compile(pattern)` - Compile regex pattern (cached)
+- `regex.match(regex, str)` - Boolean match check
+- `regex.findall(regex, str)` - Find all matches
+- `regex.search(regex, str)` - First match with position
+- `regex.replace(regex, str, replacement)` - Replace matches
+- `regex.split(regex, str)` - Split by pattern
+- `regex.groups(regex, str)` - Extract capture groups
+
+**Test Framework 🧪:**
+- `test.describe(name, fn)` - Define test suite
+- `test.it(name, fn)` - Define test case
+- `test.expect(val).toBe(expected)` - Strict equality
+- `test.expect(val).toEqual(expected)` - Deep equality
+- `test.expect(val).toBeTruthy()` - Truthy check
+- `test.expect(val).toBeFalsy()` - Falsy check
+- `test.expect(val).toBeNull()` - Null check
+- `test.beforeEach(fn)` - Setup before each test
+- `test.afterEach(fn)` - Cleanup after each test
+- `test.run()` - Execute all tests
+
+**env Module 🌍:**
+- `env.get(name)` - Get environment variable
+- `env.set(name, value)` - Set environment variable
+- `env.has(name)` - Check if variable exists
+- `env.unset(name)` - Remove environment variable
+- `env.list()` - Get all variables as struct
+- `env.paths()` - Parse PATH into array
+- `env.home()` - Get HOME directory
+- `env.cwd()` - Get current working directory
+- `env.user()` - Get current username
+- `env.shell()` - Get current shell
+
+**cli Module 🖥️:**
+- `cli.args()` - Get raw argument array
+- `cli.program()` - Get program name
+- `cli.count()` - Get argument count
+- `cli.has_flag(name)` - Check if flag present
+- `cli.flag(name)` - Get flag value
+- `cli.flags()` - Get all flags
+- `cli.parse(spec)` - Parse with specification
+
+**csv Module 📊:**
+- `csv.parse(str)` - Parse CSV string
+- `csv.stringify(data)` - Convert to CSV string
+- `csv.read(path)` - Read CSV file
+- `csv.write(path, data)` - Write CSV file
+
+**base64 Module 🔐:**
+- `base64.encode(str)` - Encode string to base64
+- `base64.decode(str)` - Decode base64 to string
+- `base64.encode_bytes(arr)` - Encode byte array
+- `base64.decode_bytes(str)` - Decode to byte array
+
+### ✨ v0.0.10 Features (Still Available)
+
+**datetime Module 🕐:**
+- `datetime.now()` - Current timestamp as struct
+- `datetime.format(ts, fmt)` - Format timestamp to string
+- `datetime.parse(str, fmt)` - Parse string to timestamp
+- `datetime.unix(ts)` - Get Unix timestamp
+- `datetime.from_unix(unix)` - Create from Unix timestamp
+- `datetime.add(ts, days, hours, minutes, seconds)` - Add time
+- `datetime.diff(ts1, ts2)` - Time difference in seconds
+- `datetime.weekday(ts)` - Day of week (0=Sunday)
+
+**regex Module 🔍:**
+- `regex.compile(pattern)` - Compile regex pattern (cached)
+- `regex.match(regex, str)` - Boolean match check
+- `regex.findall(regex, str)` - Find all matches
+- `regex.search(regex, str)` - First match with position
+- `regex.replace(regex, str, replacement)` - Replace matches
+- `regex.split(regex, str)` - Split by pattern
+- `regex.groups(regex, str)` - Extract capture groups
+
+**Test Framework 🧪:**
+- `test.describe(name, fn)` - Define test suite
+- `test.it(name, fn)` - Define test case
+- `test.expect(val).toBe(expected)` - Strict equality
+- `test.expect(val).toEqual(expected)` - Deep equality
+- `test.expect(val).toBeTruthy()` - Truthy check
+- `test.expect(val).toBeFalsy()` - Falsy check
+- `test.expect(val).toBeNull()` - Null check
+- `test.beforeEach(fn)` - Setup before each test
+- `test.afterEach(fn)` - Cleanup after each test
+- `test.run()` - Execute all tests
+
+### ✨ v0.0.9 Features (Still Available)
 
 **Destructuring:**
 - `turbo [a, b, c] = [1, 2, 3]` - Array destructuring

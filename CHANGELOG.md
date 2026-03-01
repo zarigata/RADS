@@ -2,6 +2,265 @@
 
 All notable changes to RADS programming language will be documented in this file.
 
+## 💫 [0.0.11] - 2026-03-01
+
+### Codename: PULSAR
+
+**Theme:** Developer Tools & System Integration
+
+**Summary:** Essential utilities for building real command-line applications: environment variables, CLI argument parsing, CSV handling, and Base64 encoding.
+
+### 💡 New Features
+
+#### env Module 🌍
+Environment variable access - essential for configuration and system integration.
+
+```rads
+import env;
+
+turbo home = env.get("HOME");
+turbo path = env.get("PATH");
+
+env.set("MY_VAR", "value");
+
+if (env.has("HOME")) {
+    echo("HOME is set");
+}
+
+turbo all = env.list();
+env.unset("MY_VAR");
+```
+
+**Functions:**
+- `env.get(name)` - Get environment variable value
+- `env.set(name, value)` - Set environment variable
+- `env.has(name)` - Check if variable exists
+- `env.unset(name)` - Remove environment variable
+- `env.list()` - Get all variables as struct
+- `env.paths()` - Parse PATH into array
+- `env.home()` - Get HOME directory
+- `env.cwd()` - Get current working directory
+- `env.user()` - Get current username
+- `env.shell()` - Get current shell
+
+#### cli Module 🖥️
+Command-line argument parsing - essential for building CLI tools.
+
+```rads
+import cli;
+
+turbo count = cli.count();
+turbo args = cli.args();
+turbo prog = cli.program();
+
+if (cli.has_flag("--verbose")) {
+    echo("Verbose mode enabled");
+}
+
+turbo file = cli.flag("--file");
+```
+
+**Functions:**
+- `cli.args()` - Get raw argument array
+- `cli.program()` - Get program name
+- `cli.count()` - Get argument count
+- `cli.has_flag(name)` - Check if flag present
+- `cli.flag(name)` - Get flag value
+- `cli.flags()` - Get all flags
+- `cli.args_after_flag(name)` - Get args after flag
+- `cli.parse(spec)` - Parse with specification
+
+#### csv Module 📊
+CSV file handling - common data interchange format.
+
+```rads
+import csv;
+
+turbo data = csv.parse("name,age\nAlice,30\nBob,25");
+// Returns array of structs
+
+turbo csv_str = csv.stringify(data);
+// Convert back to CSV string
+
+turbo rows = csv.read("data.csv");
+csv.write("output.csv", data);
+```
+
+**Functions:**
+- `csv.parse(str)` - Parse CSV string
+- `csv.parse(str, opts)` - Parse with options
+- `csv.stringify(data)` - Convert to CSV string
+- `csv.stringify(data, opts)` - Convert with options
+- `csv.read(path)` - Read CSV file
+- `csv.write(path, data)` - Write CSV file
+
+**Options:**
+- `delimiter` - Field separator (default: `,`)
+- `header` - First row is header (default: `true`)
+- `quote` - Quote character (default: `"`)
+
+#### base64 Module 🔐
+Base64 encoding/decoding - essential for data encoding.
+
+```rads
+import base64;
+
+turbo encoded = base64.encode("Hello, World!");
+// "SGVsbG8sIFdvcmxkIQ=="
+
+turbo decoded = base64.decode(encoded);
+// "Hello, World!"
+
+turbo bytes = [72, 101, 108, 108, 111];
+turbo enc = base64.encode_bytes(bytes);
+
+turbo decoded_bytes = base64.decode_bytes(enc);
+```
+
+**Functions:**
+- `base64.encode(str)` - Encode string to base64
+- `base64.decode(str)` - Decode base64 to string
+- `base64.encode_bytes(arr)` - Encode byte array
+- `base64.decode_bytes(str)` - Decode to byte array
+
+### 📝 Changed
+- Standard library now has 80+ functions
+- Version bump to v0.0.11 PULSAR
+
+### 🐛 Fixed
+- Various minor bug fixes
+
+---
+
+
+### Codename: QUASAR
+
+**Theme:** Powerful Standard Library - datetime, regex, testing
+
+**Summary:** Developer productivity boost with three essential standard library modules: datetime handling, regex pattern matching, and built-in test framework.
+
+### ✨ New Features
+
+#### datetime Module 🕐
+Complete date/time handling for real-world applications.
+
+```rads
+import datetime;
+
+turbo now = datetime.now();
+echo(now.year);    // 2026
+echo(now.month);   // 3
+echo(now.day);     // 1
+
+turbo formatted = datetime.format(now, "YYYY-MM-DD HH:mm:ss");
+turbo parsed = datetime.parse("2025-03-01", "YYYY-MM-DD");
+turbo ts = datetime.unix(now);
+turbo restored = datetime.from_unix(ts);
+turbo tomorrow = datetime.add(now, days: 1);
+turbo diff = datetime.diff(now, tomorrow);  // seconds
+turbo wkday = datetime.weekday(now);  // 0-6
+```
+
+**Functions:**
+- `datetime.now()` - Current timestamp as struct
+- `datetime.format(ts, fmt)` - Format timestamp to string
+- `datetime.parse(str, fmt)` - Parse string to timestamp
+- `datetime.unix(ts)` - Get Unix timestamp
+- `datetime.from_unix(unix)` - Create from Unix timestamp
+- `datetime.add(ts, days, hours, minutes, seconds)` - Add time
+- `datetime.diff(ts1, ts2)` - Time difference in seconds
+- `datetime.year(ts)`, `datetime.month(ts)`, `datetime.day(ts)` - Extract fields
+- `datetime.hour(ts)`, `datetime.minute(ts)`, `datetime.second(ts)` - Time fields
+- `datetime.weekday(ts)` - Day of week (0=Sunday)
+
+#### regex Module 🔍
+Pattern matching and text manipulation.
+
+```rads
+import regex;
+
+turbo pattern = regex.compile("\\d+");
+
+if (regex.match(pattern, "123")) {
+    echo("Found digits!");
+}
+
+turbo matches = regex.findall(pattern, "abc123def456");
+// ["123", "456"]
+
+turbo result = regex.search(pattern, "price: 99 dollars");
+// { match: "99", start: 7, end: 9 }
+
+turbo replaced = regex.replace(pattern, "item123", "X");
+// "itemX"
+
+turbo groups = regex.groups("(\\d+)-(\\d+)-(\\d+)", "2025-03-01");
+// ["2025", "03", "01"]
+```
+
+**Functions:**
+- `regex.compile(pattern)` - Compile regex pattern (cached)
+- `regex.match(regex, str)` - Boolean match check
+- `regex.findall(regex, str)` - Array of all matches
+- `regex.search(regex, str)` - First match with position
+- `regex.replace(regex, str, replacement)` - Replace matches
+- `regex.split(regex, str)` - Split by pattern
+- `regex.groups(regex, str)` - Extract capture groups
+
+#### Test Framework 🧪
+Built-in testing with familiar assertions.
+
+```rads
+import test;
+
+test.describe("Math operations", blast() {
+    test.it("should add correctly", blast() {
+        test.expect(1 + 1).toBe(2);
+        test.expect(2 + 2).toBe(4);
+    });
+    
+    test.it("should handle negatives", blast() {
+        test.expect(-5 + 5).toBe(0);
+    });
+});
+
+test.run();
+```
+
+**Functions:**
+- `test.describe(name, fn)` - Define test suite
+- `test.it(name, fn)` - Define test case
+- `test.expect(value)` - Create assertion
+- `test.expect(v).toBe(expected)` - Strict equality
+- `test.expect(v).toEqual(expected)` - Deep equality
+- `test.expect(v).toBeTruthy()` - Truthy check
+- `test.expect(v).toBeFalsy()` - Falsy check
+- `test.expect(v).toBeNull()` - Null check
+- `test.expect(v).toBeGreaterThan(n)` - Greater than
+- `test.expect(v).toBeLessThan(n)` - Less than
+- `test.beforeEach(fn)` - Setup before each test
+- `test.afterEach(fn)` - Cleanup after each test
+- `test.run()` - Execute all tests
+- `test.skip(name, fn)` - Skip test
+
+### 📁 New Files
+
+```
+src/stdlib/
+├── stdlib_datetime.c  - Date/time implementation
+├── stdlib_datetime.h  - Date/time header
+├── stdlib_regex.c     - Regex implementation
+├── stdlib_regex.h     - Regex header
+├── stdlib_test.c      - Test framework implementation
+└── stdlib_test.h      - Test framework header
+```
+
+### 🔧 Technical Notes
+
+- **datetime**: Uses C standard library `<time.h>`, no external dependencies
+- **regex**: Uses POSIX regex `<regex.h>`, cached compilation for performance
+- **test**: Global test registry with colored output
+
 ---
 
 ## 🌑 [0.0.7] - 2026-01-27 (In Development) 🔜

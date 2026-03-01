@@ -1,0 +1,75 @@
+// RADS v0.0.11 PULSAR - Environment Variables Demo
+// This example demonstrates the env module
+
+blast main() {
+    echo("========================================");
+    echo("  Environment Variables Demo - v0.0.11");
+    echo("========================================");
+    echo("");
+
+    // Get environment variables
+    echo("=== Basic Environment Access ===");
+    
+    turbo home = env.home();
+    echo("Home directory: " + home);
+    
+    turbo cwd = env.cwd();
+    echo("Current directory: " + cwd);
+    
+    turbo user = env.user();
+    echo("Current user: " + user);
+    
+    turbo shell = env.shell();
+    echo("Current shell: " + shell);
+    
+    echo("");
+
+    // Set and get custom variables
+    echo("=== Setting Custom Variables ===");
+    
+    env.set("RADS_APP_NAME", "MyRadsApp");
+    env.set("RADS_VERSION", "1.0.0");
+    
+    turbo app_name = env.get("RADS_APP_NAME");
+    turbo version = env.get("RADS_VERSION");
+    
+    echo("App Name: " + app_name);
+    echo("Version: " + version);
+    
+    echo("");
+
+    // Check if variables exist
+    echo("=== Checking Variables ===");
+    
+    if (env.has("HOME")) {
+        echo("HOME variable exists");
+    }
+    
+    if (env.has("RADS_APP_NAME")) {
+        echo("RADS_APP_NAME exists");
+    }
+    
+    if (!env.has("NONEXISTENT_VAR")) {
+        echo("NONEXISTENT_VAR does not exist");
+    }
+    
+    echo("");
+
+    // Get PATH directories
+    echo("=== PATH Directories ===");
+    
+    turbo paths = env.paths();
+    echo("Found " + length(paths) + " PATH directories");
+    
+    echo("");
+
+    // Cleanup
+    env.unset("RADS_APP_NAME");
+    env.unset("RADS_VERSION");
+    
+    echo("Cleaned up custom variables");
+    echo("");
+    echo("Demo complete!");
+    
+    return 0;
+}

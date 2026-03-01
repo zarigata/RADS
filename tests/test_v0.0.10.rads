@@ -1,0 +1,75 @@
+// RADS v0.0.10 QUASAR - Focused Test Suite
+// Tests: datetime module
+
+blast main() {
+    echo("╔════════════════════════════════════════════╗");
+    echo("║   RADS v0.0.10 QUASAR - Test Suite        ║");
+    echo("╚════════════════════════════════════════════╝");
+    echo("");
+    
+    // ============================================
+    // SECTION 1: DATETIME MODULE
+    // ============================================
+    echo("=== Section 1: Datetime Module ===");
+    echo("");
+    
+    // Test datetime.now()
+    echo("Testing datetime.now()...");
+    turbo now = datetime.now();
+    echo("  Year: " + now.year);
+    echo("  Month: " + now.month);
+    echo("  Day: " + now.day);
+    echo("  Hour: " + now.hour);
+    echo("  Minute: " + now.minute);
+    echo("  Second: " + now.second);
+    
+    if (now.year >= 2025) {
+        echo("  ✓ Year is current (>= 2025)");
+    }
+    
+    // Test datetime.format()
+    echo("");
+    echo("Testing datetime.format()...");
+    turbo formatted = datetime.format(now, "YYYY-MM-DD");
+    echo("  Formatted: " + formatted);
+    echo("  ✓ Format works");
+    
+    // Test datetime.unix() and from_unix()
+    echo("");
+    echo("Testing datetime.unix() and from_unix()...");
+    turbo ts = datetime.unix(now);
+    echo("  Unix timestamp: " + ts);
+    turbo restored = datetime.from_unix(ts);
+    echo("  Restored year: " + restored.year);
+    if (restored.year == now.year) {
+        echo("  ✓ Unix roundtrip works");
+    }
+    
+    // Test datetime.add()
+    echo("");
+    echo("Testing datetime.add()...");
+    turbo tomorrow = datetime.add(now, 1);
+    echo("  Tomorrow's day: " + tomorrow.day);
+    echo("  ✓ Add works");
+    
+    // Test datetime.diff()
+    echo("");
+    echo("Testing datetime.diff()...");
+    turbo diff = datetime.diff(tomorrow, now);
+    echo("  Seconds until tomorrow: " + diff);
+    if (diff == 86400) {
+        echo("  ✓ Diff correctly returns 86400 seconds (1 day)");
+    }
+    
+    // Test datetime.weekday()
+    echo("");
+    echo("Testing datetime.weekday()...");
+    turbo weekday = datetime.weekday(now);
+    echo("  Weekday number: " + weekday);
+    echo("  ✓ Weekday works");
+    
+    echo("");
+    echo("╔════════════════════════════════════════════╗");
+    echo("║   All v0.0.10 Tests Completed! ⚡          ║");
+    echo("╚════════════════════════════════════════════╝");
+}

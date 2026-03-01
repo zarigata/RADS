@@ -99,17 +99,145 @@
                             <li><code>resize(width, height)</code> - Resize image</li>
                             <li><code>apply_filter(name)</code> - Apply image filter</li>
                         </ul>
-                        <h2>Module: sys</h2>
-                        <p>System operations and environment.</p>
+                        <h2 id="datetime">Module: datetime 🕐</h2>
+                        <p>Date and time handling for real-world applications.</p>
                         <h3>Functions</h3>
-                        <ul>
-                            <li><code>getenv(name)</code> - Get environment variable</li>
-                            <li><code>setenv(name, value)</code> - Set environment variable</li>
-                            <li><code>exec(command)</code> - Execute command</li>
-                            <li><code>exit(code)</code> - Exit program</li>
-                        </ul>
-                        <h2>Web Engine Functions</h2>
                         <table class="api-table">
+                            <thead><tr><th>Function</th><th>Description</th><th>Example</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>datetime.now()</code></td><td>Current timestamp as struct</td><td><code>datetime.now().year</code></td></tr>
+                                <tr><td><code>datetime.format(ts, fmt)</code></td><td>Format timestamp to string</td><td><code>datetime.format(now, "YYYY-MM-DD")</code></td></tr>
+                                <tr><td><code>datetime.parse(str, fmt)</code></td><td>Parse string to timestamp</td><td><code>datetime.parse("2025-03-01", "YYYY-MM-DD")</code></td></tr>
+                                <tr><td><code>datetime.unix(ts)</code></td><td>Get Unix timestamp</td><td><code>datetime.unix(now)</code></td></tr>
+                                <tr><td><code>datetime.from_unix(unix)</code></td><td>Create from Unix timestamp</td><td><code>datetime.from_unix(1772373508)</code></td></tr>
+                                <tr><td><code>datetime.add(ts, days, hrs, min, sec)</code></td><td>Add time to timestamp</td><td><code>datetime.add(now, 1)</code></td></tr>
+                                <tr><td><code>datetime.diff(ts1, ts2)</code></td><td>Time difference in seconds</td><td><code>datetime.diff(tomorrow, now)</code></td></tr>
+                                <tr><td><code>datetime.weekday(ts)</code></td><td>Day of week (0=Sunday)</td><td><code>datetime.weekday(now)</code></td></tr>
+                            </tbody>
+                        </table>
+                        <h3>Timestamp Struct Fields</h3>
+                        <ul>
+                            <li><code>.year</code> - Year (2025)</li>
+                            <li><code>.month</code> - Month (1-12)</li>
+                            <li><code>.day</code> - Day (1-31)</li>
+                            <li><code>.hour</code> - Hour (0-23)</li>
+                            <li><code>.minute</code> - Minute (0-59)</li>
+                            <li><code>.second</code> - Second (0-59)</li>
+                            <li><code>.unix</code> - Unix timestamp</li>
+                        </ul>
+                        
+                        <h2 id="regex">Module: regex 🔍</h2>
+                        <p>Pattern matching and text manipulation using POSIX regex.</p>
+                        <h3>Functions</h3>
+                        <table class="api-table">
+                            <thead><tr><th>Function</th><th>Description</th><th>Example</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>regex.compile(pattern)</code></td><td>Compile regex pattern (cached)</td><td><code>regex.compile("\\d+")</code></td></tr>
+                                <tr><td><code>regex.match(regex, str)</code></td><td>Boolean match check</td><td><code>regex.match(p, "123")</code></td></tr>
+                                <tr><td><code>regex.findall(regex, str)</code></td><td>Find all matches</td><td><code>regex.findall(p, "a1b2")</code></td></tr>
+                                <tr><td><code>regex.search(regex, str)</code></td><td>First match with position</td><td><code>regex.search(p, "price: 99")</code></td></tr>
+                                <tr><td><code>regex.replace(regex, str, repl)</code></td><td>Replace matches</td><td><code>regex.replace(p, "a1", "X")</code></td></tr>
+                                <tr><td><code>regex.split(regex, str)</code></td><td>Split by pattern</td><td><code>regex.split(p, "a,b;c")</code></td></tr>
+                                <tr><td><code>regex.groups(regex, str)</code></td><td>Extract capture groups</td><td><code>regex.groups("(\\d+)", "abc123")</code></td></tr>
+                            </tbody>
+                        </table>
+                        
+                        <h2 id="test">Module: test 🧪</h2>
+                        <p>Built-in testing framework with familiar assertions.</p>
+                        <h3>Test Structure</h3>
+                        <pre><code class="language-rads">import test;
+
+test.describe("My tests", blast() {
+    test.it("should work", blast() {
+        test.expect(1 + 1).toBe(2);
+    });
+});
+
+test.run();</code></pre>
+                        <h3>Assertion Functions</h3>
+                        <table class="api-table">
+                            <thead><tr><th>Function</th><th>Description</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>test.describe(name, fn)</code></td><td>Define test suite</td></tr>
+                                <tr><td><code>test.it(name, fn)</code></td><td>Define test case</td></tr>
+                                <tr><td><code>test.expect(val).toBe(expected)</code></td><td>Strict equality</td></tr>
+                                <tr><td><code>test.expect(val).toEqual(expected)</code></td><td>Deep equality</td></tr>
+                                <tr><td><code>test.expect(val).toBeTruthy()</code></td><td>Truthy check</td></tr>
+                                <tr><td><code>test.expect(val).toBeFalsy()</code></td><td>Falsy check</td></tr>
+                                <tr><td><code>test.expect(val).toBeNull()</code></td><td>Null check</td></tr>
+                                <tr><td><code>test.expect(val).toBeGreaterThan(n)</code></td><td>Greater than</td></tr>
+                                <tr><td><code>test.expect(val).toBeLessThan(n)</code></td><td>Less than</td></tr>
+                                <tr><td><code>test.beforeEach(fn)</code></td><td>Setup before each test</td></tr>
+                                <tr><td><code>test.afterEach(fn)</code></td><td>Cleanup after each test</td></tr>
+                                <tr><td><code>test.run()</code></td><td>Execute all tests</td></tr>
+                                <tr><td><code>test.skip(name, fn)</code></td><td>Skip a test</td></tr>
+                            </tbody>
+                        </table>
+                        
+                        <h2 id="env">Module: env 🌍</h2>
+                        <p>Environment variable access and system information.</p>
+                        <h3>Functions</h3>
+                        <table class="api-table">
+                            <thead><tr><th>Function</th><th>Description</th><th>Example</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>env.get(name)</code></td><td>Get environment variable</td><td><code>env.get("HOME")</code></td></tr>
+                                <tr><td><code>env.set(name, value)</code></td><td>Set environment variable</td><td><code>env.set("DEBUG", "1")</code></td></tr>
+                                <tr><td><code>env.has(name)</code></td><td>Check if variable exists</td><td><code>env.has("PATH")</code></td></tr>
+                                <tr><td><code>env.unset(name)</code></td><td>Remove environment variable</td><td><code>env.unset("DEBUG")</code></td></tr>
+                                <tr><td><code>env.list()</code></td><td>Get all variables as struct</td><td><code>env.list()</code></td></tr>
+                                <tr><td><code>env.paths()</code></td><td>Parse PATH into array</td><td><code>env.paths()</code></td></tr>
+                                <tr><td><code>env.home()</code></td><td>Get HOME directory</td><td><code>env.home()</code></td></tr>
+                                <tr><td><code>env.cwd()</code></td><td>Get current working directory</td><td><code>env.cwd()</code></td></tr>
+                                <tr><td><code>env.user()</code></td><td>Get current username</td><td><code>env.user()</code></td></tr>
+                                <tr><td><code>env.shell()</code></td><td>Get current shell</td><td><code>env.shell()</code></td></tr>
+                            </tbody>
+                        </table>
+                        
+                        <h2 id="cli">Module: cli 🖥️</h2>
+                        <p>Command-line argument parsing for CLI tools.</p>
+                        <h3>Functions</h3>
+                        <table class="api-table">
+                            <thead><tr><th>Function</th><th>Description</th><th>Example</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>cli.args()</code></td><td>Get raw argument array</td><td><code>cli.args()</code></td></tr>
+                                <tr><td><code>cli.program()</code></td><td>Get program name</td><td><code>cli.program()</code></td></tr>
+                                <tr><td><code>cli.count()</code></td><td>Get argument count</td><td><code>cli.count()</code></td></tr>
+                                <tr><td><code>cli.has_flag(name)</code></td><td>Check if flag present</td><td><code>cli.has_flag("--verbose")</code></td></tr>
+                                <tr><td><code>cli.flag(name)</code></td><td>Get flag value</td><td><code>cli.flag("--output")</code></td></tr>
+                                <tr><td><code>cli.flags()</code></td><td>Get all flags as struct</td><td><code>cli.flags()</code></td></tr>
+                                <tr><td><code>cli.args_after_flag(name)</code></td><td>Get args after flag</td><td><code>cli.args_after_flag("--")</code></td></tr>
+                                <tr><td><code>cli.parse(spec)</code></td><td>Parse with specification</td><td><code>cli.parse(spec)</code></td></tr>
+                            </tbody>
+                        </table>
+                        
+                        <h2 id="csv">Module: csv 📊</h2>
+                        <p>CSV file parsing and generation for data processing.</p>
+                        <h3>Functions</h3>
+                        <table class="api-table">
+                            <thead><tr><th>Function</th><th>Description</th><th>Example</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>csv.parse(str)</code></td><td>Parse CSV string to array</td><td><code>csv.parse(data)</code></td></tr>
+                                <tr><td><code>csv.stringify(data)</code></td><td>Convert array to CSV string</td><td><code>csv.stringify(rows)</code></td></tr>
+                                <tr><td><code>csv.read(path)</code></td><td>Read CSV file</td><td><code>csv.read("data.csv")</code></td></tr>
+                                <tr><td><code>csv.write(path, data)</code></td><td>Write CSV file</td><td><code>csv.write("out.csv", rows)</code></td></tr>
+                            </tbody>
+                        </table>
+                        
+                        <h2 id="base64">Module: base64 🔐</h2>
+                        <p>Base64 encoding and decoding for data encoding.</p>
+                        <h3>Functions</h3>
+                        <table class="api-table">
+                            <thead><tr><th>Function</th><th>Description</th><th>Example</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>base64.encode(str)</code></td><td>Encode string to base64</td><td><code>base64.encode("hello")</code></td></tr>
+                                <tr><td><code>base64.decode(str)</code></td><td>Decode base64 to string</td><td><code>base64.decode("aGVsbG8=")</code></td></tr>
+                                <tr><td><code>base64.encode_bytes(arr)</code></td><td>Encode byte array</td><td><code>base64.encode_bytes(bytes)</code></td></tr>
+                                <tr><td><code>base64.decode_bytes(str)</code></td><td>Decode to byte array</td><td><code>base64.decode_bytes(enc)</code></td></tr>
+                            </tbody>
+                        </table>
+                        
+                        <h2>Other Built-ins</h2>
+                        
                             <thead>
                                 <tr><th>Function</th><th>Description</th></tr>
                             </thead>

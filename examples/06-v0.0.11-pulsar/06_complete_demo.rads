@@ -1,0 +1,115 @@
+// RADS v0.0.11 PULSAR - Combined Features Demo
+// Demonstrates all v0.0.11 modules working together
+
+blast main() {
+    echo("╔════════════════════════════════════════════════════════════╗");
+    echo("║         RADS v0.0.11 PULSAR - Complete Demo                ║");
+    echo("╚════════════════════════════════════════════════════════════╝");
+    echo("");
+
+    // === ENV MODULE ===
+    echo("┌────────────────────────────────────────────────────────────┐");
+    echo("│ 🌍 ENV MODULE - Environment Variables                      │");
+    echo("└────────────────────────────────────────────────────────────┘");
+    
+    turbo user = env.user();
+    turbo home = env.home();
+    turbo shell = env.shell();
+    
+    echo("  User:   " + user);
+    echo("  Home:   " + home);
+    echo("  Shell:  " + shell);
+    echo("");
+    
+    // Set application config
+    env.set("RADS_DEMO_MODE", "true");
+    echo("  Set RADS_DEMO_MODE = " + env.get("RADS_DEMO_MODE"));
+    echo("");
+
+    // === CLI MODULE ===
+    echo("┌────────────────────────────────────────────────────────────┐");
+    echo("│ 🖥️  CLI MODULE - Command Line Interface                    │");
+    echo("└────────────────────────────────────────────────────────────┘");
+    
+    turbo program = cli.program();
+    turbo arg_count = cli.count();
+    
+    echo("  Program: " + program);
+    echo("  Arguments: " + arg_count);
+    
+    if (cli.has_flag("--verbose")) {
+        echo("  Verbose mode: enabled");
+    }
+    echo("");
+
+    // === BASE64 MODULE ===
+    echo("┌────────────────────────────────────────────────────────────┐");
+    echo("│ 🔐 BASE64 MODULE - Encoding & Decoding                     │");
+    echo("└────────────────────────────────────────────────────────────┘");
+    
+    turbo message = "RADS v0.0.11 PULSAR is here!";
+    echo("  Original:  " + message);
+    
+    turbo encoded = base64.encode(message);
+    echo("  Encoded:   " + encoded);
+    
+    turbo decoded = base64.decode(encoded);
+    echo("  Decoded:   " + decoded);
+    echo("");
+
+    // === CSV MODULE ===
+    echo("┌────────────────────────────────────────────────────────────┐");
+    echo("│ 📊 CSV MODULE - Data Interchange                           │");
+    echo("└────────────────────────────────────────────────────────────┘");
+    
+    turbo csv_data = "module,status,functions\n";
+    csv_data = csv_data + "env,✓,10\n";
+    csv_data = csv_data + "cli,✓,8\n";
+    csv_data = csv_data + "csv,✓,4\n";
+    csv_data = csv_data + "base64,✓,4\n";
+    csv_data = csv_data + "datetime,✓,13\n";
+    csv_data = csv_data + "regex,✓,7\n";
+    csv_data = csv_data + "test,✓,12";
+    
+    echo("  Module Status CSV:");
+    echo("  " + csv_data);
+    echo("");
+
+    // === COMBINED USE CASE ===
+    echo("┌────────────────────────────────────────────────────────────┐");
+    echo("│ 🔗 INTEGRATION DEMO - All Modules Together                 │");
+    echo("└────────────────────────────────────────────────────────────┘");
+    
+    // Create config from environment
+    turbo config = "user=" + user + "\n";
+    config = config + "home=" + home + "\n";
+    config = config + "demo_mode=true\n";
+    config = config + "version=0.0.11\n";
+    config = config + "codename=PULSAR";
+    
+    echo("  Generated config:");
+    echo("  " + config);
+    
+    // Encode config
+    turbo config_encoded = base64.encode(config);
+    echo("");
+    echo("  Base64 encoded config:");
+    echo("  " + config_encoded);
+    
+    // Cleanup
+    env.unset("RADS_DEMO_MODE");
+    
+    echo("");
+    echo("╔════════════════════════════════════════════════════════════╗");
+    echo("║               ✨ Demo Complete! ✨                         ║");
+    echo("║                                                            ║");
+    echo("║  v0.0.11 PULSAR brings you:                               ║");
+    echo("║    • 🌍 env  - Environment variables                       ║");
+    echo("║    • 🖥️  cli  - Command-line parsing                       ║");
+    echo("║    • 📊 csv  - CSV handling                                ║");
+    echo("║    • 🔐 base64 - Encoding/decoding                         ║");
+    echo("╚════════════════════════════════════════════════════════════╝");
+    echo("");
+    
+    return 0;
+}

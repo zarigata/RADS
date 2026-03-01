@@ -1,0 +1,69 @@
+// RADS v0.0.11 PULSAR - Base64 Encoding Demo
+// This example demonstrates the base64 module
+
+blast main() {
+    echo("========================================");
+    echo("  Base64 Encoding Demo - v0.0.11");
+    echo("========================================");
+    echo("");
+
+    // Basic encoding
+    echo("=== String Encoding ===");
+    
+    turbo original = "Hello, RADS World!";
+    echo("Original: " + original);
+    
+    turbo encoded = base64.encode(original);
+    echo("Encoded:  " + encoded);
+    
+    turbo decoded = base64.decode(encoded);
+    echo("Decoded:  " + decoded);
+    
+    if (original == decoded) {
+        echo("Round-trip successful!");
+    }
+    
+    echo("");
+
+    // Different strings
+    echo("=== Various Encodings ===");
+    
+    turbo strings = [
+        "RADS Programming",
+        "v0.0.11 PULSAR",
+        "The quick brown fox"
+    ];
+    
+    echo("Encoding multiple strings:");
+    
+    echo("");
+
+    // Binary data simulation
+    echo("=== Byte Array Encoding ===");
+    
+    // Simulate byte array (text "HELLO" as bytes)
+    turbo bytes = [72, 69, 76, 76, 79];
+    echo("Bytes: [72, 69, 76, 76, 79] (HELLO)");
+    
+    turbo bytes_encoded = base64.encode_bytes(bytes);
+    echo("Encoded: " + bytes_encoded);
+    
+    turbo bytes_decoded = base64.decode_bytes(bytes_encoded);
+    echo("Decoded back to bytes");
+    
+    echo "";
+
+    // Use cases
+    echo("=== Common Use Cases ===");
+    
+    echo("Base64 is useful for:");
+    echo("  - Encoding binary data in text formats");
+    echo("  - Data URLs in web applications");
+    echo("  - Simple obfuscation");
+    echo("  - API authentication tokens");
+    
+    echo "";
+    echo("Demo complete!");
+    
+    return 0;
+}

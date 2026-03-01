@@ -1,0 +1,72 @@
+// RADS v0.0.11 PULSAR - Test Suite
+
+blast main() {
+    echo("========================================");
+    echo("  RADS v0.0.11 PULSAR - Test Suite");
+    echo("========================================");
+    echo("");
+
+    // ENV MODULE TESTS
+    echo("=== ENV MODULE TESTS ===");
+    
+    turbo home = env.home();
+    echo("env.home() = " + home);
+    
+    turbo cwd = env.cwd();
+    echo("env.cwd() = " + cwd);
+    
+    turbo user = env.user();
+    echo("env.user() = " + user);
+    
+    env.set("RADS_TEST", "hello123");
+    turbo val = env.get("RADS_TEST");
+    echo("env.set/get = " + val);
+    
+    if (env.has("RADS_TEST")) {
+        echo("env.has() works = true");
+    }
+    
+    env.unset("RADS_TEST");
+    
+    turbo paths = env.paths();
+    echo("env.paths() works");
+
+    // CLI MODULE TESTS
+    echo("");
+    echo("=== CLI MODULE TESTS ===");
+    
+    turbo count = cli.count();
+    echo("cli.count() = " + count);
+    
+    turbo args = cli.args();
+    echo("cli.args() works");
+    
+    turbo prog = cli.program();
+    echo("cli.program() = " + prog);
+
+    // CSV MODULE TESTS
+    echo("");
+    echo("=== CSV MODULE TESTS ===");
+    
+    turbo csv_data = "name,age\nAlice,30\nBob,25";
+    turbo parsed = csv.parse(csv_data);
+    echo("csv.parse() works");
+
+    // BASE64 MODULE TESTS
+    echo("");
+    echo("=== BASE64 MODULE TESTS ===");
+    
+    turbo original = "Hello RADS!";
+    turbo encoded = base64.encode(original);
+    echo("base64.encode works = " + encoded);
+    
+    turbo decoded = base64.decode(encoded);
+    echo("base64.decode works = " + decoded);
+
+    echo("");
+    echo("========================================");
+    echo("  All v0.0.11 tests completed!");
+    echo("========================================");
+    
+    return 0;
+}

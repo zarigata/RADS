@@ -1,0 +1,75 @@
+// RADS v0.0.11 PULSAR - CLI Tool Example
+// A realistic CLI application using env, cli, and base64
+
+blast show_help(turbo program) {
+    echo(program + " - A simple configuration tool");
+    echo("");
+    echo("Usage:");
+    echo("  " + program + " [options] <command>");
+    echo("");
+    echo("Commands:");
+    echo("  info      Show system information");
+    echo("  encode    Encode a string to base64");
+    echo("  decode    Decode base64 to string");
+    echo("");
+    echo("Options:");
+    echo("  --help, -h     Show this help message");
+    echo("  --verbose, -v  Enable verbose output");
+    echo("  --env VAR      Show specific environment variable");
+    echo("");
+}
+
+blast show_info() {
+    echo("=== System Information ===");
+    echo("");
+    echo("User:    " + env.user());
+    echo("Home:    " + env.home());
+    echo("Shell:   " + env.shell());
+    echo("CWD:     " + env.cwd());
+    echo("");
+    echo("PATH directories: " + length(env.paths()));
+    echo("");
+}
+
+blast main() {
+    turbo program = cli.program();
+    turbo verbose = cli.has_flag("--verbose") || cli.has_flag("-v");
+    
+    // Show help
+    if (cli.has_flag("--help") || cli.has_flag("-h")) {
+        show_help(program);
+        return 0;
+    }
+    
+    // Check for env flag
+    turbo env_var = cli.flag("--env");
+    if (env_var != null) {
+        turbo value = env.get(env_var);
+        if (value != null) {
+            echo(env_var + " = " + value);
+        } else {
+            echo(env_var + " is not set");
+        }
+        return 0;
+    }
+    
+    // Get command
+    turbo args = cli.args();
+    
+    if (verbose) {
+        echo("[verbose] Program: " + program);
+        echo("[verbose] Arguments: " + cli.count());
+    }
+    
+    echo("");
+    echo("  💫 RADS CLI Tool v0.0.11");
+    echo("");
+    
+    // Default: show info
+    show_info();
+    
+    echo("Tip: Use --help to see available commands");
+    echo("");
+    
+    return 0;
+}
