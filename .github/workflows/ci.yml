@@ -54,7 +54,7 @@ jobs:
         run: make test || echo "Tests need setup"
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rads-${{ matrix.platform }}
           path: bin/
@@ -157,7 +157,7 @@ jobs:
           ls *.gcov || echo "No coverage files"
 
       - name: Upload coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: "*.gcov"
