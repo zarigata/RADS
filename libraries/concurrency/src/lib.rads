@@ -1,0 +1,449 @@
+# Concurrency Library for RADS
+# Advanced async patterns - channels, workers, pools
+
+import async_utils;
+
+# Channel
+# =======
+
+# Buffered channel for async communication
+turbo struct Channel {
+    array buffer;
+    int capacity;
+    int read_pos;
+    int write_pos;
+    int count;
+    struct mutex;
+    struct not_empty;
+    struct not_full;
+}
+
+# Create channel
+blast Channel channel(int capacity = 0) {
+    # Create buffered channel
+    # capacity = 0: unbuffered (synchronous)
+    # capacity > 0: buffered (asynchronous up to capacity)
+    return {
+        buffer: array(capacity),
+        capacity: capacity,
+        read_pos: 0,
+        write_pos: 0,
+        count: 0,
+        mutex: mutex_create(),
+        not_empty: cond_create(),
+        not_full: cond_create()
+    };
+}
+
+# Send to channel (async)
+blast void channel_send(Channel ch, value) {
+    mutex_lock(ch.mutex);
+
+    # Wait if buffer is full
+    while (ch.count >= ch.capacity && ch.capacity > 0) {
+        cond_wait(ch.not_full, ch.mutex);
+    }
+
+    # Add to buffer
+    if (ch.capacity > 0) {
+        ch.buffer[ch.write_pos] = value;
+        ch.write_pos = (ch.write_pos + 1) % ch.capacity;
+        ch.count = ch.count + 1;
+    }
+
+    # Signal not empty
+    cond_signal(ch.not_empty);
+    mutex_unlock(ch.mutex);
+}
+
+# Receive from channel (async)
+blast channel_receive(Channel ch) {
+    mutex_lock(ch.mutex);
+
+    # Wait if buffer is empty
+    while (ch.count == 0) {
+        cond_wait(ch.not_empty, ch.mutex);
+    }
+
+    # Remove from buffer
+    value = ch.buffer[ch.read_pos];
+    ch.read_pos = (ch.read_pos + 1) % ch.capacity;
+    ch.count = ch.count - 1;
+
+    # Signal not full
+    cond_signal(ch.not_full);
+    mutex_unlock(ch.mutex);
+
+    return value;
+}
+
+# Try send (non-blocking)
+blast bool channel_try_send(Channel ch, value) {
+    mutex_lock(ch.mutex);
+
+    if (ch.count >= ch.capacity && ch.capacity > 0) {
+        mutex_unlock(ch.mutex);
+        return false;
+    }
+
+    if (ch.capacity > 0) {
+        ch.buffer[ch.write_pos] = value;
+        ch.write_pos = (ch.write_pos + 1) % ch.capacity;
+        ch.count = ch.count + 1;
+    }
+
+    cond_signal(ch.not_empty);
+    mutex_unlock(ch.mutex);
+    return true;
+}
+
+# Try receive (non-blocking)
+blast channel_try_receive(Channel ch) {
+    struct result = { success: false, value: null };
+
+    mutex_lock(ch.mutex);
+
+    if (ch.count == 0) {
+        mutex_unlock(ch.mutex);
+        return result;
+    }
+
+    value = ch.buffer[ch.read_pos];
+    ch.read_pos = (ch.read_pos + 1) % ch.capacity;
+    ch.count = ch.count - 1;
+
+    cond_signal(ch.not_full);
+    mutex_unlock(ch.mutex);
+
+    return { success: true, value: value };
+}
+
+# Close channel
+blast void channel_close(Channel ch) {
+    mutex_lock(ch.mutex);
+    ch.count = -1;  # Mark as closed
+    cond_broadcast(ch.not_empty);
+    cond_broadcast(ch.not_full);
+    mutex_unlock(ch.mutex);
+}
+
+# Worker Pool
+# ===========
+
+turbo struct WorkerPool {
+    int num_workers;
+    array workers;
+    Channel task_channel;
+    Channel result_channel;
+    bool running;
+}
+
+# Create worker pool
+blast WorkerPool worker_pool(int num_workers, blast task_handler) {
+    Channel task_ch = channel(num_workers * 2);
+    Channel result_ch = channel(num_workers * 2);
+
+    struct pool = {
+        num_workers: num_workers,
+        workers: [],
+        task_channel: task_ch,
+        result_channel: result_ch,
+        running: true
+    };
+
+    # Start workers
+    for (int i = 0; i < num_workers; i = i + 1) {
+        struct worker = worker_start(i, task_ch, result_ch, task_handler);
+        push(pool.workers, worker);
+    }
+
+    return pool;
+}
+
+# Start worker
+blast struct worker_start(int id, Channel task_ch, Channel result_ch, blast handler) {
+    # Worker loop (async)
+    blast worker_loop() {
+        loop {
+            struct task = channel_receive(task_ch);
+
+            if (task == null) {
+                break;  # Shutdown signal
+            }
+
+            struct result = handler(task);
+            channel_send(result_ch, result);
+        }
+    }
+
+    async_utils.parallel([worker_loop]);
+    return { id: id, running: true };
+}
+
+# Submit task to pool
+blast void pool_submit(WorkerPool pool, struct task) {
+    channel_send(pool.task_channel, task);
+}
+
+# Get result from pool
+blast pool_result(WorkerPool pool) {
+    return channel_receive(pool.result_channel);
+}
+
+# Shutdown pool
+blast void pool_shutdown(WorkerPool pool) {
+    pool.running = false;
+
+    # Send shutdown signals
+    for (int i = 0; i < pool.num_workers; i = i + 1) {
+        channel_send(pool.task_channel, null);
+    }
+}
+
+# Rate Limiter
+# ============
+
+turbo struct RateLimiter {
+    int limit;
+    int window_ms;
+    array requests;
+}
+
+# Create rate limiter
+blast RateLimiter rate_limiter(int limit, int window_ms = 60000) {
+    return {
+        limit: limit,
+        window_ms: window_ms,
+        requests: []
+    };
+}
+
+# Check if request allowed
+blast bool rate_limit_check(RateLimiter limiter) {
+    int now = datetime.unix(datetime.now()) * 1000;
+
+    # Remove old requests
+    array new_requests = [];
+    for (int i = 0; i < length(limiter.requests); i = i + 1) {
+        int timestamp = limiter.requests[i];
+        if (now - timestamp < limiter.window_ms) {
+            push(new_requests, timestamp);
+        }
+    }
+    limiter.requests = new_requests;
+
+    # Check limit
+    if (length(limiter.requests) >= limiter.limit) {
+        return false;
+    }
+
+    # Add request
+    push(limiter.requests, now);
+    return true;
+}
+
+# Reset rate limiter
+blast void rate_limit_reset(RateLimiter limiter) {
+    limiter.requests = [];
+}
+
+# Semaphore
+# =========
+
+turbo struct Semaphore {
+    int permits;
+    int available;
+    struct mutex;
+    struct cond;
+}
+
+# Create semaphore
+blast Semaphore semaphore(int permits) {
+    return {
+        permits: permits,
+        available: permits,
+        mutex: mutex_create(),
+        cond: cond_create()
+    };
+}
+
+# Acquire permit
+blast void sem_acquire(Semaphore sem) {
+    mutex_lock(sem.mutex);
+
+    while (sem.available == 0) {
+        cond_wait(sem.cond, sem.mutex);
+    }
+
+    sem.available = sem.available - 1;
+    mutex_unlock(sem.mutex);
+}
+
+# Release permit
+blast void sem_release(Semaphore sem) {
+    mutex_lock(sem.mutex);
+    sem.available = sem.available + 1;
+    cond_signal(sem.cond);
+    mutex_unlock(sem.mutex);
+}
+
+# Try acquire (non-blocking)
+blast bool sem_try_acquire(Semaphore sem) {
+    mutex_lock(sem.mutex);
+
+    if (sem.available == 0) {
+        mutex_unlock(sem.mutex);
+        return false;
+    }
+
+    sem.available = sem.available - 1;
+    mutex_unlock(sem.mutex);
+    return true;
+}
+
+# Mutex helper (placeholder - would use async_utils mutex)
+blast struct mutex_create() {
+    return { locked: false };
+}
+
+blast void mutex_lock(struct m) {
+    # Placeholder - would use actual mutex
+    while (m.locked) {
+        async_utils.delay(1, blast() {});
+    }
+    m.locked = true;
+}
+
+blast void mutex_unlock(struct m) {
+    m.locked = false;
+}
+
+# Condition variable helper (placeholder)
+blast struct cond_create() {
+    return { waiting: 0 };
+}
+
+blast void cond_wait(struct c, struct m) {
+    c.waiting = c.waiting + 1;
+    mutex_unlock(m);
+    async_utils.delay(1, blast() {});
+    mutex_lock(m);
+    c.waiting = c.waiting - 1;
+}
+
+blast void cond_signal(struct c) {
+    # Wake one waiting thread
+}
+
+blast void cond_broadcast(struct c) {
+    # Wake all waiting threads
+}
+
+# Async Queue
+# ===========
+
+turbo struct AsyncQueue {
+    array items;
+    struct mutex;
+    struct not_empty;
+    bool closed;
+}
+
+# Create async queue
+blast AsyncQueue async_queue() {
+    return {
+        items: [],
+        mutex: mutex_create(),
+        not_empty: cond_create(),
+        closed: false
+    };
+}
+
+# Push to queue
+blast void queue_push(AsyncQueue q, value) {
+    mutex_lock(q.mutex);
+    push(q.items, value);
+    cond_signal(q.not_empty);
+    mutex_unlock(q.mutex);
+}
+
+# Pop from queue (blocking)
+blast queue_pop(AsyncQueue q) {
+    mutex_lock(q.mutex);
+
+    while (length(q.items) == 0 && !q.closed) {
+        cond_wait(q.not_empty, q.mutex);
+    }
+
+    if (length(q.items) == 0) {
+        mutex_unlock(q.mutex);
+        return null;
+    }
+
+    value = q.items[0];
+    q.items = array.slice(q.items, 1);
+    mutex_unlock(q.mutex);
+
+    return value;
+}
+
+# Close queue
+blast void queue_close(AsyncQueue q) {
+    mutex_lock(q.mutex);
+    q.closed = true;
+    cond_broadcast(q.not_empty);
+    mutex_unlock(q.mutex);
+}
+
+# Fan-out / Fan-in
+# ================
+
+# Fan-out: distribute work to multiple workers
+blast void fan_out(array items, int workers, blast handler) {
+    Channel ch = channel(workers * 2);
+
+    # Start workers
+    for (int i = 0; i < workers; i = i + 1) {
+        async_utils.parallel([blast() {
+            loop {
+                struct item = channel_receive(ch);
+                if (item == null) break;
+                handler(item);
+            }
+        }]);
+    }
+
+    # Send items
+    for (int i = 0; i < length(items); i = i + 1) {
+        channel_send(ch, items[i]);
+    }
+
+    # Close channel
+    channel_close(ch);
+}
+
+# Fan-in: collect results from multiple sources
+blast array fan_in(int sources, Channel ch) {
+    array results = [];
+    int completed = 0;
+
+    while (completed < sources) {
+        value = channel_receive(ch);
+        if (value == null) {
+            completed = completed + 1;
+        } else {
+            push(results, value);
+        }
+    }
+
+    return results;
+}
+
+# Export
+export Channel, WorkerPool, RateLimiter, Semaphore, AsyncQueue;
+export channel, channel_send, channel_receive, channel_try_send, channel_try_receive, channel_close;
+export worker_pool, pool_submit, pool_result, pool_shutdown;
+export rate_limiter, rate_limit_check, rate_limit_reset;
+export semaphore, sem_acquire, sem_release, sem_try_acquire;
+export async_queue, queue_push, queue_pop, queue_close;
+export fan_out, fan_in;

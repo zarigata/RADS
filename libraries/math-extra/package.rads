@@ -1,0 +1,8 @@
+name = "math-extra"
+version = "0.1.0"
+description = "Advanced math for RADS - trigonometry, statistics, linear algebra"
+author = "RADS Team"
+license = "MIT"
+rads_version = "0.0.11"
+keywords = ["math", "trigonometry", "statistics", "linear", "algebra"]
+dependencies = ["math"]

@@ -1,0 +1,253 @@
+# Logging Library for RADS
+# Structured logging with levels, formatters, and multiple outputs
+
+# Log levels
+turbo struct LogLevel {
+    int DEBUG = 0;
+    int INFO = 1;
+    int WARN = 2;
+    int ERROR = 3;
+    int FATAL = 4;
+}
+
+turbo LogLevel LOG_LEVEL = LogLevel();
+
+# Logger configuration
+turbo struct LoggerConfig {
+    str name;
+    int level;
+    str format;
+    struct outputs;
+    bool colors;
+    bool timestamps;
+    str timestamp_format;
+}
+
+# Default configuration
+turbo LoggerConfig DEFAULT_CONFIG = {
+    name: "root",
+    level: LOG_LEVEL.INFO,
+    format: "[{level}] {name}: {message}",
+    outputs: { console: true },
+    colors: true,
+    timestamps: true,
+    timestamp_format: "YYYY-MM-DD HH:mm:ss"
+};
+
+# Log level names
+turbo struct LEVEL_NAMES {
+    array names = ["DEBUG", "INFO", "WARN", "ERROR", "FATAL"];
+}
+
+# Level colors (ANSI)
+turbo struct LEVEL_COLORS {
+    array colors = ["\033[36m", "\033[32m", "\033[33m", "\033[31m", "\033[35m"];
+}
+
+turbo str RESET = "\033[0m";
+
+# Create logger
+blast struct logger(str name, struct config = {}) {
+    # Create logger instance
+    struct merged = struct_merge(DEFAULT_CONFIG, config);
+
+    return {
+        name: name,
+        level: merged.level,
+        format: merged.format,
+        outputs: merged.outputs,
+        colors: merged.colors,
+        timestamps: merged.timestamps,
+        timestamp_format: merged.timestamp_format
+    };
+}
+
+# Set log level
+blast void logger_set_level(struct logger, int level) {
+    logger.level = level;
+}
+
+# Core log function
+blast void log(struct logger, int level, str message, struct context = {}) {
+    # Check level
+    if (level < logger.level) {
+        return;
+    }
+
+    # Build log entry
+    struct entry = {
+        level: level,
+        level_name: LEVEL_NAMES.names[level],
+        name: logger.name,
+        message: message,
+        context: context,
+        timestamp: datetime.now()
+    };
+
+    # Format message
+    str formatted = format_message(logger, entry);
+
+    # Add color if enabled
+    if (logger.colors) {
+        str color = LEVEL_COLORS.colors[level];
+        formatted = color + formatted + RESET;
+    }
+
+    # Output
+    log_output(logger, entry, formatted);
+}
+
+# Format message
+blast str format_message(struct logger, struct entry) {
+    str output = logger.format;
+
+    # Replace placeholders
+    output = string.replace(output, "{level}", entry.level_name);
+    output = string.replace(output, "{name}", entry.name);
+    output = string.replace(output, "{message}", entry.message);
+
+    # Add timestamp
+    if (logger.timestamps) {
+        str ts = datetime.format(entry.timestamp, logger.timestamp_format);
+        output = string.replace(output, "{timestamp}", ts);
+    }
+
+    # Add context if present
+    if (length(struct_keys(entry.context)) > 0) {
+        output = output + " " + json_stringify(entry.context);
+    }
+
+    return output;
+}
+
+# Output handlers
+blast void log_output(struct logger, struct entry, str formatted) {
+    # Console output
+    if (logger.outputs.console) {
+        if (entry.level >= LOG_LEVEL.ERROR) {
+            error(formatted);
+        } else {
+            echo(formatted);
+        }
+    }
+
+    # File output
+    if (logger.outputs.file) {
+        file_write(logger.outputs.file, formatted + "\n");
+    }
+
+    # Custom output function
+    if (logger.outputs.handler) {
+        blast handler = logger.outputs.handler;
+        handler(entry, formatted);
+    }
+}
+
+# File writer helper
+blast void file_write(str path, str content) {
+    import fs;
+    fs.write(path, content);
+}
+
+# Log methods
+blast void debug(struct logger, str message, struct context = {}) {
+    log(logger, LOG_LEVEL.DEBUG, message, context);
+}
+
+blast void info(struct logger, str message, struct context = {}) {
+    log(logger, LOG_LEVEL.INFO, message, context);
+}
+
+blast void warn(struct logger, str message, struct context = {}) {
+    log(logger, LOG_LEVEL.WARN, message, context);
+}
+
+blast void error(struct logger, str message, struct context = {}) {
+    log(logger, LOG_LEVEL.ERROR, message, context);
+}
+
+blast void fatal(struct logger, str message, struct context = {}) {
+    log(logger, LOG_LEVEL.FATAL, message, context);
+}
+
+# Structured logging
+blast void log_struct(struct logger, int level, struct data) {
+    # Log structured data
+    str message = json_stringify(data);
+    log(logger, level, message, data);
+}
+
+# Child logger
+blast struct child_logger(struct parent, str suffix) {
+    # Create child logger that inherits parent config
+    return logger(parent.name + "." + suffix, parent);
+}
+
+# Formatters
+blast str json_format(struct entry) {
+    # Format log as JSON
+    return json_stringify({
+        timestamp: datetime.format(entry.timestamp, "YYYY-MM-DDTHH:mm:ssZ"),
+        level: entry.level_name,
+        logger: entry.name,
+        message: entry.message,
+        context: entry.context
+    });
+}
+
+blast str pretty_format(struct entry) {
+    # Format for human-readable output
+    str ts = datetime.format(entry.timestamp, "HH:mm:ss");
+
+    str context_str = "";
+    if (length(struct_keys(entry.context)) > 0) {
+        context_str = " " + json_stringify(entry.context);
+    }
+
+    return ts + " [" + entry.level_name + "] " + entry.name + ": " + entry.message + context_str;
+}
+
+# Global logger
+turbo struct GLOBAL_LOGGER = null;
+
+blast struct get_logger() {
+    if (GLOBAL_LOGGER == null) {
+        GLOBAL_LOGGER = logger("app");
+    }
+    return GLOBAL_LOGGER;
+}
+
+blast void set_global_logger(struct logger) {
+    GLOBAL_LOGGER = logger;
+}
+
+# Global log functions (use global logger)
+blast void log_debug(str message, struct context = {}) {
+    debug(get_logger(), message, context);
+}
+
+blast void log_info(str message, struct context = {}) {
+    info(get_logger(), message, context);
+}
+
+blast void log_warn(str message, struct context = {}) {
+    warn(get_logger(), message, context);
+}
+
+blast void log_error(str message, struct context = {}) {
+    error(get_logger(), message, context);
+}
+
+blast void log_fatal(str message, struct context = {}) {
+    fatal(get_logger(), message, context);
+}
+
+# Export
+export LOG_LEVEL;
+export logger, logger_set_level;
+export debug, info, warn, error, fatal;
+export log, log_struct, log_output;
+export child_logger;
+export json_format, pretty_format, format_message;
+export get_logger, set_global_logger;
+export log_debug, log_info, log_warn, log_error, log_fatal;

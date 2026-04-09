@@ -1,0 +1,8 @@
+name = "testing"
+version = "0.1.0"
+description = "Advanced testing utilities for RADS - mocking, fixtures, benchmarks"
+author = "RADS Team"
+license = "MIT"
+rads_version = "0.0.11"
+keywords = ["test", "testing", "mock", "mocking", "benchmark", "fixture"]
+dependencies = ["test"]

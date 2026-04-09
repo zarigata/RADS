@@ -1,0 +1,40 @@
+# Auto-detect text files and normalize to LF
+* text=auto eol=lf
+
+# C source files
+*.c text diff=cpp
+*.h text diff=cpp
+
+# RADS source files
+*.rads text diff=cpp
+
+# Rust source files
+*.rs text diff=rust
+
+# Shell scripts (always LF)
+*.sh text eol=lf
+
+# Makefiles (tabs required)
+Makefile text
+*.mk text
+
+# Documentation
+*.md text diff=markdown
+
+# JSON/YAML
+*.json text
+*.yaml text
+*.yml text
+
+# Config files
+*.toml text
+*.lock text
+
+# Binary files (don't touch)
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.gz binary
+*.zip binary

@@ -1,0 +1,418 @@
+# Testing Library for RADS
+# Advanced testing utilities - mocking, fixtures, benchmarks
+
+import test;
+
+# Mocking Framework
+# =================
+
+# Mock function storage
+turbo struct MockRegistry {
+    struct calls;
+    struct returns;
+    struct implementations;
+}
+
+turbo MockRegistry MOCKS = { calls: {}, returns: {}, implementations: {} };
+
+# Create a mock function
+blast blast mock_fn(str name, blast default_impl = blast() { return null; }) {
+    # Create mock function that tracks calls
+    MOCKS.calls[name] = [];
+    MOCKS.returns[name] = null;
+    MOCKS.implementations[name] = default_impl;
+
+    blast mock_impl(...args) {
+        # Track call
+        array calls = MOCKS.calls[name];
+        push(calls, args);
+
+        # Use custom implementation if set
+        blast impl = MOCKS.implementations[name];
+        if (impl != null) {
+            return impl(...args);
+        }
+
+        # Use return value if set
+        if (MOCKS.returns[name] != null) {
+            return MOCKS.returns[name];
+        }
+
+        return null;
+    }
+
+    return mock_impl;
+}
+
+# Set mock return value
+blast void mock_returns(str name, value) {
+    MOCKS.returns[name] = value;
+}
+
+# Set mock implementation
+blast void mock_implementation(str name, blast impl) {
+    MOCKS.implementations[name] = impl;
+}
+
+# Get mock call history
+blast array mock_calls(str name) {
+    return MOCKS.calls[name];
+}
+
+# Clear mock
+blast void mock_clear(str name) {
+    MOCKS.calls[name] = [];
+    MOCKS.returns[name] = null;
+    MOCKS.implementations[name] = null;
+}
+
+# Clear all mocks
+blast void mock_reset() {
+    MOCKS.calls = {};
+    MOCKS.returns = {};
+    MOCKS.implementations = {};
+}
+
+# Assertions for mocks
+blast void mock_assert_called(str name, int times = -1) {
+    # Assert mock was called
+    # If times is -1, assert called at least once
+    # If times is N, assert called exactly N times
+    array calls = MOCKS.calls[name];
+
+    if (times == -1) {
+        test.expect(length(calls)).toBeGreaterThan(0);
+    } else {
+        test.expect(length(calls)).toBe(times);
+    }
+}
+
+blast void mock_assert_called_with(str name, ...expected_args) {
+    # Assert mock was called with specific arguments
+    array calls = MOCKS.calls[name];
+    bool found = false;
+
+    for (int i = 0; i < length(calls); i = i + 1) {
+        array call = calls[i];
+        if (mock_args_match(call, expected_args)) {
+            found = true;
+            break;
+        }
+    }
+
+    test.expect(found).toBe(true);
+}
+
+blast bool mock_args_match(array actual, array expected) {
+    # Check if arguments match
+    if (length(actual) != length(expected)) {
+        return false;
+    }
+
+    for (int i = 0; i < length(actual); i = i + 1) {
+        if (actual[i] != expected[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+# Spy Functions
+# =============
+
+turbo struct SpyRegistry {
+    struct calls;
+    struct originals;
+}
+
+turbo SpyRegistry SPIES = { calls: {}, originals: {} };
+
+# Create a spy on an existing function
+blast blast spy_on(str name, blast original_fn) {
+    # Track calls while preserving original behavior
+    SPIES.calls[name] = [];
+    SPIES.originals[name] = original_fn;
+
+    blast spy_impl(...args) {
+        array calls = SPIES.calls[name];
+        push(calls, args);
+        return original_fn(...args);
+    }
+
+    return spy_impl;
+}
+
+# Get spy call count
+blast int spy_call_count(str name) {
+    return length(SPIES.calls[name]);
+}
+
+# Get spy calls
+blast array spy_get_calls(str name) {
+    return SPIES.calls[name];
+}
+
+# Restore original function
+blast blast spy_restore(str name) {
+    return SPIES.originals[name];
+}
+
+# Test Fixtures
+# =============
+
+turbo struct FixtureRegistry {
+    struct setups;
+    struct teardowns;
+    struct fixtures;
+}
+
+turbo FixtureRegistry FIXTURES = { setups: {}, teardowns: {}, fixtures: {} };
+
+# Define a fixture
+blast void fixture(str name, blast setup, blast teardown = blast() {}) {
+    FIXTURES.setups[name] = setup;
+    FIXTURES.teardowns[name] = teardown;
+}
+
+# Use a fixture
+blast struct use_fixture(str name) {
+    if (FIXTURES.setups[name] == null) {
+        error("Fixture not found: " + name);
+        return {};
+    }
+
+    blast setup = FIXTURES.setups[name];
+    struct data = setup();
+    FIXTURES.fixtures[name] = data;
+    return data;
+}
+
+# Cleanup fixture
+blast void cleanup_fixture(str name) {
+    if (FIXTURES.teardowns[name] != null) {
+        blast teardown = FIXTURES.teardowns[name];
+        teardown(FIXTURES.fixtures[name]);
+    }
+    FIXTURES.fixtures[name] = null;
+}
+
+# Parameterized Tests
+# ===================
+
+blast void test_each(str name, array cases, blast test_fn) {
+    # Run test for each case in cases array
+    for (int i = 0; i < length(cases); i = i + 1) {
+        struct case_data = cases[i];
+        str case_name = name + " (case " + string(i + 1) + ")";
+
+        test.it(case_name, blast() {
+            test_fn(case_data);
+        });
+    }
+}
+
+blast void test_describe_each(str suite_name, array cases, blast test_fn) {
+    # Create a describe block for each case
+    for (int i = 0; i < length(cases); i = i + 1) {
+        struct case_data = cases[i];
+        str case_name = case_data.name;
+        if (case_name == null) {
+            case_name = suite_name + " case " + string(i + 1);
+        }
+
+        test.describe(case_name, blast() {
+            test_fn(case_data);
+        });
+    }
+}
+
+# Benchmarks
+# ==========
+
+turbo struct BenchmarkResult {
+    str name;
+    int iterations;
+    float total_ms;
+    float avg_ms;
+    float min_ms;
+    float max_ms;
+    float ops_per_sec;
+}
+
+blast BenchmarkResult benchmark(str name, blast fn, int iterations = 1000) {
+    # Run benchmark and return results
+    array times = [];
+
+    for (int i = 0; i < iterations; i = i + 1) {
+        float start = datetime.unix(datetime.now());
+        fn();
+        float end = datetime.unix(datetime.now());
+        push(times, (end - start) * 1000);
+    }
+
+    float total = 0;
+    float min_val = times[0];
+    float max_val = times[0];
+
+    for (int i = 0; i < length(times); i = i + 1) {
+        total = total + times[i];
+        if (times[i] < min_val) { min_val = times[i]; }
+        if (times[i] > max_val) { max_val = times[i]; }
+    }
+
+    float avg = total / length(times);
+    float ops = 1000 / avg;
+
+    return {
+        name: name,
+        iterations: iterations,
+        total_ms: total,
+        avg_ms: avg,
+        min_ms: min_val,
+        max_ms: max_val,
+        ops_per_sec: ops
+    };
+}
+
+blast void benchmark_report(array results) {
+    # Print benchmark report
+    echo("=".repeat(80));
+    echo("BENCHMARK RESULTS");
+    echo("=".repeat(80));
+    echo("");
+
+    for (int i = 0; i < length(results); i = i + 1) {
+        BenchmarkResult r = results[i];
+        echo("Name: " + r.name);
+        echo("  Iterations: " + string(r.iterations));
+        echo("  Total: " + string(r.total_ms) + "ms");
+        echo("  Average: " + string(r.avg_ms) + "ms");
+        echo("  Min: " + string(r.min_ms) + "ms");
+        echo("  Max: " + string(r.max_ms) + "ms");
+        echo("  Ops/sec: " + string(r.ops_per_sec));
+        echo("");
+    }
+}
+
+# Snapshot Testing
+# ================
+
+turbo struct SnapshotRegistry {
+    struct snapshots;
+    struct pending;
+}
+
+turbo SnapshotRegistry SNAPSHOTS = { snapshots: {}, pending: {} };
+
+blast void snapshot_save(str name, value) {
+    # Save snapshot (would typically write to file)
+    SNAPSHOTS.snapshots[name] = value;
+}
+
+blast bool snapshot_match(str name, value) {
+    # Compare against saved snapshot
+    struct saved = SNAPSHOTS.snapshots[name];
+    if (saved == null) {
+        SNAPSHOTS.pending[name] = value;
+        return false;
+    }
+    return deep_equals(saved, value);
+}
+
+blast bool deep_equals(a, b) {
+    # Deep equality comparison
+    if (typeof(a) != typeof(b)) {
+        return false;
+    }
+
+    str type = typeof(a);
+
+    if (type == "null") {
+        return a == b;
+    }
+
+    if (type == "int" || type == "float" || type == "bool" || type == "string") {
+        return a == b;
+    }
+
+    if (type == "array") {
+        if (length(a) != length(b)) {
+            return false;
+        }
+        for (int i = 0; i < length(a); i = i + 1) {
+            if (!deep_equals(a[i], b[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    if (type == "struct") {
+        array keys_a = struct_keys(a);
+        array keys_b = struct_keys(b);
+        if (length(keys_a) != length(keys_b)) {
+            return false;
+        }
+        for (int i = 0; i < length(keys_a); i = i + 1) {
+            str key = keys_a[i];
+            if (!deep_equals(a[key], b[key])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    return a == b;
+}
+
+# Test Helpers
+# ============
+
+blast struct test_helpers() {
+    return {
+        # Mock functions
+        mock_fn: mock_fn,
+        mock_returns: mock_returns,
+        mock_implementation: mock_implementation,
+        mock_calls: mock_calls,
+        mock_clear: mock_clear,
+        mock_reset: mock_reset,
+        mock_assert_called: mock_assert_called,
+        mock_assert_called_with: mock_assert_called_with,
+
+        # Spy functions
+        spy_on: spy_on,
+        spy_call_count: spy_call_count,
+        spy_get_calls: spy_get_calls,
+        spy_restore: spy_restore,
+
+        # Fixtures
+        fixture: fixture,
+        use_fixture: use_fixture,
+        cleanup_fixture: cleanup_fixture,
+
+        # Parameterized tests
+        test_each: test_each,
+        test_describe_each: test_describe_each,
+
+        # Benchmarks
+        benchmark: benchmark,
+        benchmark_report: benchmark_report,
+
+        # Snapshots
+        snapshot_save: snapshot_save,
+        snapshot_match: snapshot_match,
+        deep_equals: deep_equals
+    };
+}
+
+# Export
+export mock_fn, mock_returns, mock_implementation, mock_calls;
+export mock_clear, mock_reset, mock_assert_called, mock_assert_called_with;
+export spy_on, spy_call_count, spy_get_calls, spy_restore;
+export fixture, use_fixture, cleanup_fixture;
+export test_each, test_describe_each;
+export benchmark, benchmark_report;
+export snapshot_save, snapshot_match, deep_equals;
+export test_helpers;

@@ -1,0 +1,60 @@
+# GitHub Dependabot Configuration
+# Automatically scan and update dependencies
+
+version: 2
+updates:
+  # C dependencies - check for libuv, sqlite3, readline updates
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "zarigata"
+    labels:
+      - "dependencies"
+      - "security"
+
+  # Node.js - rads-registry
+  - package-ecosystem: "npm"
+    directory: "/rads-registry"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "zarigata"
+    labels:
+      - "dependencies"
+      - "frontend"
+    ignore:
+      # Major version upgrades require testing
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+
+  # Rust - LSP server
+  - package-ecosystem: "cargo"
+    directory: "/tools/rads-lsp"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "zarigata"
+    labels:
+      - "dependencies"
+      - "lsp"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "zarigata"
+    labels:
+      - "ci"
+      - "dependencies"

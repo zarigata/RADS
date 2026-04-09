@@ -1,0 +1,8 @@
+name = "config"
+version = "0.1.0"
+description = "Configuration file parsing for RADS - JSON, YAML, TOML, ENV"
+author = "RADS Team"
+license = "MIT"
+rads_version = "0.0.11"
+keywords = ["config", "configuration", "json", "yaml", "toml", "env"]
+dependencies = ["json", "env"]

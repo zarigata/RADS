@@ -1,0 +1,8 @@
+name = "parsing"
+version = "0.1.0"
+description = "Parser combinators and text processing utilities for RADS"
+author = "RADS Team"
+license = "MIT"
+rads_version = "0.0.11"
+keywords = ["parsing", "parser", "text", "combinator", "lexer"]
+dependencies = ["regex"]

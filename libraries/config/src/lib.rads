@@ -1,0 +1,479 @@
+# Config Library for RADS
+# Configuration file parsing - JSON, YAML, TOML, ENV files
+
+import json;
+import env;
+import fs;
+
+# Config sources
+turbo struct ConfigSource {
+    str type;  # "file", "env", "object"
+    str path;
+    int priority;  # Higher priority overrides lower
+}
+
+# Configuration manager
+turbo struct Config {
+    struct sources;
+    struct data;
+    bool loaded;
+}
+
+# Default config instance
+turbo Config CONFIG = { sources: [], data: {}, loaded: false };
+
+# Load configuration from file
+blast struct config_load(str path) {
+    # Auto-detect format from extension
+    str ext = file_extension(path);
+
+    if (ext == "json") {
+        return load_json(path);
+    } else if (ext == "yaml" || ext == "yml") {
+        return load_yaml(path);
+    } else if (ext == "toml") {
+        return load_toml(path);
+    } else if (ext == "env") {
+        return load_env_file(path);
+    }
+
+    error("Unknown config format: " + ext);
+    return {};
+}
+
+# Load JSON config
+blast struct load_json(str path) {
+    str content = fs.read(path);
+    return json_parse(content);
+}
+
+# Load YAML config (simplified parser)
+blast struct load_yaml(str path) {
+    str content = fs.read(path);
+    return parse_yaml(content);
+}
+
+# Load TOML config
+blast struct load_toml(str path) {
+    str content = fs.read(path);
+    return parse_toml(content);
+}
+
+# Load .env file
+blast struct load_env_file(str path) {
+    str content = fs.read(path);
+    array lines = string.split(content, "\n");
+    struct result = {};
+
+    for (int i = 0; i < length(lines); i = i + 1) {
+        str line = string.trim(lines[i]);
+
+        # Skip empty lines and comments
+        if (length(line) == 0 || string.substring(line, 0, 1) == "#") {
+            continue;
+        }
+
+        # Parse KEY=VALUE
+        int eq_pos = string.find(line, "=");
+        if (eq_pos > 0) {
+            str key = string.trim(string.substring(line, 0, eq_pos));
+            str value = string.trim(string.substring(line, eq_pos + 1));
+
+            # Remove quotes
+            if (string.substring(value, 0, 1) == "\"" || string.substring(value, 0, 1) == "'") {
+                value = string.substring(value, 1, length(value) - 1);
+            }
+
+            result[key] = value;
+        }
+    }
+
+    return result;
+}
+
+# Save configuration
+blast void config_save(str path, struct data, str format = "json") {
+    str content;
+
+    if (format == "json") {
+        content = json_stringify(data, true);
+    } else if (format == "env") {
+        content = struct_to_env(data);
+    } else if (format == "yaml") {
+        content = struct_to_yaml(data);
+    } else if (format == "toml") {
+        content = struct_to_toml(data);
+    }
+
+    fs.write(path, content);
+}
+
+# Get config value with default
+blast config_get(str key, default = null) {
+    # Get value from loaded config
+    # Key supports dot notation: "database.host"
+    array parts = string.split(key, ".");
+    struct current = CONFIG.data;
+
+    for (int i = 0; i < length(parts); i = i + 1) {
+        str part = parts[i];
+        if (current[part] == null) {
+            return default;
+        }
+        current = current[part];
+    }
+
+    if (current == null) {
+        return default;
+    }
+    return current;
+}
+
+# Set config value
+blast void config_set(str key, value) {
+    # Set value in config
+    # Key supports dot notation: "database.host"
+    array parts = string.split(key, ".");
+
+    struct current = CONFIG.data;
+
+    for (int i = 0; i < length(parts) - 1; i = i + 1) {
+        str part = parts[i];
+        if (current[part] == null) {
+            current[part] = {};
+        }
+        current = current[part];
+    }
+
+    current[parts[length(parts) - 1]] = value;
+}
+
+# Check if key exists
+blast bool config_has(str key) {
+    return config_get(key, null) != null;
+}
+
+# Merge configurations (deep merge)
+blast struct config_merge(struct base, struct override) {
+    # Deep merge two configs
+    struct result = struct_clone(base);
+
+    array keys = struct_keys(override);
+    for (int i = 0; i < length(keys); i = i + 1) {
+        str key = keys[i];
+        value override_val = override[key];
+
+        if (result[key] != null && typeof(result[key]) == "struct" && typeof(override_val) == "struct") {
+            result[key] = config_merge(result[key], override_val);
+        } else {
+            result[key] = override_val;
+        }
+    }
+
+    return result;
+}
+
+# Add config source
+blast void config_add_source(str path, int priority = 0) {
+    # Add configuration source
+    push(CONFIG.sources, { type: "file", path: path, priority: priority });
+}
+
+# Add environment source
+blast void config_add_env(int priority = 100) {
+    # Add environment variables as config source
+    push(CONFIG.sources, { type: "env", priority: priority });
+}
+
+# Load all sources
+blast void config_reload() {
+    # Load and merge all config sources
+    # Sort by priority (lower priority first, so higher priority overrides)
+    CONFIG.sources = array_sort(CONFIG.sources, blast(a, b) {
+        return a.priority - b.priority;
+    });
+
+    CONFIG.data = {};
+
+    for (int i = 0; i < length(CONFIG.sources); i = i + 1) {
+        struct source = CONFIG.sources[i];
+
+        if (source.type == "file") {
+            struct loaded = config_load(source.path);
+            CONFIG.data = config_merge(CONFIG.data, loaded);
+        } else if (source.type == "env") {
+            struct env_data = env_to_config();
+            CONFIG.data = config_merge(CONFIG.data, env_data);
+        }
+    }
+
+    CONFIG.loaded = true;
+}
+
+# Environment to config
+blast struct env_to_config() {
+    struct result = {};
+    array vars = env.list();
+
+    for (int i = 0; i < length(vars); i = i + 1) {
+        str key = vars[i];
+
+        # Only include APP_ prefixed vars
+        if (string.substring(key, 0, 4) == "APP_") {
+            str config_key = string.replace(string.lower(key), "_", ".");
+            config_key = string.replace(config_key, "app.", "");
+            result[config_key] = env.get(key);
+        }
+    }
+
+    return result;
+}
+
+# Initialize config with defaults
+blast void config_init(struct defaults = {}) {
+    CONFIG.data = defaults;
+    CONFIG.sources = [];
+    CONFIG.loaded = false;
+}
+
+# YAML parser (simplified)
+blast struct parse_yaml(str content) {
+    # Simplified YAML parser for basic key-value pairs
+    array lines = string.split(content, "\n");
+    struct result = {};
+    struct current = result;
+    int indent_stack = [0];
+    struct key_stack = [];
+
+    for (int i = 0; i < length(lines); i = i + 1) {
+        str line = lines[i];
+
+        # Skip empty and comments
+        if (string.trim(line) == "" || string.substring(string.trim(line), 0, 1) == "#") {
+            continue;
+        }
+
+        # Count indentation
+        int indent = 0;
+        while (string.substring(line, indent, indent + 1) == " ") {
+            indent = indent + 1;
+        }
+
+        # Handle indentation changes
+        while (indent < indent_stack[length(indent_stack) - 1]) {
+            pop(indent_stack);
+            if (length(key_stack) > 0) {
+                pop(key_stack);
+            }
+        }
+
+        # Parse key: value
+        str trimmed = string.trim(line);
+        int colon_pos = string.find(trimmed, ":");
+
+        if (colon_pos > 0) {
+            str key = string.trim(string.substring(trimmed, 0, colon_pos));
+            str value = string.trim(string.substring(trimmed, colon_pos + 1));
+
+            # Navigate to correct level
+            current = result;
+            for (int j = 0; j < length(key_stack); j = j + 1) {
+                current = current[key_stack[j]];
+            }
+
+            if (value == "" || value == "|") {
+                # Nested object
+                current[key] = {};
+                push(key_stack, key);
+                push(indent_stack, indent);
+            } else {
+                # Key-value pair
+                current[key] = parse_yaml_value(value);
+            }
+        }
+    }
+
+    return result;
+}
+
+blast parse_yaml_value(str value) {
+    # Parse YAML value
+    value = string.trim(value);
+
+    # Remove quotes
+    if ((string.substring(value, 0, 1) == "\"" && string.substring(value, length(value) - 1) == "\"") ||
+        (string.substring(value, 0, 1) == "'" && string.substring(value, length(value) - 1) == "'")) {
+        return string.substring(value, 1, length(value) - 1);
+    }
+
+    # Boolean
+    if (value == "true") return true;
+    if (value == "false") return false;
+
+    # Null
+    if (value == "null" || value == "~") return null;
+
+    # Number
+    if (regex.match("^-?\\d+$", value)) {
+        return int(value);
+    }
+    if (regex.match("^-?\\d+\\.\\d+$", value)) {
+        return float(value);
+    }
+
+    return value;
+}
+
+# TOML parser (simplified)
+blast struct parse_toml(str content) {
+    # Simplified TOML parser
+    array lines = string.split(content, "\n");
+    struct result = {};
+    struct current = result;
+    str current_section = "";
+
+    for (int i = 0; i < length(lines); i = i + 1) {
+        str line = string.trim(lines[i]);
+
+        # Skip empty and comments
+        if (line == "" || string.substring(line, 0, 1) == "#") {
+            continue;
+        }
+
+        # Section header
+        if (string.substring(line, 0, 1) == "[") {
+            int end = string.find(line, "]");
+            current_section = string.substring(line, 1, end);
+            result[current_section] = {};
+            current = result[current_section];
+            continue;
+        }
+
+        # Key = value
+        int eq_pos = string.find(line, "=");
+        if (eq_pos > 0) {
+            str key = string.trim(string.substring(line, 0, eq_pos));
+            str value = string.trim(string.substring(line, eq_pos + 1));
+            current[key] = parse_toml_value(value);
+        }
+    }
+
+    return result;
+}
+
+blast parse_toml_value(str value) {
+    # Parse TOML value
+    value = string.trim(value);
+
+    # String
+    if (string.substring(value, 0, 1) == "\"") {
+        return string.substring(value, 1, length(value) - 1);
+    }
+
+    # Boolean
+    if (value == "true") return true;
+    if (value == "false") return false;
+
+    # Number
+    if (regex.match("^-?\\d+$", value)) return int(value);
+    if (regex.match("^-?\\d+\\.\\d+$", value)) return float(value);
+
+    return value;
+}
+
+# Helper functions
+blast str file_extension(str path) {
+    int dot_pos = string.find_last(path, ".");
+    if (dot_pos < 0) return "";
+    return string.substring(path, dot_pos + 1);
+}
+
+blast struct struct_clone(struct s) {
+    return json_parse(json_stringify(s));
+}
+
+blast str struct_to_env(struct data, str prefix = "") {
+    # Convert struct to .env format
+    str result = "";
+    array keys = struct_keys(data);
+
+    for (int i = 0; i < length(keys); i = i + 1) {
+        str key = keys[i];
+        value = data[key];
+
+        str env_key = prefix + string.upper(key);
+
+        if (typeof(value) == "struct") {
+            result = result + struct_to_env(value, env_key + "_");
+        } else {
+            result = result + env_key + "=" + string(value) + "\n";
+        }
+    }
+
+    return result;
+}
+
+blast str struct_to_yaml(struct data, int indent = 0) {
+    # Convert struct to YAML format
+    str result = "";
+    str indent_str = " ".repeat(indent);
+    array keys = struct_keys(data);
+
+    for (int i = 0; i < length(keys); i = i + 1) {
+        str key = keys[i];
+        value = data[key];
+
+        if (typeof(value) == "struct") {
+            result = result + indent_str + key + ":\n";
+            result = result + struct_to_yaml(value, indent + 2);
+        } else if (typeof(value) == "array") {
+            result = result + indent_str + key + ":\n";
+            for (int j = 0; j < length(value); j = j + 1) {
+                result = result + indent_str + "  - " + string(value[j]) + "\n";
+            }
+        } else {
+            result = result + indent_str + key + ": " + string(value) + "\n";
+        }
+    }
+
+    return result;
+}
+
+blast str struct_to_toml(struct data, str section = "") {
+    # Convert struct to TOML format
+    str result = "";
+    array keys = struct_keys(data);
+
+    if (section != "") {
+        result = "[" + section + "]\n";
+    }
+
+    for (int i = 0; i < length(keys); i = i + 1) {
+        str key = keys[i];
+        value = data[key];
+
+        if (typeof(value) == "struct") {
+            str subsection = section == "" ? key : section + "." + key;
+            result = result + "\n" + struct_to_toml(value, subsection);
+        } else {
+            result = result + key + " = " + toml_value(value) + "\n";
+        }
+    }
+
+    return result;
+}
+
+blast str toml_value(value) {
+    if (typeof(value) == "string") {
+        return "\"" + value + "\"";
+    }
+    return string(value);
+}
+
+# Export
+export CONFIG;
+export config_load, config_save, config_get, config_set, config_has;
+export config_merge, config_add_source, config_add_env, config_reload;
+export config_init;
+export load_json, load_yaml, load_toml, load_env_file;
+export parse_yaml, parse_toml;

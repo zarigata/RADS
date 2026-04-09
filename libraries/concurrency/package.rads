@@ -1,0 +1,8 @@
+name = "concurrency"
+version = "0.1.0"
+description = "Advanced async patterns for RADS - channels, workers, pools"
+author = "RADS Team"
+license = "MIT"
+rads_version = "0.0.11"
+keywords = ["concurrency", "async", "channel", "worker", "pool", "parallel"]
+dependencies = ["async_utils"]

@@ -1,0 +1,8 @@
+name = "http"
+version = "0.1.0"
+description = "Enhanced HTTP client and server utilities for RADS"
+author = "RADS Team"
+license = "MIT"
+rads_version = "0.0.11"
+keywords = ["http", "client", "server", "rest", "api", "request"]
+dependencies = ["net"]

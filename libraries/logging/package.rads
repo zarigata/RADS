@@ -1,0 +1,7 @@
+name = "logging"
+version = "0.1.0"
+description = "Structured logging for RADS with levels, formatters, and outputs"
+author = "RADS Team"
+license = "MIT"
+rads_version = "0.0.11"
+keywords = ["logging", "log", "debug", "structured"]

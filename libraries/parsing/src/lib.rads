@@ -1,0 +1,426 @@
+# Parsing Library for RADS
+# Parser combinators and text processing utilities
+
+import regex;
+import string;
+
+# Parser result
+turbo struct ParseResult {
+    bool success;
+    value;
+    str remaining;
+    str error;
+    int position;
+}
+
+# Parser type (function)
+# blast ParseResult parser(str input, int position)
+
+# Create successful result
+blast ParseResult success(value, str remaining, int position) {
+    return {
+        success: true,
+        value: value,
+        remaining: remaining,
+        position: position
+    };
+}
+
+# Create failure result
+blast ParseResult failure(str error, int position) {
+    return {
+        success: false,
+        value: null,
+        remaining: "",
+        error: error,
+        position: position
+    };
+}
+
+# Basic Parsers
+# =============
+
+# Match exact string
+blast blast string_parser(str expected) {
+    return blast(str input, int position) {
+        str chunk = string.substring(input, position, position + length(expected));
+        if (chunk == expected) {
+            return success(expected, string.substring(input, position + length(expected)), position + length(expected));
+        }
+        return failure("Expected '" + expected + "'", position);
+    };
+}
+
+# Match regex pattern
+blast blast regex_parser(str pattern) {
+    turbo re = regex.compile(pattern);
+    return blast(str input, int position) {
+        str chunk = string.substring(input, position);
+        struct match = regex.search(re, chunk);
+        if (match != null) {
+            return success(match.match, string.substring(input, position + match.end), position + match.end);
+        }
+        return failure("Pattern not found: " + pattern, position);
+    };
+}
+
+# Match any character
+blast ParseResult any_char(str input, int position) {
+    if (position >= length(input)) {
+        return failure("End of input", position);
+    }
+    return success(string.substring(input, position, position + 1), string.substring(input, position + 1), position + 1);
+}
+
+# Match single character from set
+blast blast char_in(str chars) {
+    return blast(str input, int position) {
+        if (position >= length(input)) {
+            return failure("End of input", position);
+        }
+        str c = string.substring(input, position, position + 1);
+        if (string.find(chars, c) >= 0) {
+            return success(c, string.substring(input, position + 1), position + 1);
+        }
+        return failure("Expected one of '" + chars + "'", position);
+    };
+}
+
+# Match character not in set
+blast blast char_not_in(str chars) {
+    return blast(str input, int position) {
+        if (position >= length(input)) {
+            return failure("End of input", position);
+        }
+        str c = string.substring(input, position, position + 1);
+        if (string.find(chars, c) < 0) {
+            return success(c, string.substring(input, position + 1), position + 1);
+        }
+        return failure("Unexpected '" + c + "'", position);
+    };
+}
+
+# Match whitespace
+blast ParseResult whitespace(str input, int position) {
+    return char_in(" \t\n\r")(input, position);
+}
+
+# Match digits
+blast ParseResult digit(str input, int position) {
+    return char_in("0123456789")(input, position);
+}
+
+# Match letters
+blast ParseResult letter(str input, int position) {
+    return char_in("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")(input, position);
+}
+
+# Match alphanumeric
+blast ParseResult alphanumeric(str input, int position) {
+    return char_in("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")(input, position);
+}
+
+# Combinators
+# ===========
+
+# Sequence (match multiple parsers in order)
+blast blast seq(array parsers) {
+    return blast(str input, int position) {
+        array values = [];
+        str remaining = input;
+        int pos = position;
+
+        for (int i = 0; i < length(parsers); i = i + 1) {
+            ParseResult result = parsers[i](remaining, pos);
+            if (!result.success) {
+                return result;
+            }
+            push(values, result.value);
+            remaining = result.remaining;
+            pos = result.position;
+        }
+
+        return success(values, remaining, pos);
+    };
+}
+
+# Alternative (try parsers in order, return first success)
+blast blast alt(array parsers) {
+    return blast(str input, int position) {
+        for (int i = 0; i < length(parsers); i = i + 1) {
+            ParseResult result = parsers[i](input, position);
+            if (result.success) {
+                return result;
+            }
+        }
+        return failure("No alternative matched", position);
+    };
+}
+
+# Optional (succeeds even if parser fails)
+blast blast optional(blast parser) {
+    return blast(str input, int position) {
+        ParseResult result = parser(input, position);
+        if (result.success) {
+            return result;
+        }
+        return success(null, input, position);
+    };
+}
+
+# Many (zero or more)
+blast blast many(blast parser) {
+    return blast(str input, int position) {
+        array values = [];
+        str remaining = input;
+        int pos = position;
+
+        loop {
+            ParseResult result = parser(remaining, pos);
+            if (!result.success) {
+                break;
+            }
+            push(values, result.value);
+            remaining = result.remaining;
+            pos = result.position;
+        }
+
+        return success(values, remaining, pos);
+    };
+}
+
+# Many1 (one or more)
+blast blast many1(blast parser) {
+    return blast(str input, int position) {
+        ParseResult first = parser(input, position);
+        if (!first.success) {
+            return first;
+        }
+
+        ParseResult rest = many(parser)(first.remaining, first.position);
+        array values = [first.value];
+        for (int i = 0; i < length(rest.value); i = i + 1) {
+            push(values, rest.value[i]);
+        }
+
+        return success(values, rest.remaining, rest.position);
+    };
+}
+
+# Map (transform result)
+blast blast map_parser(blast parser, blast transform) {
+    return blast(str input, int position) {
+        ParseResult result = parser(input, position);
+        if (!result.success) {
+            return result;
+        }
+        return success(transform(result.value), result.remaining, result.position);
+    };
+}
+
+# Between (match between delimiters)
+blast blast between(blast open, blast content, blast close) {
+    return blast(str input, int position) {
+        ParseResult r1 = open(input, position);
+        if (!r1.success) return r1;
+
+        ParseResult r2 = content(r1.remaining, r1.position);
+        if (!r2.success) return r2;
+
+        ParseResult r3 = close(r2.remaining, r2.position);
+        if (!r3.success) return r3;
+
+        return success(r2.value, r3.remaining, r3.position);
+    };
+}
+
+# SepBy (separated by)
+blast blast sep_by(blast parser, blast separator) {
+    return blast(str input, int position) {
+        array values = [];
+        str remaining = input;
+        int pos = position;
+
+        ParseResult first = parser(input, position);
+        if (!first.success) {
+            return success([], remaining, pos);
+        }
+        push(values, first.value);
+        remaining = first.remaining;
+        pos = first.position;
+
+        loop {
+            ParseResult sep = separator(remaining, pos);
+            if (!sep.success) {
+                break;
+            }
+
+            ParseResult next = parser(sep.remaining, sep.position);
+            if (!next.success) {
+                break;
+            }
+
+            push(values, next.value);
+            remaining = next.remaining;
+            pos = next.position;
+        }
+
+        return success(values, remaining, pos);
+    };
+}
+
+# Common Parsers
+# ==============
+
+# Integer
+blast ParseResult parse_int(str input, int position) {
+    return map_parser(
+        seq([optional(string_parser("-")), many1(digit)]),
+        blast(parts) {
+            str sign = parts[0] != null ? "-" : "";
+            array digits = parts[1];
+            return int(sign + string.join(digits, ""));
+        }
+    )(input, position);
+}
+
+# Float
+blast ParseResult parse_float(str input, int position) {
+    return map_parser(
+        seq([
+            optional(string_parser("-")),
+            many1(digit),
+            string_parser("."),
+            many1(digit)
+        ]),
+        blast(parts) {
+            str sign = parts[0] != null ? "-" : "";
+            array int_part = parts[1];
+            array frac_part = parts[3];
+            return float(sign + string.join(int_part, "") + "." + string.join(frac_part, ""));
+        }
+    )(input, position);
+}
+
+# String (quoted)
+blast ParseResult parse_string(str input, int position) {
+    return between(
+        string_parser("\""),
+        many(char_not_in("\"")),
+        string_parser("\"")
+    )(input, position);
+}
+
+# Identifier
+blast ParseResult parse_identifier(str input, int position) {
+    return map_parser(
+        seq([letter, many(alphanumeric)]),
+        blast(parts) {
+            str result = parts[0];
+            for (int i = 0; i < length(parts[1]); i = i + 1) {
+                result = result + parts[1][i];
+            }
+            return result;
+        }
+    )(input, position);
+}
+
+# Whitespace (skip)
+blast blast skip_whitespace(blast parser) {
+    return blast(str input, int position) {
+        ParseResult ws = many(whitespace)(input, position);
+        return parser(ws.remaining, ws.position);
+    };
+}
+
+# Token (with trailing whitespace)
+blast blast token(blast parser) {
+    return skip_whitespace(parser);
+}
+
+# Parse full input
+blast ParseResult parse(blast parser, str input) {
+    return parser(input, 0);
+}
+
+# Parse and require full consumption
+blast ParseResult parse_full(blast parser, str input) {
+    ParseResult result = parser(input, 0);
+    if (!result.success) {
+        return result;
+    }
+    if (length(result.remaining) > 0) {
+        return failure("Unexpected input after parse", result.position);
+    }
+    return result;
+}
+
+# Error handling
+blast ParseResult parse_or_error(blast parser, str input) {
+    ParseResult result = parse_full(parser, input);
+    if (!result.success) {
+        error("Parse error at position " + string(result.position) + ": " + result.error);
+    }
+    return result;
+}
+
+# Lexer
+# =====
+
+turbo struct Token {
+    str type;
+    str value;
+    int position;
+}
+
+# Tokenize input
+blast array tokenize(str input, array patterns) {
+    # patterns: array of { type, pattern }
+    array tokens = [];
+    int pos = 0;
+
+    while (pos < length(input)) {
+        bool matched = false;
+
+        # Skip whitespace
+        ParseResult ws = many(whitespace)(input, pos);
+        if (ws.success && ws.position > pos) {
+            pos = ws.position;
+            continue;
+        }
+
+        for (int i = 0; i < length(patterns); i = i + 1) {
+            struct pattern = patterns[i];
+            ParseResult result = regex_parser(pattern.pattern)(input, pos);
+
+            if (result.success) {
+                push(tokens, {
+                    type: pattern.type,
+                    value: result.value,
+                    position: pos
+                });
+                pos = result.position;
+                matched = true;
+                break;
+            }
+        }
+
+        if (!matched) {
+            error("Unexpected character at position " + string(pos) + ": " + string.substring(input, pos, pos + 1));
+            pos = pos + 1;
+        }
+    }
+
+    return tokens;
+}
+
+# Export
+export ParseResult, Token;
+export success, failure;
+export string_parser, regex_parser, any_char, char_in, char_not_in;
+export whitespace, digit, letter, alphanumeric;
+export seq, alt, optional, many, many1, map_parser, between, sep_by;
+export parse_int, parse_float, parse_string, parse_identifier;
+export skip_whitespace, token;
+export parse, parse_full, parse_or_error;
+export tokenize;

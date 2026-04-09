@@ -1,0 +1,578 @@
+# Math-Extra Library for RADS
+# Advanced math - trigonometry, statistics, linear algebra
+
+import math;
+
+# Constants
+turbo float PI = 3.14159265358979323846;
+turbo float E = 2.71828182845904523536;
+turbo float PHI = 1.61803398874989484820;  # Golden ratio
+turbo float SQRT2 = 1.41421356237309504880;
+turbo float SQRT3 = 1.73205080756887729353;
+turbo float LN2 = 0.69314718055994530941;
+turbo float LN10 = 2.30258509299404568401;
+
+# Trigonometry
+# =============
+
+blast float deg_to_rad(float degrees) {
+    return degrees * PI / 180.0;
+}
+
+blast float rad_to_deg(float radians) {
+    return radians * 180.0 / PI;
+}
+
+blast float sin(float x) {
+    # Sine function
+    native "math_sin";
+}
+
+blast float cos(float x) {
+    # Cosine function
+    native "math_cos";
+}
+
+blast float tan(float x) {
+    # Tangent function
+    return sin(x) / cos(x);
+}
+
+blast float asin(float x) {
+    # Arc sine
+    native "math_asin";
+}
+
+blast float acos(float x) {
+    # Arc cosine
+    native "math_acos";
+}
+
+blast float atan(float x) {
+    # Arc tangent
+    native "math_atan";
+}
+
+blast float atan2(float y, float x) {
+    # Arc tangent of y/x
+    native "math_atan2";
+}
+
+blast float sinh(float x) {
+    # Hyperbolic sine
+    return (exp(x) - exp(-x)) / 2.0;
+}
+
+blast float cosh(float x) {
+    # Hyperbolic cosine
+    return (exp(x) + exp(-x)) / 2.0;
+}
+
+blast float tanh(float x) {
+    # Hyperbolic tangent
+    return sinh(x) / cosh(x);
+}
+
+# Exponential and Logarithmic
+# ===========================
+
+blast float exp(float x) {
+    # e^x
+    native "math_exp";
+}
+
+blast float log(float x) {
+    # Natural logarithm
+    native "math_log";
+}
+
+blast float log2(float x) {
+    # Base-2 logarithm
+    return log(x) / LN2;
+}
+
+blast float log10(float x) {
+    # Base-10 logarithm
+    return log(x) / LN10;
+}
+
+blast float log_base(float x, float base) {
+    # Logarithm with custom base
+    return log(x) / log(base);
+}
+
+blast float pow(float base, float exp) {
+    # Power function
+    native "math_pow";
+}
+
+blast float sqrt(float x) {
+    # Square root
+    return pow(x, 0.5);
+}
+
+blast float cbrt(float x) {
+    # Cube root
+    return pow(x, 1.0/3.0);
+}
+
+blast float nth_root(float x, float n) {
+    # Nth root
+    return pow(x, 1.0/n);
+}
+
+# Statistics
+# ==========
+
+blast float mean(array values) {
+    # Arithmetic mean
+    if (length(values) == 0) return 0.0;
+
+    float sum = 0.0;
+    for (int i = 0; i < length(values); i = i + 1) {
+        sum = sum + float(values[i]);
+    }
+    return sum / float(length(values));
+}
+
+blast float median(array values) {
+    # Median (middle value)
+    if (length(values) == 0) return 0.0;
+
+    array sorted = array.sort(values);
+    int n = length(sorted);
+    int mid = n / 2;
+
+    if (n % 2 == 0) {
+        return (float(sorted[mid - 1]) + float(sorted[mid])) / 2.0;
+    }
+    return float(sorted[mid]);
+}
+
+blast float mode(array values) {
+    # Mode (most frequent value)
+    if (length(values) == 0) return 0.0;
+
+    struct counts = {};
+    float max_count = 0;
+    float mode_val = float(values[0]);
+
+    for (int i = 0; i < length(values); i = i + 1) {
+        float val = float(values[i]);
+        str key = string(val);
+
+        if (counts[key] == null) {
+            counts[key] = 0;
+        }
+        counts[key] = counts[key] + 1;
+
+        if (counts[key] > max_count) {
+            max_count = counts[key];
+            mode_val = val;
+        }
+    }
+
+    return mode_val;
+}
+
+blast float variance(array values, bool population = false) {
+    # Variance
+    if (length(values) == 0) return 0.0;
+
+    float m = mean(values);
+    float sum_sq = 0.0;
+
+    for (int i = 0; i < length(values); i = i + 1) {
+        float diff = float(values[i]) - m;
+        sum_sq = sum_sq + diff * diff;
+    }
+
+    int n = length(values);
+    if (population) {
+        return sum_sq / float(n);
+    }
+    return sum_sq / float(n - 1);  # Sample variance
+}
+
+blast float std_dev(array values, bool population = false) {
+    # Standard deviation
+    return sqrt(variance(values, population));
+}
+
+blast float skewness(array values) {
+    # Skewness (asymmetry measure)
+    if (length(values) < 3) return 0.0;
+
+    float m = mean(values);
+    float s = std_dev(values, true);
+    int n = length(values);
+
+    if (s == 0) return 0.0;
+
+    float sum = 0.0;
+    for (int i = 0; i < n; i = i + 1) {
+        float z = (float(values[i]) - m) / s;
+        sum = sum + z * z * z;
+    }
+
+    return sum * float(n) / float((n - 1) * (n - 2));
+}
+
+blast float kurtosis(array values) {
+    # Kurtosis (tailedness measure)
+    if (length(values) < 4) return 0.0;
+
+    float m = mean(values);
+    float s = std_dev(values, true);
+    int n = length(values);
+
+    if (s == 0) return 0.0;
+
+    float sum = 0.0;
+    for (int i = 0; i < n; i = i + 1) {
+        float z = (float(values[i]) - m) / s;
+        sum = sum + z * z * z * z;
+    }
+
+    return sum * float(n) * (n + 1) / float((n - 1) * (n - 2) * (n - 3))
+           - 3.0 * float(n - 1) * float(n - 1) / float((n - 2) * (n - 3));
+}
+
+blast struct summary(array values) {
+    # Statistical summary
+    array sorted = array.sort(values);
+    int n = length(values);
+
+    return {
+        count: n,
+        mean: mean(values),
+        median: median(values),
+        mode: mode(values),
+        std_dev: std_dev(values),
+        variance: variance(values),
+        min: float(sorted[0]),
+        max: float(sorted[n - 1]),
+        range: float(sorted[n - 1]) - float(sorted[0]),
+        q1: float(sorted[n / 4]),
+        q3: float(sorted[3 * n / 4]),
+        iqr: float(sorted[3 * n / 4]) - float(sorted[n / 4]),
+        skewness: skewness(values),
+        kurtosis: kurtosis(values)
+    };
+}
+
+blast struct linear_regression(array x, array y) {
+    # Simple linear regression
+    if (length(x) != length(y) || length(x) == 0) {
+        return { slope: 0, intercept: 0, r_squared: 0 };
+    }
+
+    int n = length(x);
+    float sum_x = 0.0, sum_y = 0.0, sum_xy = 0.0, sum_x2 = 0.0, sum_y2 = 0.0;
+
+    for (int i = 0; i < n; i = i + 1) {
+        float xi = float(x[i]);
+        float yi = float(y[i]);
+        sum_x = sum_x + xi;
+        sum_y = sum_y + yi;
+        sum_xy = sum_xy + xi * yi;
+        sum_x2 = sum_x2 + xi * xi;
+        sum_y2 = sum_y2 + yi * yi;
+    }
+
+    float slope = (float(n) * sum_xy - sum_x * sum_y) / (float(n) * sum_x2 - sum_x * sum_x);
+    float intercept = (sum_y - slope * sum_x) / float(n);
+
+    # R-squared
+    float ss_tot = 0.0, ss_res = 0.0;
+    float mean_y = sum_y / float(n);
+
+    for (int i = 0; i < n; i = i + 1) {
+        float yi = float(y[i]);
+        float xi = float(x[i]);
+        float y_pred = slope * xi + intercept;
+        ss_tot = ss_tot + (yi - mean_y) * (yi - mean_y);
+        ss_res = ss_res + (yi - y_pred) * (yi - y_pred);
+    }
+
+    float r_squared = 1.0 - ss_res / ss_tot;
+
+    return {
+        slope: slope,
+        intercept: intercept,
+        r_squared: r_squared,
+        predict: blast(x_val) { return slope * x_val + intercept; }
+    };
+}
+
+# Vector operations
+# =================
+
+blast float vec_dot(array a, array b) {
+    # Dot product
+    if (length(a) != length(b)) {
+        error("Vector dimensions must match");
+        return 0.0;
+    }
+
+    float sum = 0.0;
+    for (int i = 0; i < length(a); i = i + 1) {
+        sum = sum + float(a[i]) * float(b[i]);
+    }
+    return sum;
+}
+
+blast float vec_magnitude(array v) {
+    # Vector magnitude
+    return sqrt(vec_dot(v, v));
+}
+
+blast array vec_normalize(array v) {
+    # Normalize vector
+    float mag = vec_magnitude(v);
+    if (mag == 0) return v;
+
+    array result = [];
+    for (int i = 0; i < length(v); i = i + 1) {
+        push(result, float(v[i]) / mag);
+    }
+    return result;
+}
+
+blast array vec_add(array a, array b) {
+    # Vector addition
+    if (length(a) != length(b)) {
+        error("Vector dimensions must match");
+        return [];
+    }
+
+    array result = [];
+    for (int i = 0; i < length(a); i = i + 1) {
+        push(result, float(a[i]) + float(b[i]));
+    }
+    return result;
+}
+
+blast array vec_sub(array a, array b) {
+    # Vector subtraction
+    if (length(a) != length(b)) {
+        error("Vector dimensions must match");
+        return [];
+    }
+
+    array result = [];
+    for (int i = 0; i < length(a); i = i + 1) {
+        push(result, float(a[i]) - float(b[i]));
+    }
+    return result;
+}
+
+blast array vec_scale(array v, float scalar) {
+    # Scale vector
+    array result = [];
+    for (int i = 0; i < length(v); i = i + 1) {
+        push(result, float(v[i]) * scalar);
+    }
+    return result;
+}
+
+blast float vec_angle(array a, array b) {
+    # Angle between vectors (in radians)
+    float dot = vec_dot(a, b);
+    float mag_a = vec_magnitude(a);
+    float mag_b = vec_magnitude(b);
+    return acos(dot / (mag_a * mag_b));
+}
+
+blast array vec_cross(array a, array b) {
+    # Cross product (3D vectors only)
+    if (length(a) != 3 || length(b) != 3) {
+        error("Cross product requires 3D vectors");
+        return [];
+    }
+
+    return [
+        float(a[1]) * float(b[2]) - float(a[2]) * float(b[1]),
+        float(a[2]) * float(b[0]) - float(a[0]) * float(b[2]),
+        float(a[0]) * float(b[1]) - float(a[1]) * float(b[0])
+    ];
+}
+
+# Matrix operations
+# =================
+
+blast array mat_identity(int n) {
+    # Identity matrix
+    array mat = [];
+    for (int i = 0; i < n; i = i + 1) {
+        array row = [];
+        for (int j = 0; j < n; j = j + 1) {
+            push(row, i == j ? 1.0 : 0.0);
+        }
+        push(mat, row);
+    }
+    return mat;
+}
+
+blast array mat_add(array a, array b) {
+    # Matrix addition
+    int rows = length(a);
+    int cols = length(a[0]);
+
+    array result = [];
+    for (int i = 0; i < rows; i = i + 1) {
+        array row = [];
+        for (int j = 0; j < cols; j = j + 1) {
+            push(row, float(a[i][j]) + float(b[i][j]));
+        }
+        push(result, row);
+    }
+    return result;
+}
+
+blast array mat_multiply(array a, array b) {
+    # Matrix multiplication
+    int rows_a = length(a);
+    int cols_a = length(a[0]);
+    int cols_b = length(b[0]);
+
+    array result = [];
+    for (int i = 0; i < rows_a; i = i + 1) {
+        array row = [];
+        for (int j = 0; j < cols_b; j = j + 1) {
+            float sum = 0.0;
+            for (int k = 0; k < cols_a; k = k + 1) {
+                sum = sum + float(a[i][k]) * float(b[k][j]);
+            }
+            push(row, sum);
+        }
+        push(result, row);
+    }
+    return result;
+}
+
+blast array mat_transpose(array mat) {
+    # Matrix transpose
+    int rows = length(mat);
+    int cols = length(mat[0]);
+
+    array result = [];
+    for (int j = 0; j < cols; j = j + 1) {
+        array row = [];
+        for (int i = 0; i < rows; i = i + 1) {
+            push(row, mat[i][j]);
+        }
+        push(result, row);
+    }
+    return result;
+}
+
+blast float mat_determinant(array mat) {
+    # Matrix determinant (recursive)
+    int n = length(mat);
+
+    if (n == 1) return float(mat[0][0]);
+    if (n == 2) {
+        return float(mat[0][0]) * float(mat[1][1]) - float(mat[0][1]) * float(mat[1][0]);
+    }
+
+    float det = 0.0;
+    for (int j = 0; j < n; j = j + 1) {
+        array sub = mat_minor(mat, 0, j);
+        float sign = (j % 2 == 0) ? 1.0 : -1.0;
+        det = det + sign * float(mat[0][j]) * mat_determinant(sub);
+    }
+    return det;
+}
+
+blast array mat_minor(array mat, int row, int col) {
+    # Minor matrix (remove row and col)
+    int n = length(mat);
+    array result = [];
+
+    for (int i = 0; i < n; i = i + 1) {
+        if (i == row) continue;
+        array r = [];
+        for (int j = 0; j < n; j = j + 1) {
+            if (j == col) continue;
+            push(r, mat[i][j]);
+        }
+        push(result, r);
+    }
+    return result;
+}
+
+# Utility functions
+# =================
+
+blast float lerp(float a, float b, float t) {
+    # Linear interpolation
+    return a + t * (b - a);
+}
+
+blast float clamp(float value, float min_val, float max_val) {
+    # Clamp value to range
+    if (value < min_val) return min_val;
+    if (value > max_val) return max_val;
+    return value;
+}
+
+blast float sign(float x) {
+    # Sign function
+    if (x > 0) return 1.0;
+    if (x < 0) return -1.0;
+    return 0.0;
+}
+
+blast float abs(float x) {
+    # Absolute value
+    return x < 0 ? -x : x;
+}
+
+blast float frac(float x) {
+    # Fractional part
+    return x - math.floor(x);
+}
+
+blast float mod(float x, float y) {
+    # Modulo
+    return x - y * math.floor(x / y);
+}
+
+blast float wrap(float x, float min_val, float max_val) {
+    # Wrap value to range
+    float range = max_val - min_val;
+    return mod(x - min_val, range) + min_val;
+}
+
+blast float smooth_step(float edge0, float edge1, float x) {
+    # Smooth step interpolation
+    float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+    return t * t * (3.0 - 2.0 * t);
+}
+
+# Export constants
+export PI, E, PHI, SQRT2, SQRT3, LN2, LN10;
+
+# Export trigonometry
+export deg_to_rad, rad_to_deg;
+export sin, cos, tan, asin, acos, atan, atan2;
+export sinh, cosh, tanh;
+
+# Export exponential/logarithmic
+export exp, log, log2, log10, log_base, pow, sqrt, cbrt, nth_root;
+
+# Export statistics
+export mean, median, mode, variance, std_dev;
+export skewness, kurtosis, summary, linear_regression;
+
+# Export vector operations
+export vec_dot, vec_magnitude, vec_normalize;
+export vec_add, vec_sub, vec_scale, vec_angle, vec_cross;
+
+# Export matrix operations
+export mat_identity, mat_add, mat_multiply, mat_transpose;
+export mat_determinant, mat_minor;
+
+# Export utilities
+export lerp, clamp, sign, abs, frac, mod, wrap, smooth_step;

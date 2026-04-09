@@ -1,0 +1,7 @@
+name = "crypto"
+version = "0.1.0"
+description = "Cryptographic utilities for RADS - hashing, encryption, signing"
+author = "RADS Team"
+license = "MIT"
+rads_version = "0.0.11"
+keywords = ["crypto", "hash", "encryption", "security", "sha256", "aes"]

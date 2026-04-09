@@ -1,0 +1,297 @@
+# HTTP Library for RADS
+# Enhanced HTTP client and server utilities
+
+import net;
+
+# HTTP Client
+# ============
+
+# Request configuration struct
+struct RequestConfig {
+    str method;
+    str url;
+    struct headers;
+    str body;
+    int timeout;
+    bool follow_redirects;
+    int max_redirects;
+    bool verify_ssl;
+    str auth;
+}
+
+# Response struct
+struct Response {
+    int status;
+    str status_text;
+    struct headers;
+    str body;
+    int elapsed_ms;
+}
+
+# Simple GET request
+blast Response http_get(str url, struct headers = {}) {
+    # Perform GET request
+    return http_request({
+        method: "GET",
+        url: url,
+        headers: headers,
+        timeout: 30000,
+        follow_redirects: true
+    });
+}
+
+# Simple POST request
+blast Response http_post(str url, str body, struct headers = {}) {
+    # Perform POST request with body
+    return http_request({
+        method: "POST",
+        url: url,
+        headers: headers,
+        body: body,
+        timeout: 30000
+    });
+}
+
+# Simple PUT request
+blast Response http_put(str url, str body, struct headers = {}) {
+    # Perform PUT request
+    return http_request({
+        method: "PUT",
+        url: url,
+        headers: headers,
+        body: body,
+        timeout: 30000
+    });
+}
+
+# Simple DELETE request
+blast Response http_delete(str url, struct headers = {}) {
+    # Perform DELETE request
+    return http_request({
+        method: "DELETE",
+        url: url,
+        headers: headers,
+        timeout: 30000
+    });
+}
+
+# Generic request method
+blast Response http_request(struct config) {
+    # Perform HTTP request with full configuration
+    # Config fields:
+    #   method: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS
+    #   url: Full URL including query string
+    #   headers: struct of header names to values
+    #   body: Request body (for POST, PUT, PATCH)
+    #   timeout: Request timeout in milliseconds (default: 30000)
+    #   follow_redirects: Follow HTTP redirects (default: true)
+    #   max_redirects: Maximum redirects to follow (default: 10)
+    #   verify_ssl: Verify SSL certificates (default: true)
+    #   auth: Basic auth "username:password" or Bearer token
+    native "http_request";
+}
+
+# JSON helper
+blast Response http_get_json(str url, struct headers = {}) {
+    # GET request expecting JSON response
+    struct merged = struct_merge(headers, { "Accept": "application/json" });
+    Response resp = http_get(url, merged);
+    resp.body = json_parse(resp.body);
+    return resp;
+}
+
+blast Response http_post_json(str url, struct data, struct headers = {}) {
+    # POST request with JSON body
+    struct merged = struct_merge(headers, {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+    });
+    str body = json_stringify(data);
+    Response resp = http_post(url, body, merged);
+    resp.body = json_parse(resp.body);
+    return resp;
+}
+
+# Headers helper
+blast struct http_headers(str content_type = "application/json", str accept = "application/json") {
+    # Create standard headers struct
+    return {
+        "Content-Type": content_type,
+        "Accept": accept,
+        "User-Agent": "RADS-http/0.1.0"
+    };
+}
+
+blast struct http_auth_bearer(str token) {
+    # Create Authorization header with Bearer token
+    return { "Authorization": "Bearer " + token };
+}
+
+blast struct http_auth_basic(str username, str password) {
+    # Create Authorization header with Basic auth
+    str credentials = base64.encode(username + ":" + password);
+    return { "Authorization": "Basic " + credentials };
+}
+
+# HTTP Server
+# ============
+
+# Server configuration struct
+struct ServerConfig {
+    str host;
+    int port;
+    struct routes;
+    struct middleware;
+    bool cors;
+    struct cors_config;
+    int max_body_size;
+    int timeout;
+}
+
+# Route handler type
+# blast void route_handler(struct request, struct response)
+
+# Create server
+blast void http_server(struct config) {
+    # Create HTTP server with configuration
+    # Config fields:
+    #   host: Bind address (default: "0.0.0.0")
+    #   port: Port number (default: 8080)
+    #   routes: struct mapping paths to handlers
+    #   middleware: array of middleware functions
+    #   cors: Enable CORS (default: false)
+    #   cors_config: CORS configuration struct
+    #   max_body_size: Maximum request body size (default: 10MB)
+    #   timeout: Request timeout in seconds (default: 30)
+    native "http_server_create";
+}
+
+# Route registration
+blast void http_route(str method, str path, blast handler) {
+    # Register route handler
+    # Methods: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS
+    # Path can include parameters: /user/:id
+    native "http_route";
+}
+
+# Middleware
+blast void http_use(blast middleware) {
+    # Add middleware function
+    # Middleware signature: blast void(struct request, struct next)
+    native "http_use";
+}
+
+# CORS middleware
+blast void http_cors(struct config = {}) {
+    # Enable CORS with configuration
+    # Config fields:
+    #   origins: array of allowed origins (default: "*")
+    #   methods: array of allowed methods (default: all)
+    #   headers: array of allowed headers (default: all)
+    #   credentials: Allow credentials (default: false)
+    #   max_age: Preflight cache duration (default: 86400)
+    native "http_cors";
+}
+
+# Static file serving
+blast void http_static(str path, str directory) {
+    # Serve static files from directory
+    # Example: http_static("/public", "./assets")
+    native "http_static";
+}
+
+# Server control
+blast void http_listen(int port = 8080, str host = "0.0.0.0") {
+    # Start server listening
+    native "http_listen";
+}
+
+blast void http_close() {
+    # Stop server
+    native "http_close";
+}
+
+# Response helpers
+blast struct http_response(int status, str body, struct headers = {}) {
+    # Create response struct
+    return {
+        status: status,
+        body: body,
+        headers: headers
+    };
+}
+
+blast struct http_json(int status, struct data, struct headers = {}) {
+    # Create JSON response
+    struct merged = struct_merge(headers, { "Content-Type": "application/json" });
+    return http_response(status, json_stringify(data), merged);
+}
+
+blast struct http_error(int status, str message, struct headers = {}) {
+    # Create error response
+    return http_json(status, { error: message }, headers);
+}
+
+# Status codes
+struct HTTP {
+    int OK = 200;
+    int CREATED = 201;
+    int NO_CONTENT = 204;
+    int BAD_REQUEST = 400;
+    int UNAUTHORIZED = 401;
+    int FORBIDDEN = 403;
+    int NOT_FOUND = 404;
+    int METHOD_NOT_ALLOWED = 405;
+    int CONFLICT = 409;
+    int INTERNAL_SERVER_ERROR = 500;
+    int NOT_IMPLEMENTED = 501;
+    int BAD_GATEWAY = 502;
+    int SERVICE_UNAVAILABLE = 503;
+}
+
+# Cookie handling
+blast struct http_cookie(str name, str value, struct options = {}) {
+    # Create cookie header value
+    # Options: expires, max_age, domain, path, secure, http_only, same_site
+    native "http_cookie";
+}
+
+blast struct http_parse_cookies(str cookie_header) {
+    # Parse Cookie header into struct
+    native "http_parse_cookies";
+}
+
+# Query string handling
+blast struct http_parse_query(str query_string) {
+    # Parse query string into struct
+    native "http_parse_query";
+}
+
+blast str http_build_query(struct params) {
+    # Build query string from struct
+    native "http_build_query";
+}
+
+# URL handling
+blast struct http_parse_url(str url) {
+    # Parse URL into components
+    # Returns: protocol, host, port, path, query, hash
+    native "http_parse_url";
+}
+
+blast str http_build_url(struct components) {
+    # Build URL from components
+    native "http_build_url";
+}
+
+# Export
+export http_get, http_post, http_put, http_delete, http_request;
+export http_get_json, http_post_json;
+export http_headers, http_auth_bearer, http_auth_basic;
+export http_server, http_route, http_use, http_cors, http_static;
+export http_listen, http_close;
+export http_response, http_json, http_error;
+export HTTP;
+export http_cookie, http_parse_cookies;
+export http_parse_query, http_build_query;
+export http_parse_url, http_build_url;

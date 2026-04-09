@@ -1,0 +1,189 @@
+# Crypto Library for RADS
+
+import stdlib;
+
+# Hash functions
+blast str sha256(str data) {
+    # SHA-256 hash function
+    # Returns 64-character hex string
+    native "crypto_sha256";
+}
+
+blast str sha512(str data) {
+    # SHA-512 hash function
+    # Returns 128-character hex string
+    native "crypto_sha512";
+}
+
+blast str md5(str data) {
+    # MD5 hash function (deprecated, use sha256)
+    # Returns 32-character hex string
+    # WARNING: Not cryptographically secure
+    native "crypto_md5";
+}
+
+blast str blake2b(str data, int output_len = 64) {
+    # BLAKE2b hash function
+    # Output length: 1-64 bytes
+    native "crypto_blake2b";
+}
+
+# HMAC functions
+blast str hmac_sha256(str key, str data) {
+    # HMAC-SHA256 authentication
+    native "crypto_hmac_sha256";
+}
+
+blast str hmac_sha512(str key, str data) {
+    # HMAC-SHA512 authentication
+    native "crypto_hmac_sha512";
+}
+
+# Password hashing
+blast str password_hash(str password, str algorithm = "argon2id") {
+    # Secure password hashing
+    # Algorithms: argon2id, bcrypt, scrypt
+    # Returns formatted hash with algorithm and parameters
+    native "crypto_password_hash";
+}
+
+blast bool password_verify(str password, str hash) {
+    # Verify password against hash
+    native "crypto_password_verify";
+}
+
+# Symmetric encryption
+blast str aes_encrypt(str plaintext, str key, str mode = "gcm") {
+    # AES encryption
+    # Modes: gcm, cbc, ctr
+    # Key must be 16, 24, or 32 bytes
+    native "crypto_aes_encrypt";
+}
+
+blast str aes_decrypt(str ciphertext, str key, str mode = "gcm") {
+    # AES decryption
+    native "crypto_aes_decrypt";
+}
+
+# Asymmetric encryption (RSA)
+blast str rsa_generate_keypair(int bits = 2048) {
+    # Generate RSA key pair
+    # Returns struct with 'public' and 'private' fields
+    native "crypto_rsa_keypair";
+}
+
+blast str rsa_encrypt(str plaintext, str public_key) {
+    # RSA public key encryption
+    native "crypto_rsa_encrypt";
+}
+
+blast str rsa_decrypt(str ciphertext, str private_key) {
+    # RSA private key decryption
+    native "crypto_rsa_decrypt";
+}
+
+# Digital signatures
+blast str rsa_sign(str data, str private_key) {
+    # Sign data with RSA private key
+    native "crypto_rsa_sign";
+}
+
+blast bool rsa_verify(str data, str signature, str public_key) {
+    # Verify RSA signature
+    native "crypto_rsa_verify";
+}
+
+# Elliptic curve cryptography
+blast str ecdsa_generate_keypair(str curve = "secp256k1") {
+    # Generate ECDSA key pair
+    # Curves: secp256k1, secp384r1, secp521r1
+    native "crypto_ecdsa_keypair";
+}
+
+blast str ecdsa_sign(str data, str private_key) {
+    # ECDSA signature
+    native "crypto_ecdsa_sign";
+}
+
+blast bool ecdsa_verify(str data, str signature, str public_key) {
+    # Verify ECDSA signature
+    native "crypto_ecdsa_verify";
+}
+
+# Random number generation (cryptographically secure)
+blast int random_bytes(int length) {
+    # Generate cryptographically secure random bytes
+    # Returns array of byte values
+    native "crypto_random_bytes";
+}
+
+blast str random_hex(int length) {
+    # Generate random hex string
+    # Length is number of bytes, output is 2*length characters
+    native "crypto_random_hex";
+}
+
+blast str random_uuid() {
+    # Generate random UUID v4
+    native "crypto_random_uuid";
+}
+
+# Key derivation
+blast str pbkdf2(str password, str salt, int iterations = 100000, int key_len = 32) {
+    # PBKDF2 key derivation
+    native "crypto_pbkdf2";
+}
+
+blast str hkdf(str secret, str salt, str info = "", int length = 32) {
+    # HKDF key derivation
+    native "crypto_hkdf";
+}
+
+# Encoding utilities
+blast str hex_encode(array bytes) {
+    # Encode bytes to hex string
+    native "crypto_hex_encode";
+}
+
+blast array hex_decode(str hex_string) {
+    # Decode hex string to bytes
+    native "crypto_hex_decode";
+}
+
+blast str base64_encode(array bytes) {
+    # Encode bytes to base64
+    # Re-export from stdlib
+    return base64.encode_bytes(bytes);
+}
+
+blast array base64_decode(str base64_string) {
+    # Decode base64 to bytes
+    # Re-export from stdlib
+    return base64.decode_bytes(base64_string);
+}
+
+# Utility functions
+blast str hash_file(str path, str algorithm = "sha256") {
+    # Hash file contents
+    # Algorithms: sha256, sha512, md5, blake2b
+    native "crypto_hash_file";
+}
+
+blast bool constant_time_equals(str a, str b) {
+    # Constant-time string comparison
+    # Use for comparing hashes/tokens
+    native "crypto_constant_time_equals";
+}
+
+# Export public API
+export sha256, sha512, md5, blake2b;
+export hmac_sha256, hmac_sha512;
+export password_hash, password_verify;
+export aes_encrypt, aes_decrypt;
+export rsa_generate_keypair, rsa_encrypt, rsa_decrypt;
+export rsa_sign, rsa_verify;
+export ecdsa_generate_keypair, ecdsa_sign, ecdsa_verify;
+export random_bytes, random_hex, random_uuid;
+export pbkdf2, hkdf;
+export hex_encode, hex_decode, base64_encode, base64_decode;
+export hash_file, constant_time_equals;
