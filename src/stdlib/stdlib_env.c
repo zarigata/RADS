@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>  // for getcwd(), getlogin()
 
 extern Value make_string(const char* val);
 extern Value make_int(long long val);
