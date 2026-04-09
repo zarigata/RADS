@@ -1,0 +1,45 @@
+{
+  "name": "RADS Programming Language",
+  "short_name": "RADS",
+  "description": "High Performance Retro-Future Programming Language",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0078D7",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/branding/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/branding/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["developer tools", "programming"],
+  "screenshots": [
+    {
+      "src": "assets/screenshots/homepage.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "RADS Homepage"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Documentation",
+      "url": "/documentation.html",
+      "description": "View RADS documentation"
+    },
+    {
+      "name": "Playground",
+      "url": "/playground.html",
+      "description": "Try RADS in your browser"
+    }
+  ]
+}

@@ -36,10 +36,57 @@
     <meta name="language" content="English">
     
     <link rel="icon" type="image/svg+xml" href="assets/branding/favicon.svg">
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="style.css" as="style">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fira+Code&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0078D7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RADS">
+    
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareSourceCode",
+        "name": "RADS",
+        "description": "High Performance Retro-Future Programming Language with Bytecode VM",
+        "programmingLanguage": "RADS",
+        "codeRepository": "https://github.com/zarigata/RADS",
+        "license": "https://opensource.org/licenses/MIT",
+        "author": {
+            "@type": "Organization",
+            "name": "FeverDream Dev",
+            "url": "https://feverdream.dev"
+        },
+        "version": "0.0.11",
+        "dateCreated": "2025-01-01",
+        "dateModified": "2026-04-09",
+        "downloadUrl": "https://github.com/zarigata/RADS/releases",
+        "softwareRequirements": [
+            "GCC",
+            "libuv",
+            "readline",
+            "SQLite3"
+        ]
+    }
+    </script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('SW registered:', reg.scope))
+                    .catch(err => console.log('SW registration failed:', err));
+            });
+        }
+    </script>
 </head>
 <body>
     <div class="bg-blur blur-1"></div>
