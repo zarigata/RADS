@@ -1,0 +1,28 @@
+{
+  "name": "rads",
+  "version": "1.0.0",
+  "description": "---",
+  "main": "analyze-site.js",
+  "directories": {
+    "doc": "docs",
+    "example": "examples",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zarigata/RADS.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zarigata/RADS/issues"
+  },
+  "homepage": "https://github.com/zarigata/RADS#readme",
+  "dependencies": {
+    "playwright": "^1.59.1"
+  }
+}
