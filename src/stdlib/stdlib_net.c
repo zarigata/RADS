@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>  // for strcasecmp, strncasecmp on macOS
 #include <ctype.h>
 #include <stdbool.h>
 #include <time.h>
