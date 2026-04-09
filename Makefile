@@ -20,7 +20,8 @@ LDFLAGS =
 TARGET = rads
 
 # Dependency check for libuv
-UV_H := $(shell find $(UV_INCLUDE) /usr/include /usr/local/include -name uv.h -print -quit)
+# Find uv.h in common locations
+UV_H := $(shell find $(UV_INCLUDE) /usr/include /usr/local/include /opt/homebrew/include -name uv.h -print -quit 2>/dev/null)
 ifndef UV_H
     $(error "libuv header (uv.h) not found. Please install libuv-dev or set the UV_INCLUDE environment variable.")
 endif
