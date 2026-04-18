@@ -1,4 +1,91 @@
-# 🚀 RADS v0.0.11 "PULSAR"
+# 🚀 RADS v0.0.12 "QUASAR II"
+
+---
+
+## 🆕 What's New in v0.0.12
+
+### ✨ New Standard Library Modules
+
+**hash Module #️⃣:**
+- `hash.fnv1a(str)` - FNV-1a 32-bit hash (hex string)
+- `hash.fnv1a64(str)` - FNV-1a 64-bit hash (hex string)
+- `hash.djb2(str)` - DJB2 hash
+- `hash.crc32(str)` - CRC32 checksum
+- `hash.adler32(str)` - Adler-32 checksum
+- `hash.xorshift(str)` - Xorshift hash (64-bit)
+- `hash.bucket(str, n)` - Hash bucket index for hash tables
+
+**uuid Module 🔑:**
+- `uuid.v4()` - Generate RFC 4122 v4 UUID
+- `uuid.short()` - Generate 8-char short ID
+- `uuid.nanoid(len)` - Generate NanoID-style string (default 21 chars)
+- `uuid.is_valid(str)` - Validate UUID format
+
+**process Module ⚙️:**
+- `process.exec(cmd)` - Execute command, return stdout
+- `process.exec_status(cmd)` - Execute command, return [stdout, exit_code]
+- `process.pid()` - Get current process ID
+- `process.ppid()` - Get parent process ID
+- `process.uid()` - Get user ID
+- `process.sleep(secs)` - Sleep for N seconds
+- `process.sleep_ms(ms)` - Sleep for N milliseconds
+- `process.cwd()` - Get current working directory
+- `process.chdir(path)` - Change directory
+- `process.hostname()` - Get system hostname
+- `process.cpu_count()` - Get number of CPU cores
+- `process.uptime()` - Get process uptime in seconds
+- `process.exit(code)` - Exit the process
+
+### ✨ Major JSON Overhaul
+
+**New Full-Featured JSON Parser & Serializer:**
+- `json.parse(str)` - Full recursive JSON parser (objects, arrays, nested, unicode, escapes)
+- `json.stringify(value)` - Serialize any value to compact JSON
+- `json.stringify_pretty(value)` - Serialize to indented JSON
+- `json.get(data, path)` - Get nested value by dot-path (e.g. `"user.address.city"`)
+- `json.keys(obj)` - Get array of keys from parsed object
+- `json.values(obj)` - Get array of values from parsed object
+- `json.has_key(obj, key)` - Check if key exists
+- `json.type_of(value)` - Get type name string
+
+### ✨ Array Module — 12 New Functions
+- `array.includes(arr, val)` - Check if value exists
+- `array.index_of(arr, val)` - Find first index of value
+- `array.last_index_of(arr, val)` - Find last index of value
+- `array.flat(arr, depth)` - Flatten nested arrays
+- `array.slice(arr, start, end)` - Extract sub-array (supports negative indices)
+- `array.unique(arr)` - Remove duplicates
+- `array.count(arr)` - Get array length
+- `array.is_empty(arr)` - Check if empty
+- `array.concat(a, b)` - Merge two arrays
+- `array.push(arr, val)` - Append (mutating)
+- `array.pop(arr)` - Remove and return last (mutating)
+- `array.shift(arr)` - Remove and return first (mutating)
+
+### ✨ String Module — 10 New Functions
+- `str.repeat(str, n)` - Repeat string N times
+- `str.pad_left(str, width, fill)` - Left-pad string
+- `str.pad_right(str, width, fill)` - Right-pad string
+- `str.char_at(str, index)` - Get character at index
+- `str.to_int(str)` - Parse string to integer
+- `str.to_float(str)` - Parse string to float
+- `str.is_empty(str)` - Check if empty string
+- `str.reverse(str)` - Reverse string
+- `str.count(str, substr)` - Count occurrences
+- `str.title(str)` - Title-case string
+- `str.capitalize(str)` - Capitalize first character
+
+### ✨ Math Module — 9 New Functions
+- `math.PI()` - π constant
+- `math.E()` - e constant
+- `math.atan2(y, x)` - Arc tangent of y/x
+- `math.hypot(a, b)` - Hypotenuse
+- `math.sign(x)` - Sign of number (-1, 0, 1)
+- `math.sum(arr)` - Sum of array
+- `math.avg(arr)` - Average of array
+- `math.median(arr)` - Median of array
+- `math.deg_to_rad(deg)` - Degrees to radians
+- `math.rad_to_deg(rad)` - Radians to degrees
 
 ---
 

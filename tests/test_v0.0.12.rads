@@ -1,0 +1,306 @@
+// ═══════════════════════════════════════════
+// RADS v0.0.12 Test Suite — New Features
+// ═══════════════════════════════════════════
+
+test.describe("hash module", fn() {
+    test.it("computes fnv1a hash", fn() {
+        let h = hash.fnv1a("hello")
+        test.expect(h).toBeTruthy()
+        test.expect(str.length(h)).toBe(8)
+    })
+
+    test.it("computes crc32", fn() {
+        let c = hash.crc32("hello")
+        test.expect(c).toBeTruthy()
+        test.expect(str.length(c)).toBe(8)
+    })
+
+    test.it("computes adler32", fn() {
+        let a = hash.adler32("test data")
+        test.expect(a).toBeTruthy()
+    })
+
+    test.it("computes bucket index", fn() {
+        let b = hash.bucket("mykey", 16)
+        test.expect(b >= 0).toBeTruthy()
+        test.expect(b < 16).toBeTruthy()
+    })
+})
+
+test.describe("uuid module", fn() {
+    test.it("generates v4 UUID", fn() {
+        let id = uuid.v4()
+        test.expect(str.length(id)).toBe(36)
+        test.expect(uuid.is_valid(id)).toBeTruthy()
+    })
+
+    test.it("generates short ID", fn() {
+        let id = uuid.short()
+        test.expect(str.length(id)).toBe(8)
+    })
+
+    test.it("generates nanoid", fn() {
+        let id = uuid.nanoid()
+        test.expect(str.length(id)).toBe(21)
+        let id10 = uuid.nanoid(10)
+        test.expect(str.length(id10)).toBe(10)
+    })
+
+    test.it("validates UUID format", fn() {
+        test.expect(uuid.is_valid("550e8400-e29b-41d4-a716-446655440000")).toBeTruthy()
+        test.expect(uuid.is_valid("not-a-uuid")).toBeFalsy()
+    })
+})
+
+test.describe("process module", fn() {
+    test.it("gets PID", fn() {
+        let pid = process.pid()
+        test.expect(pid > 0).toBeTruthy()
+    })
+
+    test.it("gets PPID", fn() {
+        let ppid = process.ppid()
+        test.expect(ppid > 0).toBeTruthy()
+    })
+
+    test.it("gets UID", fn() {
+        let uid = process.uid()
+        test.expect(uid >= 0).toBeTruthy()
+    })
+
+    test.it("gets CPU count", fn() {
+        let cpus = process.cpu_count()
+        test.expect(cpus >= 1).toBeTruthy()
+    })
+
+    test.it("gets hostname", fn() {
+        let name = process.hostname()
+        test.expect(str.length(name) > 0).toBeTruthy()
+    })
+
+    test.it("gets cwd", fn() {
+        let dir = process.cwd()
+        test.expect(str.length(dir) > 0).toBeTruthy()
+    })
+
+    test.it("exec returns output", fn() {
+        let out = process.exec("echo hello")
+        test.expect(str.contains(out, "hello")).toBeTruthy()
+    })
+})
+
+test.describe("json.parse — full parser", fn() {
+    test.it("parses simple object", fn() {
+        let data = json.parse("{\"name\":\"RADS\",\"version\":12}")
+        test.expect(json.has_key(data, "name")).toBeTruthy()
+        test.expect(json.has_key(data, "version")).toBeTruthy()
+    })
+
+    test.it("parses nested object", fn() {
+        let data = json.parse("{\"user\":{\"name\":\"Z\",\"age\":30}}")
+        let user = json.get(data, "user")
+        test.expect(json.has_key(user, "name")).toBeTruthy()
+    })
+
+    test.it("parses arrays", fn() {
+        let data = json.parse("[1,2,3,4,5]")
+        test.expect(array.count(data)).toBe(5)
+    })
+
+    test.it("parses booleans and null", fn() {
+        let data = json.parse("{\"a\":true,\"b\":false,\"c\":null}")
+        test.expect(json.has_key(data, "a")).toBeTruthy()
+        test.expect(json.has_key(data, "b")).toBeTruthy()
+        test.expect(json.has_key(data, "c")).toBeTruthy()
+    })
+
+    test.it("parses floats", fn() {
+        let data = json.parse("{\"pi\":3.14159}")
+        test.expect(json.has_key(data, "pi")).toBeTruthy()
+    })
+
+    test.it("parses unicode escapes", fn() {
+        let data = json.parse("{\"emoji\":\"\\u0048\\u0065\\u006c\\u006c\\u006f\"}")
+        test.expect(json.has_key(data, "emoji")).toBeTruthy()
+    })
+})
+
+test.describe("json.stringify — full serializer", fn() {
+    test.it("stringifies a value", fn() {
+        let s = json.stringify("hello")
+        test.expect(str.contains(s, "hello")).toBeTruthy()
+    })
+
+    test.it("stringifies pretty", fn() {
+        let data = json.parse("{\"a\":1,\"b\":2}")
+        let s = json.stringify_pretty(data)
+        test.expect(str.contains(s, "\\n")).toBeTruthy()
+    })
+
+    test.it("round-trips JSON", fn() {
+        let original = "{\"x\":42,\"y\":[1,2,3]}"
+        let parsed = json.parse(original)
+        let output = json.stringify(parsed)
+        test.expect(str.contains(output, "x")).toBeTruthy()
+        test.expect(str.contains(output, "42")).toBeTruthy()
+    })
+})
+
+test.describe("json helpers", fn() {
+    test.it("json.get with dot path", fn() {
+        let data = json.parse("{\"a\":{\"b\":{\"c\":99}}}")
+        let val = json.get(data, "a.b.c")
+        test.expect(val).toBe(99)
+    })
+
+    test.it("json.keys returns key array", fn() {
+        let data = json.parse("{\"x\":1,\"y\":2,\"z\":3}")
+        let keys = json.keys(data)
+        test.expect(array.count(keys)).toBe(3)
+    })
+
+    test.it("json.values returns value array", fn() {
+        let data = json.parse("{\"x\":1,\"y\":2,\"z\":3}")
+        let vals = json.values(data)
+        test.expect(array.count(vals)).toBe(3)
+    })
+
+    test.it("json.type_of returns type strings", fn() {
+        test.expect(json.type_of(42)).toBe("int")
+        test.expect(json.type_of(3.14)).toBe("float")
+        test.expect(json.type_of("hello")).toBe("string")
+        test.expect(json.type_of(true)).toBe("bool")
+    })
+})
+
+test.describe("array — new functions", fn() {
+    test.it("includes checks membership", fn() {
+        let arr = [1, 2, 3, 4, 5]
+        test.expect(array.includes(arr, 3)).toBeTruthy()
+        test.expect(array.includes(arr, 99)).toBeFalsy()
+    })
+
+    test.it("index_of finds element", fn() {
+        let arr = [10, 20, 30]
+        test.expect(array.index_of(arr, 20)).toBe(1)
+        test.expect(array.index_of(arr, 99)).toBe(-1)
+    })
+
+    test.it("flat flattens nested arrays", fn() {
+        let arr = [[1, 2], [3, 4], [5]]
+        let flat = array.flat(arr)
+        test.expect(array.count(flat)).toBe(5)
+    })
+
+    test.it("slice extracts sub-array", fn() {
+        let arr = [0, 1, 2, 3, 4]
+        let s = array.slice(arr, 1, 3)
+        test.expect(array.count(s)).toBe(2)
+    })
+
+    test.it("unique removes duplicates", fn() {
+        let arr = [1, 2, 2, 3, 3, 3, 4]
+        let u = array.unique(arr)
+        test.expect(array.count(u)).toBe(4)
+    })
+
+    test.it("concat merges arrays", fn() {
+        let a = [1, 2]
+        let b = [3, 4]
+        let c = array.concat(a, b)
+        test.expect(array.count(c)).toBe(4)
+    })
+
+    test.it("push/pop/shift mutate", fn() {
+        let arr = [1, 2, 3]
+        array.push(arr, 4)
+        test.expect(array.count(arr)).toBe(4)
+        let last = array.pop(arr)
+        test.expect(last).toBe(4)
+        let first = array.shift(arr)
+        test.expect(first).toBe(1)
+    })
+})
+
+test.describe("string — new functions", fn() {
+    test.it("repeat repeats strings", fn() {
+        let s = str.repeat("ab", 3)
+        test.expect(s).toBe("ababab")
+    })
+
+    test.it("pad_left pads on the left", fn() {
+        let s = str.pad_left("42", 5, "0")
+        test.expect(s).toBe("00042")
+    })
+
+    test.it("pad_right pads on the right", fn() {
+        let s = str.pad_right("hi", 5, ".")
+        test.expect(s).toBe("hi...")
+    })
+
+    test.it("char_at gets character", fn() {
+        let c = str.char_at("hello", 1)
+        test.expect(c).toBe("e")
+    })
+
+    test.it("to_int and to_float convert", fn() {
+        test.expect(str.to_int("42")).toBe(42)
+        test.expect(str.to_float("3.14") > 3.0).toBeTruthy()
+    })
+
+    test.it("reverse reverses strings", fn() {
+        test.expect(str.reverse("abc")).toBe("cba")
+    })
+
+    test.it("count counts occurrences", fn() {
+        test.expect(str.count("hello hello", "hello")).toBe(2)
+    })
+
+    test.it("title and capitalize work", fn() {
+        test.expect(str.title("hello world")).toBe("Hello World")
+        test.expect(str.capitalize("hello WORLD")).toBe("Hello world")
+    })
+})
+
+test.describe("math — new functions", fn() {
+    test.it("PI and E constants", fn() {
+        test.expect(math.PI() > 3.14).toBeTruthy()
+        test.expect(math.E() > 2.71).toBeTruthy()
+    })
+
+    test.it("atan2 computes angle", fn() {
+        let angle = math.atan2(1, 1)
+        test.expect(angle > 0.7).toBeTruthy()
+    })
+
+    test.it("hypot computes distance", fn() {
+        let d = math.hypot(3, 4)
+        test.expect(d).toBe(5.0)
+    })
+
+    test.it("sign returns sign", fn() {
+        test.expect(math.sign(42)).toBe(1)
+        test.expect(math.sign(-5)).toBe(-1)
+        test.expect(math.sign(0)).toBe(0)
+    })
+
+    test.it("sum and avg work on arrays", fn() {
+        let arr = [1, 2, 3, 4, 5]
+        test.expect(math.sum(arr)).toBe(15)
+        test.expect(math.avg(arr)).toBe(3.0)
+    })
+
+    test.it("median computes middle value", fn() {
+        let arr = [1, 3, 5, 7, 9]
+        test.expect(math.median(arr)).toBe(5.0)
+    })
+
+    test.it("deg_to_rad and rad_to_deg convert", fn() {
+        let rad = math.deg_to_rad(180)
+        test.expect(rad > 3.14).toBeTruthy()
+        let deg = math.rad_to_deg(3.14159)
+        test.expect(deg > 179).toBeTruthy()
+    })
+})
+
+test.run()
