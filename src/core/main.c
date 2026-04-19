@@ -31,6 +31,9 @@
 #include "stdlib_cli.h"
 #include "stdlib_csv.h"
 #include "stdlib_base64.h"
+#include "stdlib_random.h"
+#include "stdlib_path.h"
+#include "stdlib_hash.h"
 
 // ANSI Color Codes for Chroma Effects
 #define COLOR_RESET     "\033[0m"
@@ -261,7 +264,10 @@ int run_repl() {
     stdlib_net_register();
     stdlib_ffi_register();
     stdlib_string_register();
+    stdlib_string_advanced_register();
     stdlib_math_register();
+    stdlib_math_extended_register();
+    stdlib_array_register();
     stdlib_fs_register();
     stdlib_json_register();
     stdlib_db_register();
@@ -273,6 +279,10 @@ int run_repl() {
     stdlib_cli_register();
     stdlib_csv_register();
     stdlib_base64_register();
+    stdlib_random_register();
+    stdlib_path_register();
+    stdlib_websocket_register();
+    stdlib_graphql_register();
     int line_num = 1;
 
     // RGB Chroma color cycle for prompt (like RGB keyboard)
@@ -469,7 +479,6 @@ int main(int argc, char* argv[]) {
     stdlib_json_register();
     stdlib_db_register();
     stdlib_webengine_register();
-    stdlib_filesystem_register();
     stdlib_async_utils_register();
     stdlib_datetime_register();
     stdlib_regex_register();
@@ -478,8 +487,11 @@ int main(int argc, char* argv[]) {
     stdlib_cli_register();
     stdlib_csv_register();
     stdlib_base64_register();
-    // TODO: stdlib_websocket_register();
-    // TODO: stdlib_graphql_register();
+    stdlib_random_register();
+    stdlib_path_register();
+    stdlib_hash_register();
+    stdlib_websocket_register();
+    stdlib_graphql_register();
 
     // Tokenize
     Lexer lexer;

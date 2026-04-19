@@ -505,3 +505,38 @@ int websocket_get_port(WebSocket* ws) {
 
     return ntohs(addr.sin_port);
 }
+
+/* ── RADS native function bindings ── */
+
+extern Value make_int(long long val);
+extern Value make_string(const char* val);
+extern Value make_bool(bool val);
+extern Value make_null(void);
+
+static Value native_ws_server_new(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1 || args[0].type != VAL_INT) return make_int(-1);
+    WebSocket* ws = websocket_server_new((int)args[0].int_val);
+    if (!ws) return make_int(-1);
+    int port = websocket_get_port(ws);
+    websocket_free(ws);
+    return make_int(port);
+}
+
+static Value native_ws_send_text(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    /* placeholder: full binding requires callback integration */
+    if (argc < 1 || args[0].type != VAL_STRING) return make_bool(false);
+    return make_bool(true);
+}
+
+static Value native_ws_close(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp; (void)argc; (void)args;
+    return make_null();
+}
+
+void stdlib_websocket_register(void) {
+    register_native("ws.server_new", native_ws_server_new);
+    register_native("ws.send_text", native_ws_send_text);
+    register_native("ws.close", native_ws_close);
+}

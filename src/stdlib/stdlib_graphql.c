@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <stdint.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -501,4 +502,40 @@ void graphql_server_stop(struct GraphQLServer* server) {
 
     GraphQLServerImpl* impl = (GraphQLServerImpl*)server;
     impl->running = false;
+}
+
+/* ── RADS native function bindings ── */
+
+extern Value make_string(const char* val);
+extern Value make_int(long long val);
+extern Value make_bool(bool val);
+extern Value make_null(void);
+
+static Value native_gql_parse(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1 || args[0].type != VAL_STRING) return make_null();
+    char* error = NULL;
+    GraphQLQuery* q = graphql_parse(args[0].string_val, &error);
+    if (!q) {
+        Value v;
+        if (error) { v = make_string(error); free(error); }
+        else v = make_string("Parse error");
+        return v;
+    }
+    char* json = graphql_value_to_json(q->result);
+    graphql_query_free(q);
+    if (json) return make_string(json);
+    return make_string("{}");
+}
+
+static Value native_gql_schema_create(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp; (void)argc; (void)args;
+    GraphQLSchema* schema = graphql_schema_create();
+    /* Return pointer as int for now; future: opaque handle type */
+    return make_int(schema ? (long long)(uintptr_t)schema : 0);
+}
+
+void stdlib_graphql_register(void) {
+    register_native("graphql.parse", native_gql_parse);
+    register_native("graphql.schema_create", native_gql_schema_create);
 }
