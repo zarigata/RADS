@@ -308,20 +308,16 @@ print("CPU utilization: " + str(cpu_time / wall_time * 100) + "%")
 
 ## Platform Notes
 
-### Linux
-- Uses `clock_gettime()` with `CLOCK_MONOTONIC`, `CLOCK_MONOTONIC_RAW`, `CLOCK_REALTIME`, `CLOCK_PROCESS_CPUTIME_ID`, and `CLOCK_THREAD_CPUTIME_ID`
-- Nanosecond precision available
+### POSIX Systems (Linux, macOS, BSD)
+- Uses `clock_gettime()` when available with `CLOCK_MONOTONIC`, `CLOCK_REALTIME`, `CLOCK_PROCESS_CPUTIME_ID`, and `CLOCK_THREAD_CPUTIME_ID`
+- Nanosecond precision on systems that support it
 - `nanosleep()` for high-resolution sleep
 
-### macOS
-- Uses `clock_gettime()` (macOS 10.12+) with appropriate clock types
-- Nanosecond precision available
-- `nanosleep()` for high-resolution sleep
-
-### Windows
-- Uses `gettimeofday()` and `clock()` as fallback
-- Microsecond precision
-- `usleep()` for sleep (via POSIX compatibility layer)
+### Fallback Platforms
+- Uses `gettimeofday()` for wall-clock time when `clock_gettime()` is unavailable
+- Uses `clock()` for CPU time when process/thread clocks are unavailable
+- Uses `usleep()` for sleep when `nanosleep()` is unavailable
+- Microsecond precision on fallback platforms
 
 ---
 
