@@ -1,10 +1,13 @@
-#define _POSIX_C_SOURCE 200809L
+#define _POSIX_C_SOURCE 199309L
+#define _BSD_SOURCE 1
+#define _DEFAULT_SOURCE 1
 #include "stdlib_time.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
+#include <unistd.h>
 
 /* ── Time Module ──
  * Provides timing and sleep functions similar to Python's time module.
@@ -28,7 +31,7 @@ extern Value make_error(const char* msg);
 
 /* ── Helper: Get high-resolution timestamp in seconds ── */
 static double get_perf_counter(void) {
-#if defined(CLOCK_MONOTONIC) || defined(__linux__) || defined(__APPLE__)
+#if defined(CLOCK_MONOTONIC)
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (double)ts.tv_sec + (double)ts.tv_nsec * 1e-9;
@@ -41,7 +44,7 @@ static double get_perf_counter(void) {
 
 /* ── Helper: Get process CPU time in seconds ── */
 static double get_process_time(void) {
-#if defined(CLOCK_PROCESS_CPUTIME_ID) || defined(__linux__) || defined(__APPLE__)
+#if defined(CLOCK_PROCESS_CPUTIME_ID)
     struct timespec ts;
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
     return (double)ts.tv_sec + (double)ts.tv_nsec * 1e-9;
@@ -94,7 +97,7 @@ Value native_time_sleep(struct Interpreter* interp, int argc, Value* args) {
 /* ── time.time() ── Unix timestamp in seconds since epoch ── */
 Value native_time_time(struct Interpreter* interp, int argc, Value* args) {
     (void)interp; (void)argc;
-#if defined(CLOCK_REALTIME) || defined(__linux__) || defined(__APPLE__)
+#if defined(CLOCK_REALTIME)
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
     return make_float((double)ts.tv_sec + (double)ts.tv_nsec * 1e-9);
@@ -114,18 +117,7 @@ Value native_time_perf_counter(struct Interpreter* interp, int argc, Value* args
 /* ── time.monotonic() ── Monotonic clock (never goes backward) ── */
 Value native_time_monotonic(struct Interpreter* interp, int argc, Value* args) {
     (void)interp; (void)argc;
-#if defined(CLOCK_MONOTONIC_RAW)
-    /* Use CLOCK_MONOTONIC_RAW for best monotonic behavior (Linux-specific) */
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
-    return make_float((double)ts.tv_sec + (double)ts.tv_nsec * 1e-9);
-#elif defined(CLOCK_MONOTONIC)
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return make_float((double)ts.tv_sec + (double)ts.tv_nsec * 1e-9);
-#else
     return make_float(get_perf_counter());
-#endif
 }
 
 /* ── time.clock() ── CPU time used by the process ── */
@@ -143,7 +135,7 @@ Value native_time_process_time(struct Interpreter* interp, int argc, Value* args
 /* ── time.thread_time() ── Thread-specific CPU time ── */
 Value native_time_thread_time(struct Interpreter* interp, int argc, Value* args) {
     (void)interp; (void)argc;
-#if defined(CLOCK_THREAD_CPUTIME_ID) || defined(__linux__) || defined(__APPLE__)
+#if defined(CLOCK_THREAD_CPUTIME_ID)
     struct timespec ts;
     clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts);
     return make_float((double)ts.tv_sec + (double)ts.tv_nsec * 1e-9);
@@ -161,7 +153,7 @@ Value native_time_unix(struct Interpreter* interp, int argc, Value* args) {
 /* ── time.millis() ── Unix timestamp in milliseconds ── */
 Value native_time_millis(struct Interpreter* interp, int argc, Value* args) {
     (void)interp; (void)argc;
-#if defined(CLOCK_REALTIME) || defined(__linux__) || defined(__APPLE__)
+#if defined(CLOCK_REALTIME)
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
     return make_float((double)(ts.tv_sec * 1000LL) + (double)ts.tv_nsec / 1e6);
@@ -175,7 +167,7 @@ Value native_time_millis(struct Interpreter* interp, int argc, Value* args) {
 /* ── time.micros() ── Unix timestamp in microseconds ── */
 Value native_time_micros(struct Interpreter* interp, int argc, Value* args) {
     (void)interp; (void)argc;
-#if defined(CLOCK_REALTIME) || defined(__linux__) || defined(__APPLE__)
+#if defined(CLOCK_REALTIME)
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
     return make_float((double)(ts.tv_sec * 1000000LL) + (double)ts.tv_nsec / 1e3);
