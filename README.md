@@ -157,6 +157,44 @@
 - `base64.encode_bytes(arr)` - Encode byte array
 - `base64.decode_bytes(str)` - Decode to byte array
 
+**random Module 🎲:**
+- `random.seed(n)` - Seed the PRNG (auto-seeded from time+PID+clock)
+- `random.int(min, max)` - Random integer in [min, max]
+- `random.float()` - Random float in [0.0, 1.0)
+- `random.range(min, max)` - Random float in [min, max)
+- `random.choice(arr)` - Random element from array
+- `random.shuffle(arr)` - Shuffle array in-place
+- `random.sample(arr, n)` - N unique random elements
+- `random.bool()` - Random true/false
+- `random.uuid()` - Generate random UUID string
+
+**path Module 📁:**
+- `path.join(...parts)` - Join path components
+- `path.basename(path)` - Get filename
+- `path.dirname(path)` - Get directory name
+- `path.extname(path)` - Get file extension
+- `path.stem(path)` - Get filename without extension
+- `path.is_absolute(path)` - Check if path is absolute
+- `path.normalize(path)` - Normalize path (resolve `..`, `.`)
+- `path.split(path)` - Split into (dirname, basename)
+- `path.splitext(path)` - Split into (root, ext)
+- `path.sep` - Path separator (`/` or `\\`)
+- `path.cwd()` - Current working directory
+- `path.home()` - User home directory
+- `path.glob(pattern)` - Find files matching pattern
+
+**time Module ⏱️:**
+- `time.sleep(seconds)` - Sleep for N seconds (float supported)
+- `time.time()` - Unix timestamp in seconds
+- `time.unix()` - Alias for time.time()
+- `time.millis()` - Unix timestamp in milliseconds
+- `time.micros()` - Unix timestamp in microseconds
+- `time.perf_counter()` - High-resolution monotonic clock (benchmarking)
+- `time.monotonic()` - Monotonic clock (never goes backward)
+- `time.clock()` - Process CPU time
+- `time.process_time()` - High-resolution process time
+- `time.thread_time()` - Thread CPU time
+
 ### ✨ v0.0.10 Features (Still Available)
 
 **datetime Module 🕐:**

@@ -1,0 +1,80 @@
+# Time Module Test Suite
+# Tests for time.sleep, time.time, time.perf_counter, time.monotonic, etc.
+
+import "stdlib/test.rads"
+
+# Test 1: time.time() returns a number
+let t = time.time()
+assert(type(t) == "float", "time.time() should return float")
+print("✓ time.time() works: " + str(t))
+
+# Test 2: time.millis() returns milliseconds timestamp
+let ms = time.millis()
+assert(type(ms) == "float", "time.millis() should return float")
+print("✓ time.millis() works: " + str(ms))
+
+# Test 3: time.micros() returns microseconds timestamp
+let us = time.micros()
+assert(type(us) == "float", "time.micros() should return float")
+print("✓ time.micros() works: " + str(us))
+
+# Test 4: time.perf_counter() returns monotonic value
+let pc1 = time.perf_counter()
+time.sleep(0.01)  # Sleep 10ms
+let pc2 = time.perf_counter()
+assert(pc2 > pc1, "perf_counter should increase")
+print("✓ time.perf_counter() works: " + str(pc2 - pc1) + "s elapsed")
+
+# Test 5: time.monotonic() returns monotonic value
+let m1 = time.monotonic()
+time.sleep(0.01)
+let m2 = time.monotonic()
+assert(m2 > m1, "monotonic should increase")
+print("✓ time.monotonic() works: " + str(m2 - m1) + "s elapsed")
+
+# Test 6: time.clock() returns process CPU time
+let cpu = time.clock()
+assert(type(cpu) == "float", "time.clock() should return float")
+print("✓ time.clock() works: " + str(cpu) + "s CPU time")
+
+# Test 7: time.process_time() returns process time
+let pt = time.process_time()
+assert(type(pt) == "float", "time.process_time() should return float")
+print("✓ time.process_time() works: " + str(pt) + "s")
+
+# Test 8: time.thread_time() returns thread time
+let tt = time.thread_time()
+assert(type(tt) == "float", "time.thread_time() should return float")
+print("✓ time.thread_time() works: " + str(tt) + "s")
+
+# Test 9: time.sleep() with integer seconds
+let before = time.time()
+time.sleep(1)
+let after = time.time()
+assert(after - before >= 0.95, "sleep(1) should sleep at least 0.95s")
+print("✓ time.sleep(1) works")
+
+# Test 10: time.sleep() with fractional seconds
+let before_f = time.time()
+time.sleep(0.1)
+let after_f = time.time()
+assert(after_f - before_f >= 0.09, "sleep(0.1) should sleep at least 0.09s")
+print("✓ time.sleep(0.1) works")
+
+# Test 11: Benchmark example using perf_counter
+let start = time.perf_counter()
+# Do some work
+let sum = 0
+for i in range(1, 10000) {
+    sum = sum + i
+}
+let elapsed = time.perf_counter() - start
+print("✓ Benchmark completed in " + str(elapsed) + "s (sum=" + str(sum) + ")")
+
+# Test 12: time.unix() alias for time.time()
+let t1 = time.time()
+let t2 = time.unix()
+assert(abs(t1 - t2) < 1.0, "time.unix() should equal time.time()")
+print("✓ time.unix() alias works")
+
+print("\n✅ All time module tests passed!")

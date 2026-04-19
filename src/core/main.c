@@ -33,6 +33,7 @@
 #include "stdlib_base64.h"
 #include "stdlib_random.h"
 #include "stdlib_path.h"
+#include "stdlib_time.h"
 #include "stdlib_hash.h"
 
 // ANSI Color Codes for Chroma Effects
@@ -280,6 +281,7 @@ int run_repl() {
     stdlib_csv_register();
     stdlib_base64_register();
     stdlib_random_register();
+    stdlib_time_register();
     stdlib_path_register();
     stdlib_websocket_register();
     stdlib_graphql_register();
@@ -488,6 +490,7 @@ int main(int argc, char* argv[]) {
     stdlib_csv_register();
     stdlib_base64_register();
     stdlib_random_register();
+    stdlib_time_register();
     stdlib_path_register();
     stdlib_hash_register();
     stdlib_websocket_register();
