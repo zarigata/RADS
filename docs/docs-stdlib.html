@@ -223,6 +223,158 @@ test.run();</code></pre>
                             </tbody>
                         </table>
                         
+                        <h2 id="time">Module: time ⏱️</h2>
+                        <p>High-precision timing and sleep functions with nanosecond precision.</p>
+                        <h3>Functions</h3>
+                        <table class="api-table">
+                            <thead><tr><th>Function</th><th>Description</th><th>Example</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>time.sleep(seconds)</code></td><td>Sleep for specified seconds</td><td><code>time.sleep(1.5)</code></td></tr>
+                                <tr><td><code>time.time()</code></td><td>Current time as float (seconds since epoch)</td><td><code>time.time()</code></td></tr>
+                                <tr><td><code>time.unix()</code></td><td>Current Unix timestamp (integer seconds)</td><td><code>time.unix()</code></td></tr>
+                                <tr><td><code>time.millis()</code></td><td>Milliseconds since epoch</td><td><code>time.millis()</code></td></tr>
+                                <tr><td><code>time.micros()</code></td><td>Microseconds since epoch</td><td><code>time.micros()</code></td></tr>
+                                <tr><td><code>time.perf_counter()</code></td><td>High-resolution timer for benchmarks</td><td><code>time.perf_counter()</code></td></tr>
+                                <tr><td><code>time.monotonic()</code></td><td>Monotonic clock (never goes backwards)</td><td><code>time.monotonic()</code></td></tr>
+                                <tr><td><code>time.clock()</code></td><td>Process CPU time</td><td><code>time.clock()</code></td></tr>
+                                <tr><td><code>time.process_time()</code></td><td>Process + system CPU time</td><td><code>time.process_time()</code></td></tr>
+                                <tr><td><code>time.thread_time()</code></td><td>Current thread CPU time</td><td><code>time.thread_time()</code></td></tr>
+                            </tbody>
+                        </table>
+                        
+                        <h2 id="random">Module: random 🎲</h2>
+                        <p>Random number generation with multiple distributions.</p>
+                        <h3>Functions</h3>
+                        <table class="api-table">
+                            <thead><tr><th>Function</th><th>Description</th><th>Example</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>random.seed(value)</code></td><td>Seed the RNG</td><td><code>random.seed(42)</code></td></tr>
+                                <tr><td><code>random.int()</code></td><td>Random integer (platform-dependent range)</td><td><code>random.int()</code></td></tr>
+                                <tr><td><code>random.float()</code></td><td>Random float [0.0, 1.0)</td><td><code>random.float()</code></td></tr>
+                                <tr><td><code>random.range(min, max)</code></td><td>Random integer in [min, max]</td><td><code>random.range(1, 100)</code></td></tr>
+                                <tr><td><code>random.choice(array)</code></td><td>Random element from array</td><td><code>random.choice([1,2,3])</code></td></tr>
+                                <tr><td><code>random.shuffle(array)</code></td><td>Shuffle array in place</td><td><code>random.shuffle(arr)</code></td></tr>
+                                <tr><td><code>random.sample(array, n)</code></td><td>Random sample of n elements</td><td><code>random.sample(arr, 3)</code></td></tr>
+                                <tr><td><code>random.bool()</code></td><td>Random boolean</td><td><code>random.bool()</code></td></tr>
+                                <tr><td><code>random.uuid()</code></td><td>Generate UUID v4 string</td><td><code>random.uuid()</code></td></tr>
+                            </tbody>
+                        </table>
+                        
+                        <h2 id="path">Module: path 📁</h2>
+                        <p>Cross-platform path manipulation and filesystem operations.</p>
+                        <h3>Functions</h3>
+                        <table class="api-table">
+                            <thead><tr><th>Function</th><th>Description</th><th>Example</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>path.join(...parts)</code></td><td>Join path parts with OS separator</td><td><code>path.join("a", "b", "c")</code></td></tr>
+                                <tr><td><code>path.basename(path)</code></td><td>Get filename from path</td><td><code>path.basename("/a/b/c.txt")</code></td></tr>
+                                <tr><td><code>path.dirname(path)</code></td><td>Get directory from path</td><td><code>path.dirname("/a/b/c.txt")</code></td></tr>
+                                <tr><td><code>path.extname(path)</code></td><td>Get file extension</td><td><code>path.extname("file.txt")</code></td></tr>
+                                <tr><td><code>path.stem(path)</code></td><td>Get filename without extension</td><td><code>path.stem("file.txt")</code></td></tr>
+                                <tr><td><code>path.is_absolute(path)</code></td><td>Check if path is absolute</td><td><code>path.is_absolute("/a/b")</code></td></tr>
+                                <tr><td><code>path.normalize(path)</code></td><td>Normalize path (resolve . and ..)</td><td><code>path.normalize("a/b/../c")</code></td></tr>
+                                <tr><td><code>path.split(path)</code></td><td>Split into (dir, name)</td><td><code>path.split("/a/b/c")</code></td></tr>
+                                <tr><td><code>path.splitext(path)</code></td><td>Split into (name, ext)</td><td><code>path.splitext("file.txt")</code></td></tr>
+                                <tr><td><code>path.sep</code></td><td>OS path separator</td><td><code>path.sep</code></td></tr>
+                                <tr><td><code>path.cwd()</code></td><td>Current working directory</td><td><code>path.cwd()</code></td></tr>
+                                <tr><td><code>path.home()</code></td><td>User home directory</td><td><code>path.home()</code></td></tr>
+                                <tr><td><code>path.glob(pattern)</code></td><td>Find files matching pattern</td><td><code>path.glob("*.rads")</code></td></tr>
+                            </tbody>
+                        </table>
+                        
+                        <h2 id="os">Module: os 🖥️</h2>
+                        <p>System introspection and process control.</p>
+                        <h3>Functions</h3>
+                        <table class="api-table">
+                            <thead><tr><th>Function</th><th>Description</th><th>Example</th></tr></thead>
+                            <tbody>
+                                <tr><td><code>os.name()</code></td><td>OS name (linux, darwin, windows)</td><td><code>os.name()</code></td></tr>
+                                <tr><td><code>os.version()</code></td><td>OS version string</td><td><code>os.version()</code></td></tr>
+                                <tr><td><code>os.arch()</code></td><td>CPU architecture (x64, arm64)</td><td><code>os.arch()</code></td></tr>
+                                <tr><td><code>os.hostname()</code></td><td>System hostname</td><td><code>os.hostname()</code></td></tr>
+                                <tr><td><code>os.info()</code></td><td>Full system info struct</td><td><code>os.info()</code></td></tr>
+                                <tr><td><code>os.pid()</code></td><td>Current process ID</td><td><code>os.pid()</code></td></tr>
+                                <tr><td><code>os.ppid()</code></td><td>Parent process ID</td><td><code>os.ppid()</code></td></tr>
+                                <tr><td><code>os.uid()</code></td><td>Current user ID</td><td><code>os.uid()</code></td></tr>
+                                <tr><td><code>os.gid()</code></td><td>Current group ID</td><td><code>os.gid()</code></td></tr>
+                                <tr><td><code>os.exit(code)</code></td><td>Exit process with code</td><td><code>os.exit(0)</code></td></tr>
+                                <tr><td><code>os.env()</code></td><td>Get all env vars as struct</td><td><code>os.env()</code></td></tr>
+                                <tr><td><code>os.setenv(name, value)</code></td><td>Set environment variable</td><td><code>os.setenv("DEBUG", "1")</code></td></tr>
+                                <tr><td><code>os.unsetenv(name)</code></td><td>Remove environment variable</td><td><code>os.unsetenv("DEBUG")</code></td></tr>
+                                <tr><td><code>os.cpu_count()</code></td><td>Number of CPU cores</td><td><code>os.cpu_count()</code></td></tr>
+                                <tr><td><code>os.pagesize()</code></td><td>System memory page size</td><td><code>os.pagesize()</code></td></tr>
+                                <tr><td><code>os.mem_total()</code></td><td>Total system memory (bytes)</td><td><code>os.mem_total()</code></td></tr>
+                                <tr><td><code>os.mem_available()</code></td><td>Available memory (bytes)</td><td><code>os.mem_available()</code></td></tr>
+                                <tr><td><code>os.cwd()</code></td><td>Current working directory</td><td><code>os.cwd()</code></td></tr>
+                                <tr><td><code>os.tmpdir()</code></td><td>System temporary directory</td><td><code>os.tmpdir()</code></td></tr>
+                                <tr><td><code>os.sleep(ms)</code></td><td>Sleep for milliseconds</td><td><code>os.sleep(1000)</code></td></tr>
+                            </tbody>
+                        </table>
+                        
+                        <h2 id="math">Module: math ➕</h2>
+                        <p>Comprehensive mathematical functions (40+ functions). Covers trigonometry, hyperbolic, logarithmic, and utility operations.</p>
+                        <h3>Constants</h3>
+                        <ul>
+                            <li><code>math.PI()</code> - π (3.141592653589793)</li>
+                            <li><code>math.E()</code> - e (2.718281828459045)</li>
+                            <li><code>math.INF()</code> - Positive infinity</li>
+                            <li><code>math.NAN()</code> - Not-a-Number</li>
+                        </ul>
+                        <h3>Basic Operations</h3>
+                        <ul>
+                            <li><code>math.abs(x)</code> - Absolute value</li>
+                            <li><code>math.min(a, b)</code> - Minimum of two values</li>
+                            <li><code>math.max(a, b)</code> - Maximum of two values</li>
+                            <li><code>math.sign(x)</code> - Sign (-1, 0, 1)</li>
+                            <li><code>math.clamp(x, min, max)</code> - Clamp to range</li>
+                            <li><code>math.lerp(a, b, t)</code> - Linear interpolation</li>
+                        </ul>
+                        <h3>Rounding</h3>
+                        <ul>
+                            <li><code>math.floor(x)</code> - Round down</li>
+                            <li><code>math.ceil(x)</code> - Round up</li>
+                            <li><code>math.round(x)</code> - Round to nearest</li>
+                            <li><code>math.trunc(x)</code> - Truncate toward zero</li>
+                        </ul>
+                        <h3>Powers & Roots</h3>
+                        <ul>
+                            <li><code>math.sqrt(x)</code> - Square root</li>
+                            <li><code>math.cbrt(x)</code> - Cube root</li>
+                            <li><code>math.pow(x, y)</code> - x raised to power y</li>
+                            <li><code>math.hypot(a, b)</code> - Hypotenuse</li>
+                        </ul>
+                        <h3>Trigonometric (radians)</h3>
+                        <ul>
+                            <li><code>math.sin(x)</code>, <code>math.cos(x)</code>, <code>math.tan(x)</code></li>
+                            <li><code>math.asin(x)</code>, <code>math.acos(x)</code>, <code>math.atan(x)</code></li>
+                            <li><code>math.atan2(y, x)</code> - Arc tangent of y/x</li>
+                            <li><code>math.deg_to_rad(deg)</code> - Degrees to radians</li>
+                            <li><code>math.rad_to_deg(rad)</code> - Radians to degrees</li>
+                        </ul>
+                        <h3>Hyperbolic</h3>
+                        <ul>
+                            <li><code>math.sinh(x)</code>, <code>math.cosh(x)</code>, <code>math.tanh(x)</code></li>
+                        </ul>
+                        <h3>Logarithmic & Exponential</h3>
+                        <ul>
+                            <li><code>math.exp(x)</code> - e^x</li>
+                            <li><code>math.log(x)</code> - Natural logarithm</li>
+                            <li><code>math.log2(x)</code> - Base-2 logarithm</li>
+                            <li><code>math.log10(x)</code> - Base-10 logarithm</li>
+                        </ul>
+                        <h3>Special Value Checks</h3>
+                        <ul>
+                            <li><code>math.isnan(x)</code> - Check for NaN</li>
+                            <li><code>math.isinf(x)</code> - Check for infinity</li>
+                            <li><code>math.isfinite(x)</code> - Check for finite number</li>
+                        </ul>
+                        <h3>Array Operations</h3>
+                        <ul>
+                            <li><code>math.sum(arr)</code> - Sum of array</li>
+                            <li><code>math.avg(arr)</code> - Average of array</li>
+                            <li><code>math.median(arr)</code> - Median of array</li>
+                        </ul>
+                        
                         <h2 id="base64">Module: base64 🔐</h2>
                         <p>Base64 encoding and decoding for data encoding.</p>
                         <h3>Functions</h3>

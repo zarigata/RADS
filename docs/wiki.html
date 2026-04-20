@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RADS Wiki - Complete Reference</title>
+    <link rel="icon" type="image/svg+xml" href="assets/branding/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="docs-style.css">
+    <style>
+        .wiki-search {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+            padding: 1rem 1.5rem;
+            font-size: 1.1rem;
+            border: 2px solid rgba(0, 242, 255, 0.3);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            font-family: 'Fira Code', monospace;
+        }
+        .wiki-search:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.3);
+        }
+        .module-card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        .module-card:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 4px 20px rgba(0, 242, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .module-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+        .module-icon {
+            font-size: 2rem;
+        }
+        .module-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+        .module-desc {
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+        .function-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .function-tag {
+            background: rgba(0, 242, 255, 0.1);
+            color: var(--accent-cyan);
+            padding: 0.3rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-family: 'Fira Code', monospace;
+            border: 1px solid rgba(0, 242, 255, 0.2);
+        }
+        .function-tag:hover {
+            background: rgba(0, 242, 255, 0.2);
+        }
+        .category-section {
+            margin-bottom: 3rem;
+        }
+        .category-title {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: var(--secondary-green);
+            border-bottom: 2px solid rgba(0, 242, 255, 0.3);
+            padding-bottom: 0.5rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, rgba(0, 120, 215, 0.2), rgba(0, 242, 255, 0.1));
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            line-height: 1;
+        }
+        .stat-label {
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-blur blur-1"></div>
+    <div class="bg-blur blur-2"></div>
+    <div class="bg-blur blur-3"></div>
+    <div class="bg-blur blur-4"></div>
+    <header>
+        <div class="header-inner">
+            <a href="index.html" class="logo-link">
+                <img src="assets/branding/logo.png" alt="RADS Logo" class="logo-img">
+            </a>
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="guide.html">Guide</a>
+                <a href="documentation.html">Docs</a>
+                <a href="wiki.html" class="active">Wiki</a>
+                <a href="examples.html">Examples</a>
+                <a href="compare.html">Compare</a>
+                <a href="releases.html">Releases</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero-sub" style="padding: 4rem 1rem 2rem;">
+            <h1>📖 RADS Wiki</h1>
+            <p>Complete reference for all modules, functions, and features</p>
+        </section>
+
+        <section style="max-width: 1400px; margin: 0 auto; padding: 0 1rem 4rem;">
+            <input type="text" class="wiki-search" id="search" placeholder="🔍 Search modules and functions... (e.g., 'math', 'http', 'random')">
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">20+</div>
+                    <div class="stat-label">Standard Library Modules</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">300+</div>
+                    <div class="stat-label">Built-in Functions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">40+</div>
+                    <div class="stat-label">Math Functions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">22</div>
+                    <div class="stat-label">File System Functions</div>
+                </div>
+            </div>
+
+            <div class="category-section">
+                <h2 class="category-title">🌐 Networking & Web</h2>
+                
+                <div class="module-card" data-module="net">
+                    <div class="module-header">
+                        <span class="module-icon">🌐</span>
+                        <span class="module-name">net</span>
+                    </div>
+                    <p class="module-desc">HTTP server, routing, web requests, WebSocket support</p>
+                    <div class="function-list">
+                        <span class="function-tag">http_server</span>
+                        <span class="function-tag">route</span>
+                        <span class="function-tag">serve</span>
+                        <span class="function-tag">http_get</span>
+                        <span class="function-tag">http_post</span>
+                        <span class="function-tag">json_response</span>
+                        <span class="function-tag">static</span>
+                        <span class="function-tag">middleware</span>
+                    </div>
+                </div>
+
+                <div class="module-card" data-module="websocket">
+                    <div class="module-header">
+                        <span class="module-icon">📡</span>
+                        <span class="module-name">websocket</span>
+                    </div>
+                    <p class="module-desc">WebSocket client and server implementation</p>
+                    <div class="function-list">
+                        <span class="function-tag">connect</span>
+                        <span class="function-tag">send</span>
+                        <span class="function-tag">receive</span>
+                        <span class="function-tag">close</span>
+                        <span class="function-tag">on_message</span>
+                        <span class="function-tag">on_open</span>
+                        <span class="function-tag">on_close</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="category-section">
+                <h2 class="category-title">📁 File System & I/O</h2>
+                
+                <div class="module-card" data-module="fs">
+                    <div class="module-header">
+                        <span class="module-icon">📁</span>
+                        <span class="module-name">fs</span>
+                    </div>
+                    <p class="module-desc">Comprehensive file system operations (22 functions)</p>
+                    <div class="function-list">
+                        <span class="function-tag">read_file</span>
+                        <span class="function-tag">write_file</span>
+                        <span class="function-tag">exists</span>
+                        <span class="function-tag">is_file</span>
+                        <span class="function-tag">is_dir</span>
+                        <span class="function-tag">mkdir</span>
+                        <span class="function-tag">rmdir</span>
+                        <span class="function-tag">remove</span>
+                        <span class="function-tag">copy</span>
+                        <span class="function-tag">move</span>
+                        <span class="function-tag">list_dir</span>
+                        <span class="function-tag">file_size</span>
+                        <span class="function-tag">file_mtime</span>
+                        <span class="function-tag">file_perms</span>
+                        <span class="function-tag">chmod</span>
+                        <span class="function-tag">chown</span>
+                        <span class="function-tag">link</span>
+                        <span class="function-tag">symlink</span>
+                        <span class="function-tag">readlink</span>
+                        <span class="function-tag">realpath</span>
+                        <span class="function-tag">temp_dir</span>
+                        <span class="function-tag">temp_file</span>
+                    </div>
+                </div>
+
+                <div class="module-card" data-module="path">
+                    <div class="module-header">
+                        <span class="module-icon">🛤️</span>
+                        <span class="module-name">path</span>
+                    </div>
+                    <p class="module-desc">Cross-platform path manipulation (13 functions)</p>
+                    <div class="function-list">
+                        <span class="function-tag">join</span>
+                        <span class="function-tag">basename</span>
+                        <span class="function-tag">dirname</span>
+                        <span class="function-tag">extname</span>
+                        <span class="function-tag">stem</span>
+                        <span class="function-tag">is_absolute</span>
+                        <span class="function-tag">normalize</span>
+                        <span class="function-tag">split</span>
+                        <span class="function-tag">splitext</span>
+                        <span class="function-tag">sep</span>
+                        <span class="function-tag">cwd</span>
+                        <span class="function-tag">home</span>
+                        <span class="function-tag">glob</span>
+                    </div>
+                </div>
+
+                <div class="module-card" data-module="io">
+                    <div class="module-header">
+                        <span class="module-icon">📄</span>
+                        <span class="module-name">io</span>
+                    </div>
+                    <p class="module-desc">Stream processing and file I/O</p>
+                    <div class="function-list">
+                        <span class="function-tag">open</span>
+                        <span class="function-tag">close</span>
+                        <span class="function-tag">read</span>
+                        <span class="function-tag">write</span>
+                        <span class="function-tag">read_line</span>
+                        <span class="function-tag">write_line</span>
+                        <span class="function-tag">flush</span>
+                        <span class="function-tag">seek</span>
+                        <span class="function-tag">tell</span>
+                        <span class="function-tag">eof</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="category-section">
+                <h2 class="category-title">🔢 Math & Data</h2>
+                
+                <div class="module-card" data-module="math">
+                    <div class="module-header">
+                        <span class="module-icon">➕</span>
+                        <span class="module-name">math</span>
+                    </div>
+                    <p class="module-desc">Comprehensive mathematical functions (40+ functions)</p>
+                    <div class="function-list">
+                        <span class="function-tag">abs</span>
+                        <span class="function-tag">min</span>
+                        <span class="function-tag">max</span>
+                        <span class="function-tag">sign</span>
+                        <span class="function-tag">clamp</span>
+                        <span class="function-tag">lerp</span>
+                        <span class="function-tag">floor</span>
+                        <span class="function-tag">ceil</span>
+                        <span class="function-tag">round</span>
+                        <span class="function-tag">trunc</span>
+                        <span class="function-tag">sqrt</span>
+                        <span class="function-tag">cbrt</span>
+                        <span class="function-tag">pow</span>
+                        <span class="function-tag">hypot</span>
+                        <span class="function-tag">sin</span>
+                        <span class="function-tag">cos</span>
+                        <span class="function-tag">tan</span>
+                        <span class="function-tag">asin</span>
+                        <span class="function-tag">acos</span>
+                        <span class="function-tag">atan</span>
+                        <span class="function-tag">atan2</span>
+                        <span class="function-tag">sinh</span>
+                        <span class="function-tag">cosh</span>
+                        <span class="function-tag">tanh</span>
+                        <span class="function-tag">exp</span>
+                        <span class="function-tag">log</span>
+                        <span class="function-tag">log2</span>
+                        <span class="function-tag">log10</span>
+                        <span class="function-tag">fmod</span>
+                        <span class="function-tag">isnan</span>
+                        <span class="function-tag">isinf</span>
+                        <span class="function-tag">isfinite</span>
+                        <span class="function-tag">PI</span>
+                        <span class="function-tag">E</span>
+                        <span class="function-tag">INF</span>
+                        <span class="function-tag">NAN</span>
+                        <span class="function-tag">deg_to_rad</span>
+                        <span class="function-tag">rad_to_deg</span>
+                        <span class="function-tag">sum</span>
+                        <span class="function-tag">avg</span>
+                        <span class="function-tag">median</span>
+                    </div>
+                </div>
+
+                <div class="module-card" data-module="random">
+                    <div class="module-header">
+                        <span class="module-icon">🎲</span>
+                        <span class="module-name">random</span>
+                    </div>
+                    <p class="module-desc">Random number generation (9 functions)</p>
+                    <div class="function-list">
+                        <span class="function-tag">seed</span>
+                        <span class="function-tag">int</span>
+                        <span class="function-tag">float</span>
+                        <span class="function-tag">range</span>
+                        <span class="function-tag">choice</span>
+                        <span class="function-tag">shuffle</span>
+                        <span class="function-tag">sample</span>
+                        <span class="function-tag">bool</span>
+                        <span class="function-tag">uuid</span>
+                    </div>
+                </div>
+
+                <div class="module-card" data-module="json">
+                    <div class="module-header">
+                        <span class="module-icon">📊</span>
+                        <span class="module-name">json</span>
+                    </div>
+                    <p class="module-desc">JSON parsing and serialization</p>
+                    <div class="function-list">
+                        <span class="function-tag">parse</span>
+                        <span class="function-tag">stringify</span>
+                        <span class="function-tag">validate</span>
+                        <span class="function-tag">pretty</span>
+                        <span class="function-tag">get</span>
+                        <span class="function-tag">set</span>
+                        <span class="function-tag">has</span>
+                        <span class="function-tag">keys</span>
+                        <span class="function-tag">values</span>
+                        <span class="function-tag">merge</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="category-section">
+                <h2 class="category-title">⏰ Time & System</h2>
+                
+                <div class="module-card" data-module="time">
+                    <div class="module-header">
+                        <span class="module-icon">⏱️</span>
+                        <span class="module-name">time</span>
+                    </div>
+                    <p class="module-desc">High-precision timing (10 functions, nanosecond precision)</p>
+                    <div class="function-list">
+                        <span class="function-tag">sleep</span>
+                        <span class="function-tag">time</span>
+                        <span class="function-tag">unix</span>
+                        <span class="function-tag">millis</span>
+                        <span class="function-tag">micros</span>
+                        <span class="function-tag">perf_counter</span>
+                        <span class="function-tag">monotonic</span>
+                        <span class="function-tag">clock</span>
+                        <span class="function-tag">process_time</span>
+                        <span class="function-tag">thread_time</span>
+                    </div>
+                </div>
+
+                <div class="module-card" data-module="datetime">
+                    <div class="module-header">
+                        <span class="module-icon">🕐</span>
+                        <span class="module-name">datetime</span>
+                    </div>
+                    <p class="module-desc">Date and time handling</p>
+                    <div class="function-list">
+                        <span class="function-tag">now</span>
+                        <span class="function-tag">format</span>
+                        <span class="function-tag">parse</span>
+                        <span class="function-tag">unix</span>
+                        <span class="function-tag">from_unix</span>
+                        <span class="function-tag">add</span>
+                        <span class="function-tag">diff</span>
+                        <span class="function-tag">weekday</span>
+                    </div>
+                </div>
+
+                <div class="module-card" data-module="os">
+                    <div class="module-header">
+                        <span class="module-icon">🖥️</span>
+                        <span class="module-name">os</span>
+                    </div>
+                    <p class="module-desc">System introspection and process control (20 functions)</p>
+                    <div class="function-list">
+                        <span class="function-tag">name</span>
+                        <span class="function-tag">version</span>
+                        <span class="function-tag">arch</span>
+                        <span class="function-tag">hostname</span>
+                        <span class="function-tag">info</span>
+                        <span class="function-tag">pid</span>
+                        <span class="function-tag">ppid</span>
+                        <span class="function-tag">uid</span>
+                        <span class="function-tag">gid</span>
+                        <span class="function-tag">exit</span>
+                        <span class="function-tag">env</span>
+                        <span class="function-tag">setenv</span>
+                        <span class="function-tag">unsetenv</span>
+                        <span class="function-tag">cpu_count</span>
+                        <span class="function-tag">pagesize</span>
+                        <span class="function-tag">mem_total</span>
+                        <span class="function-tag">mem_available</span>
+                        <span class="function-tag">cwd</span>
+                        <span class="function-tag">tmpdir</span>
+                        <span class="function-tag">sleep</span>
+                    </div>
+                </div>
+
+                <div class="module-card" data-module="env">
+                    <div class="module-header">
+                        <span class="module-icon">🌍</span>
+                        <span class="module-name">env</span>
+                    </div>
+                    <p class="module-desc">Environment variables and system paths</p>
+                    <div class="function-list">
+                        <span class="function-tag">get</span>
+                        <span class="function-tag">set</span>
+                        <span class="function-tag">has</span>
+                        <span class="function-tag">unset</span>
+                        <span class="function-tag">list</span>
+                        <span class="function-tag">paths</span>
+                        <span class="function-tag">home</span>
+                        <span class="function-tag">cwd</span>
+                        <span class="function-tag">user</span>
+                        <span class="function-tag">shell</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="category-section">
+                <h2 class="category-title">🔧 Utilities & Tools</h2>
+                
+                <div class="module-card" data-module="regex">
+                    <div class="module-header">
+                        <span class="module-icon">🔍</span>
+                        <span class="module-name">regex</span>
+                    </div>
+                    <p class="module-desc">Pattern matching and text manipulation</p>
+                    <div class="function-list">
+                        <span class="function-tag">compile</span>
+                        <span class="function-tag">match</span>
+                        <span class="function-tag">findall</span>
+                        <span class="function-tag">search</span>
+                        <span class="function-tag">replace</span>
+                        <span class="function-tag">split</span>
+                        <span class="function-tag">groups</span>
+                    </div>
+                </div>
+
+                <div class="module-card" data-module="base64">
+                    <div class="module-header">
+                        <span class="module-icon">🔐</span>
+                        <span class="module-name">base64</span>
+                    </div>
+                    <p class="module-desc">Base64 encoding and decoding</p>
+                    <div class="function-list">
+                        <span class="function-tag">encode</span>
+                        <span class="function-tag">decode</span>
+                        <span class="function-tag">url_encode</span>
+                        <span class="function-tag">url_decode</span>
+                    </div>
+                </div>
+
+                <div class="module-card" data-module="hash">
+                    <div class="module-header">
+                        <span class="module-icon">#️⃣</span>
+                        <span class="module-name">hash</span>
+                    </div>
+                    <p class="module-desc">Hash functions (MD5, SHA1, SHA256, SHA512)</p>
+                    <div class="function-list">
+                        <span class="function-tag">md5</span>
+                        <span class="function-tag">sha1</span>
+                        <span class="function-tag">sha256</span>
+                        <span class="function-tag">sha512</span>
+                        <span class="function-tag">hmac</span>
+                    </div>
+                </div>
+
+                <div class="module-card" data-module="cli">
+                    <div class="module-header">
+                        <span class="module-icon">🖥️</span>
+                        <span class="module-name">cli</span>
+                    </div>
+                    <p class="module-desc">Command-line argument parsing</p>
+                    <div class="function-list">
+                        <span class="function-tag">args</span>
+                        <span class="function-tag">program</span>
+                        <span class="function-tag">count</span>
+                        <span class="function-tag">has_flag</span>
+                        <span class="function-tag">flag</span>
+                        <span class="function-tag">flags</span>
+                        <span class="function-tag">args_after_flag</span>
+                        <span class="function-tag">parse</span>
+                    </div>
+                </div>
+
+                <div class="module-card" data-module="csv">
+                    <div class="module-header">
+                        <span class="module-icon">📊</span>
+                        <span class="module-name">csv</span>
+                    </div>
+                    <p class="module-desc">CSV file parsing and generation</p>
+                    <div class="function-list">
+                        <span class="function-tag">parse</span>
+                        <span class="function-tag">stringify</span>
+                        <span class="function-tag">read</span>
+                        <span class="function-tag">write</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="category-section">
+                <h2 class="category-title">🎨 Media & Advanced</h2>
+                
+                <div class="module-card" data-module="media">
+                    <div class="module-header">
+                        <span class="module-icon">🎨</span>
+                        <span class="module-name">media</span>
+                    </div>
+                    <p class="module-desc">Audio and image processing</p>
+                    <div class="function-list">
+                        <span class="function-tag">load_audio</span>
+                        <span class="function-tag">load_image</span>
+                        <span class="function-tag">convert</span>
+                        <span class="function-tag">resize</span>
+                        <span class="function-tag">apply_filter</span>
+                        <span class="function-tag">crop</span>
+                        <span class="function-tag">rotate</span>
+                        <span class="function-tag">flip</span>
+                    </div>
+                </div>
+
+                <div class="module-card" data-module="test">
+                    <div class="module-header">
+                        <span class="module-icon">🧪</span>
+                        <span class="module-name">test</span>
+                    </div>
+                    <p class="module-desc">Built-in testing framework</p>
+                    <div class="function-list">
+                        <span class="function-tag">describe</span>
+                        <span class="function-tag">it</span>
+                        <span class="function-tag">expect</span>
+                        <span class="function-tag">beforeEach</span>
+                        <span class="function-tag">afterEach</span>
+                        <span class="function-tag">run</span>
+                        <span class="function-tag">skip</span>
+                    </div>
+                </div>
+
+                <div class="module-card" data-module="ffi">
+                    <div class="module-header">
+                        <span class="module-icon">🔌</span>
+                        <span class="module-name">ffi</span>
+                    </div>
+                    <p class="module-desc">Foreign Function Interface (load C libraries)</p>
+                    <div class="function-list">
+                        <span class="function-tag">load</span>
+                        <span class="function-tag">sym</span>
+                        <span class="function-tag">close</span>
+                        <span class="function-tag">error</span>
+                    </div>
+                </div>
+
+                <div class="module-card" data-module="uuid">
+                    <div class="module-header">
+                        <span class="module-icon">🆔</span>
+                        <span class="module-name">uuid</span>
+                    </div>
+                    <p class="module-desc">UUID generation and parsing</p>
+                    <div class="function-list">
+                        <span class="function-tag">v4</span>
+                        <span class="function-tag">v5</span>
+                        <span class="function-tag">parse</span>
+                        <span class="function-tag">validate</span>
+                        <span class="function-tag">to_string</span>
+                    </div>
+                </div>
+
+                <div class="module-card" data-module="string">
+                    <div class="module-header">
+                        <span class="module-icon">📝</span>
+                        <span class="module-name">string</span>
+                    </div>
+                    <p class="module-desc">String manipulation utilities</p>
+                    <div class="function-list">
+                        <span class="function-tag">len</span>
+                        <span class="function-tag">upper</span>
+                        <span class="function-tag">lower</span>
+                        <span class="function-tag">trim</span>
+                        <span class="function-tag">split</span>
+                        <span class="function-tag">join</span>
+                        <span class="function-tag">replace</span>
+                        <span class="function-tag">contains</span>
+                        <span class="function-tag">starts_with</span>
+                        <span class="function-tag">ends_with</span>
+                        <span class="function-tag">substring</span>
+                        <span class="function-tag">to_int</span>
+                        <span class="function-tag">to_float</span>
+                    </div>
+                </div>
+
+                <div class="module-card" data-module="array">
+                    <div class="module-header">
+                        <span class="module-icon">📦</span>
+                        <span class="module-name">array</span>
+                    </div>
+                    <p class="module-desc">Array manipulation utilities</p>
+                    <div class="function-list">
+                        <span class="function-tag">push</span>
+                        <span class="function-tag">pop</span>
+                        <span class="function-tag">shift</span>
+                        <span class="function-tag">unshift</span>
+                        <span class="function-tag">slice</span>
+                        <span class="function-tag">splice</span>
+                        <span class="function-tag">concat</span>
+                        <span class="function-tag">reverse</span>
+                        <span class="function-tag">sort</span>
+                        <span class="function-tag">map</span>
+                        <span class="function-tag">filter</span>
+                        <span class="function-tag">reduce</span>
+                        <span class="function-tag">find</span>
+                        <span class="function-tag">index</span>
+                        <span class="function-tag">includes</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer style="text-align: center; padding: 2rem; color: var(--text-muted);">
+        <p>🚀 RADS - High Performance Retro-Future Language</p>
+        <p style="font-size: 0.9rem; margin-top: 0.5rem;">20+ modules • 300+ functions • Python-comparable stdlib</p>
+    </footer>
+
+    <script>
+        // Search functionality
+        const searchInput = document.getElementById('search');
+        const moduleCards = document.querySelectorAll('.module-card');
+
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase().trim();
+            
+            moduleCards.forEach(card => {
+                const moduleName = card.getAttribute('data-module').toLowerCase();
+                const functionTags = card.querySelectorAll('.function-tag');
+                let matches = moduleName.includes(query);
+                
+                if (!matches) {
+                    functionTags.forEach(tag => {
+                        if (tag.textContent.toLowerCase().includes(query)) {
+                            matches = true;
+                        }
+                    });
+                }
+                
+                card.style.display = matches ? 'block' : 'none';
+            });
+        });
+
+        // Add click navigation to function tags
+        document.querySelectorAll('.function-tag').forEach(tag => {
+            tag.addEventListener('click', function() {
+                const moduleName = this.closest('.module-card').getAttribute('data-module');
+                const functionName = this.textContent;
+                // Could navigate to detailed documentation
+                alert(`${moduleName}.${functionName}\n\nFull documentation coming soon!`);
+            });
+        });
+    </script>
+</body>
+</html>
