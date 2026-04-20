@@ -20,7 +20,6 @@
 #include "stdlib_json.h"
 #include "stdlib_db.h"
 #include "stdlib_webengine.h"
-#include "stdlib_filesystem.h"
 #include "stdlib_async_utils.h"
 #include "stdlib_websocket.h"
 #include "stdlib_graphql.h"
@@ -35,6 +34,7 @@
 #include "stdlib_path.h"
 #include "stdlib_time.h"
 #include "stdlib_hash.h"
+#include "stdlib_os.h"
 
 // ANSI Color Codes for Chroma Effects
 #define COLOR_RESET     "\033[0m"
@@ -283,8 +283,11 @@ int run_repl() {
     stdlib_random_register();
     stdlib_time_register();
     stdlib_path_register();
+    stdlib_hash_register();
+    stdlib_async_utils_register();
     stdlib_websocket_register();
     stdlib_graphql_register();
+    stdlib_os_register();
     int line_num = 1;
 
     // RGB Chroma color cycle for prompt (like RGB keyboard)
@@ -495,6 +498,7 @@ int main(int argc, char* argv[]) {
     stdlib_hash_register();
     stdlib_websocket_register();
     stdlib_graphql_register();
+    stdlib_os_register();
 
     // Tokenize
     Lexer lexer;

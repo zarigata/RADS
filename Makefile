@@ -28,7 +28,7 @@ endif
 
 ifeq ($(UNAME_S),Linux)
     PLATFORM := linux
-    LIBS += -luv -lpthread
+    LIBS += -luv -lpthread -ldl
     # Enable ASLR and RELRO for Linux
     LDFLAGS += -Wl,-z,relro,-z,now
 endif

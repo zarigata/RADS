@@ -6,6 +6,29 @@
 
 ### ✨ New Standard Library Modules
 
+**os Module 🖥️:**
+- `os.name()` - OS name (Linux, Darwin, etc.)
+- `os.version()` - OS release/version string
+- `os.arch()` - CPU architecture (x86_64, aarch64, etc.)
+- `os.hostname()` - System hostname
+- `os.cwd()` - Current working directory
+- `os.pid()` / `os.ppid()` - Process/parent process ID
+- `os.uid()` / `os.gid()` - User/group ID
+- `os.env(name)` / `os.setenv(name, val)` / `os.unsetenv(name)` - Environment variables
+- `os.sleep(ms)` - Sleep N milliseconds
+- `os.cpu_count()` - Number of logical CPUs
+- `os.pagesize()` - Memory page size
+- `os.mem_total()` / `os.mem_available()` - Memory info
+- `os.tmpdir()` - System temp directory
+- `os.info()` - Comprehensive system info array
+- `os.exit(code)` - Exit process
+
+**FFI Module 🔗 (real dlopen/dlsym):**
+- `ffi.load(path)` - Load shared library, returns handle ID
+- `ffi.sym(handle, name)` - Look up symbol address
+- `ffi.close(handle)` - Close library handle
+- `ffi.error()` - Last dlerror message
+
 **hash Module #️⃣:**
 - `hash.fnv1a(str)` - FNV-1a 32-bit hash (hex string)
 - `hash.fnv1a64(str)` - FNV-1a 64-bit hash (hex string)
