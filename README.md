@@ -98,17 +98,68 @@
 - `str.title(str)` - Title-case string
 - `str.capitalize(str)` - Capitalize first character
 
-### ✨ Math Module — 9 New Functions
+### ✨ Math Module — 40+ Functions (Expanded)
+**Constants:**
 - `math.PI()` - π constant
 - `math.E()` - e constant
-- `math.atan2(y, x)` - Arc tangent of y/x
-- `math.hypot(a, b)` - Hypotenuse
+- `math.INF()` - Positive infinity
+- `math.NAN()` - Not-a-Number
+
+**Basic Operations:**
+- `math.abs(x)` - Absolute value
+- `math.min(a, b)` - Minimum of two values
+- `math.max(a, b)` - Maximum of two values
 - `math.sign(x)` - Sign of number (-1, 0, 1)
+- `math.clamp(x, min, max)` - Clamp to range
+- `math.lerp(a, b, t)` - Linear interpolation
+
+**Rounding:**
+- `math.floor(x)` - Round down
+- `math.ceil(x)` - Round up
+- `math.round(x)` - Round to nearest
+- `math.trunc(x)` - Truncate toward zero
+
+**Powers & Roots:**
+- `math.sqrt(x)` - Square root
+- `math.cbrt(x)` - Cube root
+- `math.pow(x, y)` - x raised to power y
+- `math.hypot(a, b)` - Hypotenuse
+
+**Trigonometric (radians):**
+- `math.sin(x)`, `math.cos(x)`, `math.tan(x)`
+- `math.asin(x)`, `math.acos(x)`, `math.atan(x)`
+- `math.atan2(y, x)` - Arc tangent of y/x
+
+**Hyperbolic:**
+- `math.sinh(x)`, `math.cosh(x)`, `math.tanh(x)`
+
+**Logarithmic & Exponential:**
+- `math.exp(x)` - e^x
+- `math.log(x)` - Natural logarithm
+- `math.log2(x)` - Base-2 logarithm
+- `math.log10(x)` - Base-10 logarithm
+
+**Modulo:**
+- `math.fmod(x, y)` - Floating-point remainder
+
+**Special Value Checks:**
+- `math.isnan(x)` - Check for NaN
+- `math.isinf(x)` - Check for infinity
+- `math.isfinite(x)` - Check for finite number
+
+**Angle Conversion:**
+- `math.deg_to_rad(deg)` - Degrees to radians
+- `math.rad_to_deg(rad)` - Radians to degrees
+
+**Array Operations:**
 - `math.sum(arr)` - Sum of array
 - `math.avg(arr)` - Average of array
 - `math.median(arr)` - Median of array
-- `math.deg_to_rad(deg)` - Degrees to radians
-- `math.rad_to_deg(rad)` - Radians to degrees
+
+**Random (legacy, prefer `random` module):**
+- `math.random()` - Random float [0, 1)
+- `math.random_int(max)` - Random integer [0, max]
+- `math.random_int(min, max)` - Random integer [min, max]
 
 ---
 

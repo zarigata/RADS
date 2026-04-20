@@ -472,6 +472,121 @@ Value native_math_rad_to_deg(struct Interpreter* interp, int argc, Value* args) 
     Value v; v.type = VAL_FLOAT; v.float_val = rad * 180.0 / 3.14159265358979323846; return v;
 }
 
+/* Inverse trigonometric functions */
+Value native_math_asin(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1) return make_null();
+    double val = value_to_double(&args[0]);
+    if (val < -1.0 || val > 1.0) return make_null();
+    Value v; v.type = VAL_FLOAT; v.float_val = asin(val); return v;
+}
+
+Value native_math_acos(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1) return make_null();
+    double val = value_to_double(&args[0]);
+    if (val < -1.0 || val > 1.0) return make_null();
+    Value v; v.type = VAL_FLOAT; v.float_val = acos(val); return v;
+}
+
+Value native_math_atan(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1) return make_null();
+    double val = value_to_double(&args[0]);
+    Value v; v.type = VAL_FLOAT; v.float_val = atan(val); return v;
+}
+
+/* Hyperbolic functions */
+Value native_math_sinh(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1) return make_null();
+    double val = value_to_double(&args[0]);
+    Value v; v.type = VAL_FLOAT; v.float_val = sinh(val); return v;
+}
+
+Value native_math_cosh(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1) return make_null();
+    double val = value_to_double(&args[0]);
+    Value v; v.type = VAL_FLOAT; v.float_val = cosh(val); return v;
+}
+
+Value native_math_tanh(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1) return make_null();
+    double val = value_to_double(&args[0]);
+    Value v; v.type = VAL_FLOAT; v.float_val = tanh(val); return v;
+}
+
+/* Additional logarithms and roots */
+Value native_math_log2(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1) return make_null();
+    double val = value_to_double(&args[0]);
+    if (val <= 0.0) return make_null();
+    Value v; v.type = VAL_FLOAT; v.float_val = log2(val); return v;
+}
+
+Value native_math_cbrt(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1) return make_null();
+    double val = value_to_double(&args[0]);
+    Value v; v.type = VAL_FLOAT; v.float_val = cbrt(val); return v;
+}
+
+/* Truncate toward zero */
+Value native_math_trunc(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1) return make_null();
+    double val = value_to_double(&args[0]);
+    Value v; v.type = VAL_INT;
+    v.int_val = (long long)trunc(val);
+    return v;
+}
+
+/* Floating-point modulus */
+Value native_math_fmod(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 2) return make_null();
+    double x = value_to_double(&args[0]);
+    double y = value_to_double(&args[1]);
+    if (y == 0.0) return make_null();
+    Value v; v.type = VAL_FLOAT; v.float_val = fmod(x, y); return v;
+}
+
+/* Special value checks */
+Value native_math_isnan(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1) return make_int(0);
+    double val = value_to_double(&args[0]);
+    return make_int(isnan(val) ? 1 : 0);
+}
+
+Value native_math_isinf(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1) return make_int(0);
+    double val = value_to_double(&args[0]);
+    return make_int(isinf(val) ? 1 : 0);
+}
+
+Value native_math_isfinite(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1) return make_int(0);
+    double val = value_to_double(&args[0]);
+    return make_int(isfinite(val) ? 1 : 0);
+}
+
+/* Special constants */
+Value native_math_nan(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp; (void)argc; (void)args;
+    Value v; v.type = VAL_FLOAT; v.float_val = NAN; return v;
+}
+
+Value native_math_inf(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp; (void)argc; (void)args;
+    Value v; v.type = VAL_FLOAT; v.float_val = INFINITY; return v;
+}
+
 void stdlib_math_register(void) {
     register_native("math.abs", native_math_abs);
     register_native("math.sqrt", native_math_sqrt);
@@ -501,4 +616,24 @@ void stdlib_math_register(void) {
     register_native("math.median", native_math_median);
     register_native("math.deg_to_rad", native_math_deg_to_rad);
     register_native("math.rad_to_deg", native_math_rad_to_deg);
+    /* Inverse trig */
+    register_native("math.asin", native_math_asin);
+    register_native("math.acos", native_math_acos);
+    register_native("math.atan", native_math_atan);
+    /* Hyperbolic */
+    register_native("math.sinh", native_math_sinh);
+    register_native("math.cosh", native_math_cosh);
+    register_native("math.tanh", native_math_tanh);
+    /* Additional functions */
+    register_native("math.log2", native_math_log2);
+    register_native("math.cbrt", native_math_cbrt);
+    register_native("math.trunc", native_math_trunc);
+    register_native("math.fmod", native_math_fmod);
+    /* Special value checks */
+    register_native("math.isnan", native_math_isnan);
+    register_native("math.isinf", native_math_isinf);
+    register_native("math.isfinite", native_math_isfinite);
+    /* Special constants */
+    register_native("math.NAN", native_math_nan);
+    register_native("math.INF", native_math_inf);
 }

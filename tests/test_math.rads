@@ -1,0 +1,90 @@
+# Math Module Test Suite
+# Tests new functions: asin, acos, atan, sinh, cosh, tanh, log2, cbrt, trunc, fmod, isnan, isinf, isfinite, NAN, INF
+
+println("=== Math Module Test Suite ===")
+
+# Test inverse trigonometric functions
+println("\n--- Inverse Trigonometric ---")
+let x = 0.5
+println("asin(0.5) = " + math.asin(x))
+println("acos(0.5) = " + math.acos(x))
+println("atan(1.0) = " + math.atan(1.0))
+
+# Test hyperbolic functions
+println("\n--- Hyperbolic ---")
+println("sinh(1.0) = " + math.sinh(1.0))
+println("cosh(1.0) = " + math.cosh(1.0))
+println("tanh(1.0) = " + math.tanh(1.0))
+
+# Test log2
+println("\n--- Logarithms ---")
+println("log(10.0) = " + math.log(10.0))
+println("log2(8.0) = " + math.log2(8.0))
+println("log10(100.0) = " + math.log10(100.0))
+
+# Test cbrt
+println("\n--- Roots ---")
+println("sqrt(16.0) = " + math.sqrt(16.0))
+println("cbrt(27.0) = " + math.cbrt(27.0))
+
+# Test trunc vs floor vs ceil
+println("\n--- Rounding ---")
+let val = 3.7
+println("floor(3.7) = " + math.floor(val))
+println("ceil(3.7) = " + math.ceil(val))
+println("round(3.7) = " + math.round(val))
+println("trunc(3.7) = " + math.trunc(val))
+
+let val_neg = -3.7
+println("floor(-3.7) = " + math.floor(val_neg))
+println("ceil(-3.7) = " + math.ceil(val_neg))
+println("round(-3.7) = " + math.round(val_neg))
+println("trunc(-3.7) = " + math.trunc(val_neg))
+
+# Test fmod
+println("\n--- Modulus ---")
+println("fmod(10.5, 3.0) = " + math.fmod(10.5, 3.0))
+println("fmod(-10.5, 3.0) = " + math.fmod(-10.5, 3.0))
+
+# Test special value checks
+println("\n--- Special Value Checks ---")
+let nan_val = math.NAN()
+let inf_val = math.INF()
+let finite_val = 42.0
+println("isnan(NAN) = " + math.isnan(nan_val))
+println("isnan(42.0) = " + math.isnan(finite_val))
+println("isinf(INF) = " + math.isinf(inf_val))
+println("isinf(42.0) = " + math.isinf(finite_val))
+println("isfinite(42.0) = " + math.isfinite(finite_val))
+println("isfinite(INF) = " + math.isfinite(inf_val))
+println("isfinite(NAN) = " + math.isfinite(nan_val))
+
+# Test constants
+println("\n--- Constants ---")
+println("PI = " + math.PI())
+println("E = " + math.E())
+println("INF = " + math.INF())
+
+# Test utility functions
+println("\n--- Utilities ---")
+println("abs(-5) = " + math.abs(-5))
+println("abs(-3.7) = " + math.abs(-3.7))
+println("sign(5) = " + math.sign(5))
+println("sign(-5) = " + math.sign(-5))
+println("sign(0) = " + math.sign(0))
+
+# Test angle conversion
+println("\n--- Angle Conversion ---")
+let deg = 180.0
+let rad = math.deg_to_rad(deg)
+println("deg_to_rad(180) = " + rad)
+println("rad_to_deg(" + rad + ") = " + math.rad_to_deg(rad))
+
+# Test array operations
+println("\n--- Array Operations ---")
+let arr = [1.0, 2.0, 3.0, 4.0, 5.0]
+println("sum([1,2,3,4,5]) = " + math.sum(arr))
+println("avg([1,2,3,4,5]) = " + math.avg(arr))
+println("median([1,2,3,4,5]) = " + math.median(arr))
+
+println("\n=== All Tests Complete ===")
