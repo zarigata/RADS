@@ -33,6 +33,9 @@
 #include "stdlib_random.h"
 #include "stdlib_path.h"
 #include "stdlib_time.h"
+#include "stdlib_process.h"
+#include "stdlib_uuid.h"
+#include "stdlib_collections.h"
 #include "stdlib_hash.h"
 #include "stdlib_os.h"
 
@@ -288,6 +291,9 @@ int run_repl() {
     stdlib_websocket_register();
     stdlib_graphql_register();
     stdlib_os_register();
+    stdlib_process_register();
+    stdlib_uuid_register();
+    stdlib_collections_register();
     int line_num = 1;
 
     // RGB Chroma color cycle for prompt (like RGB keyboard)
@@ -499,6 +505,9 @@ int main(int argc, char* argv[]) {
     stdlib_websocket_register();
     stdlib_graphql_register();
     stdlib_os_register();
+    stdlib_process_register();
+    stdlib_uuid_register();
+    stdlib_collections_register();
 
     // Tokenize
     Lexer lexer;
