@@ -411,6 +411,175 @@ Value native_str_capitalize(struct Interpreter* interp, int argc, Value* args) {
     Value v; v.type = VAL_STRING; v.string_val = out; return v;
 }
 
+/* str.split(str, delim) → array of substrings */
+Value native_str_split(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_STRING) return make_null();
+    const char* str = args[0].string_val;
+    const char* delim = args[1].string_val;
+    
+    int count = 1;
+    const char* p = str;
+    while (*p) {
+        if (strncmp(p, delim, strlen(delim)) == 0) count++;
+        p++;
+    }
+    
+    Value v; v.type = VAL_ARRAY; v.array_val = create_array(count);
+    p = str;
+    char buffer[1024]; int buf_idx = 0;
+    
+    while (*p) {
+        if (strncmp(p, delim, strlen(delim)) == 0) {
+            if (buf_idx > 0) {
+                buffer[buf_idx] = '\0';
+                Value elem; elem.type = VAL_STRING; elem.string_val = strdup(buffer);
+                array_push(v.array_val, elem);
+                buf_idx = 0;
+            }
+            p += strlen(delim);
+        } else {
+            buffer[buf_idx++] = *p++;
+        }
+    }
+    
+    if (buf_idx > 0) {
+        buffer[buf_idx] = '\0';
+        Value elem; elem.type = VAL_STRING; elem.string_val = strdup(buffer);
+        array_push(v.array_val, elem);
+    }
+    return v;
+}
+
+/* str.join(arr) → concatenate strings in array */
+Value native_str_join(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1 || args[0].type != VAL_ARRAY) return make_null();
+    Array* arr = args[0].array_val;
+    if (arr->count == 0) {
+        Value v; v.type = VAL_STRING; v.string_val = strdup(""); return v;
+    }
+    
+    size_t total_len = 0;
+    for (size_t i = 0; i < arr->count; i++) {
+        if (arr->items[i].type == VAL_STRING) total_len += strlen(arr->items[i].string_val);
+    }
+    
+    char* result = malloc(total_len + 1); result[0] = '\0';
+    size_t result_idx = 0;
+    
+    for (size_t i = 0; i < arr->count; i++) {
+        if (arr->items[i].type == VAL_STRING) {
+            strcpy(result + result_idx, arr->items[i].string_val);
+            result_idx += strlen(arr->items[i].string_val);
+        }
+    }
+    result[result_idx] = '\0';
+    Value v; v.type = VAL_STRING; v.string_val = result; return v;
+}
+
+/* str.find(str, sub) → index of first occurrence or -1 */
+Value native_str_find(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_STRING) return make_int(-1);
+    const char* str = args[0].string_val;
+    const char* sub = args[1].string_val;
+    char* result = strstr(str, sub);
+    return result ? make_int((int)(result - str)) : make_int(-1);
+}
+
+/* str.rfind(str, sub) → index of last occurrence or -1 */
+Value native_str_rfind(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_STRING) return make_int(-1);
+    const char* str = args[0].string_val;
+    const char* sub = args[1].string_val;
+    char* result = NULL; const char* p = str;
+    while (*p) {
+        if (strncmp(p, sub, strlen(sub)) == 0) result = (char*)p;
+        p++;
+    }
+    return result ? make_int((int)(result - str)) : make_int(-1);
+}
+
+/* str.isdigit(str) → 1 if all digits, 0 otherwise */
+Value native_str_isdigit(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1 || args[0].type != VAL_STRING) return make_int(0);
+    const char* str = args[0].string_val;
+    for (size_t i = 0; str[i]; i++) {
+        if (!isdigit((unsigned char)str[i])) return make_int(0);
+    }
+    return make_int(1);
+}
+
+/* str.isalpha(str) → 1 if all letters, 0 otherwise */
+Value native_str_isalpha(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1 || args[0].type != VAL_STRING) return make_int(0);
+    const char* str = args[0].string_val;
+    for (size_t i = 0; str[i]; i++) {
+        if (!isalpha((unsigned char)str[i])) return make_int(0);
+    }
+    return make_int(1);
+}
+
+/* str.isalnum(str) → 1 if all alphanumeric, 0 otherwise */
+Value native_str_isalnum(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1 || args[0].type != VAL_STRING) return make_int(0);
+    const char* str = args[0].string_val;
+    for (size_t i = 0; str[i]; i++) {
+        if (!isalnum((unsigned char)str[i])) return make_int(0);
+    }
+    return make_int(1);
+}
+
+/* str.ljust(str, width) → left-justify in width */
+Value native_str_ljust(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_INT) return make_null();
+    const char* str = args[0].string_val;
+    int width = args[1].int_val;
+    int len = strlen(str); int pad_len = width - len;
+    if (pad_len < 0) pad_len = 0;
+    char* result = malloc(width + 1); strcpy(result, str);
+    for (int i = 0; i < pad_len; i++) result[len + i] = ' ';
+    result[width] = '\0';
+    Value v; v.type = VAL_STRING; v.string_val = result; return v;
+}
+
+/* str.rjust(str, width) → right-justify in width */
+Value native_str_rjust(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_INT) return make_null();
+    const char* str = args[0].string_val;
+    int width = args[1].int_val;
+    int len = strlen(str); int pad_len = width - len;
+    if (pad_len < 0) pad_len = 0;
+    char* result = malloc(width + 1); int result_idx = 0;
+    for (int i = 0; i < pad_len; i++) result[result_idx++] = ' ';
+    strcpy(result + result_idx, str); result[width] = '\0';
+    Value v; v.type = VAL_STRING; v.string_val = result; return v;
+}
+
+/* str.center(str, width) → center in width */
+Value native_str_center(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_INT) return make_null();
+    const char* str = args[0].string_val;
+    int width = args[1].int_val;
+    int len = strlen(str); int total_pad = width - len;
+    if (total_pad < 0) total_pad = 0;
+    int left_pad = total_pad / 2; int right_pad = total_pad - left_pad;
+    char* result = malloc(width + 1); int result_idx = 0;
+    for (int i = 0; i < left_pad; i++) result[result_idx++] = ' ';
+    strcpy(result + result_idx, str); result_idx += len;
+    for (int i = 0; i < right_pad; i++) result[result_idx++] = ' ';
+    result[width] = '\0';
+    Value v; v.type = VAL_STRING; v.string_val = result; return v;
+}
+
 extern Value make_null(void);
 extern Value make_int(long long val);
 extern Value make_float(double val);
@@ -436,4 +605,14 @@ void stdlib_string_register(void) {
     register_native("str.count", native_str_count);
     register_native("str.title", native_str_title);
     register_native("str.capitalize", native_str_capitalize);
+    register_native("str.split", native_str_split);
+    register_native("str.join", native_str_join);
+    register_native("str.find", native_str_find);
+    register_native("str.rfind", native_str_rfind);
+    register_native("str.isdigit", native_str_isdigit);
+    register_native("str.isalpha", native_str_isalpha);
+    register_native("str.isalnum", native_str_isalnum);
+    register_native("str.ljust", native_str_ljust);
+    register_native("str.rjust", native_str_rjust);
+    register_native("str.center", native_str_center);
 }
