@@ -1,0 +1,99 @@
+# RADS String Module Test Suite
+# Tests for 30 string manipulation and inspection functions
+
+echo "=== String Module Tests ==="
+
+# Manipulation tests
+echo "--- Manipulation Tests ---"
+
+# length
+assert(str.length("hello") == 5, "str.length basic")
+assert(str.length("") == 0, "str.length empty")
+
+# upper/lower
+assert(str.upper("Hello") == "HELLO", "str.upper")
+assert(str.lower("HELLO") == "hello", "str.lower")
+
+# trim
+assert(str.trim("  hello  ") == "hello", "str.trim spaces")
+
+# substring
+assert(str.substring("hello", 1, 3) == "ell", "str.substring middle")
+assert(str.substring("hello", 0, 2) == "he", "str.substring start")
+
+# replace
+assert(str.replace("hello", "l", "x") == "hexxo", "str.replace all")
+
+# repeat
+assert(str.repeat("ab", 3) == "ababab", "str.repeat")
+
+# reverse
+assert(str.reverse("hello") == "olleh", "str.reverse")
+
+# title
+assert(str.title("hello world") == "Hello World", "str.title")
+
+# capitalize
+assert(str.capitalize("HELLO") == "Hello", "str.capitalize")
+
+# split
+parts = str.split("a,b,c", ",")
+assert(parts[0] == "a" && parts[1] == "b" && parts[2] == "c", "str.split comma")
+
+# join
+arr = ["hello", "world"]
+assert(str.join(arr) == "helloworld", "str.join no separator")
+
+# pad_left/pad_right
+assert(str.pad_left("hi", 5) == "   hi", "str.pad_left")
+assert(str.pad_right("hi", 5) == "hi   ", "str.pad_right")
+
+# ljust/rjust/center
+assert(str.ljust("hi", 5) == "hi   ", "str.ljust")
+assert(str.rjust("hi", 5) == "   hi", "str.rjust")
+assert(str.center("hi", 5) == " hi  ", "str.center")
+
+# Inspection tests
+echo "--- Inspection Tests ---"
+
+# contains
+assert(str.contains("hello", "ell") == 1, "str.contains true")
+assert(str.contains("hello", "xyz") == 0, "str.contains false")
+
+# starts_with/ends_with
+assert(str.starts_with("hello", "he") == 1, "str.starts_with true")
+assert(str.starts_with("hello", "lo") == 0, "str.starts_with false")
+assert(str.ends_with("hello", "lo") == 1, "str.ends_with true")
+assert(str.ends_with("hello", "he") == 0, "str.ends_with false")
+
+# is_empty
+assert(str.is_empty("") == 1, "str.is_empty true")
+assert(str.is_empty("hello") == 0, "str.is_empty false")
+
+# isdigit/isalpha/isalnum
+assert(str.isdigit("12345") == 1, "str.isdigit true")
+assert(str.isdigit("123a5") == 0, "str.isdigit false")
+assert(str.isalpha("hello") == 1, "str.isalpha true")
+assert(str.isalpha("hello123") == 0, "str.isalpha false")
+assert(str.isalnum("hello123") == 1, "str.isalnum true")
+assert(str.isalnum("hello 123") == 0, "str.isalnum false")
+
+# char_at
+assert(str.char_at("hello", 1) == "e", "str.char_at")
+
+# find/rfind
+assert(str.find("hello", "ll") == 2, "str.find found")
+assert(str.find("hello", "xyz") == -1, "str.find not found")
+assert(str.rfind("hello hello", "ll") == 8, "str.rfind found")
+
+# count
+assert(str.count("hello hello", "l") == 4, "str.count")
+
+# Type conversion tests
+echo "--- Type Conversion Tests ---"
+
+# to_int/to_float
+assert(str.to_int("42") == 42, "str.to_int")
+assert(str.to_float("3.14") == 3.14, "str.to_float")
+
+echo "=== All String Tests Passed ==="
