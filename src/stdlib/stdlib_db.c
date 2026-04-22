@@ -43,19 +43,87 @@ static void print_db_error(const char* message, sqlite3* db) {
 // Database Row Object Creation (for future use)
 // ============================================================================
 
-static Value __attribute__((unused)) create_row_object(sqlite3_stmt* stmt) {
-    // Create a struct-like object representing a database row
-    // For now, we'll use a simple approach with a custom type
-    // In future, this could be enhanced with proper struct support
+static StructInstance* create_row_instance(sqlite3_stmt* stmt) {
+    StructInstance* inst = calloc(1, sizeof(StructInstance));
+    if (!inst) return NULL;
 
-    Value row = {0};
-    row.type = VAL_NULL; // Placeholder - will implement proper row objects
+    int col_count = sqlite3_column_count(stmt);
+    FieldValue* tail = NULL;
 
-    // For demonstration, we'll just print the row data
-    // TODO: Create proper struct instance with column values
+    for (int i = 0; i < col_count; i++) {
+        FieldValue* fv = calloc(1, sizeof(FieldValue));
+        if (!fv) continue;
+        fv->name = strdup(sqlite3_column_name(stmt, i));
 
-    return row;
- }
+        Value* val = calloc(1, sizeof(Value));
+        int type = sqlite3_column_type(stmt, i);
+
+        switch (type) {
+            case SQLITE_INTEGER:
+                val->type = VAL_INT;
+                val->int_val = sqlite3_column_int64(stmt, i);
+                break;
+            case SQLITE_FLOAT:
+                val->type = VAL_FLOAT;
+                val->float_val = sqlite3_column_double(stmt, i);
+                break;
+            case SQLITE_TEXT: {
+                const char* text = (const char*)sqlite3_column_text(stmt, i);
+                val->type = VAL_STRING;
+                val->string_val = text ? strdup(text) : strdup("");
+                break;
+            }
+            case SQLITE_NULL:
+            default:
+                val->type = VAL_NULL;
+                break;
+        }
+
+        fv->value = val;
+
+        if (tail) {
+            tail->next = fv;
+        } else {
+            inst->fields = fv;
+        }
+        tail = fv;
+    }
+
+    return inst;
+}
+
+// Bind parameters from a RADS array (args[1]) to a prepared statement
+static int bind_params(sqlite3_stmt* stmt, Value* params_arr) {
+    if (!params_arr || params_arr->type != VAL_ARRAY) return 0;
+    Array* arr = params_arr->array_val;
+    for (size_t i = 0; i < arr->count; i++) {
+        int idx = (int)i + 1; // SQLite params are 1-indexed
+        Value* v = &arr->items[i];
+        int rc;
+        switch (v->type) {
+            case VAL_INT:
+                rc = sqlite3_bind_int64(stmt, idx, v->int_val);
+                break;
+            case VAL_FLOAT:
+                rc = sqlite3_bind_double(stmt, idx, v->float_val);
+                break;
+            case VAL_STRING:
+                rc = sqlite3_bind_text(stmt, idx, v->string_val, -1, SQLITE_TRANSIENT);
+                break;
+            case VAL_NULL:
+                rc = sqlite3_bind_null(stmt, idx);
+                break;
+            case VAL_BOOL:
+                rc = sqlite3_bind_int(stmt, idx, v->bool_val ? 1 : 0);
+                break;
+            default:
+                rc = sqlite3_bind_text(stmt, idx, "", -1, SQLITE_TRANSIENT);
+                break;
+        }
+        if (rc != SQLITE_OK) return rc;
+    }
+    return SQLITE_OK;
+}
 
 // ============================================================================
 // db.open(path) - Open database connection
@@ -155,8 +223,26 @@ Value native_db_execute(struct Interpreter* interp, int argc, Value* args) {
 
     const char* sql = args[0].string_val;
 
-    // For now, simple exec without parameter binding
-    // TODO: Add parameter binding from args[1] array
+    // If params provided, use prepared statement for proper binding
+    if (argc >= 2 && args[1].type == VAL_ARRAY) {
+        sqlite3_stmt* stmt;
+        int rc = sqlite3_prepare_v2(current_db->db, sql, -1, &stmt, NULL);
+        if (rc != SQLITE_OK) {
+            fprintf(stderr, "\033[1;31mSQL Error:\033[0m %s\n", sqlite3_errmsg(current_db->db));
+            Value v = {0}; v.type = VAL_NULL; return v;
+        }
+        rc = bind_params(stmt, &args[1]);
+        if (rc != SQLITE_OK) {
+            fprintf(stderr, "\033[1;31mBind Error:\033[0m %s\n", sqlite3_errmsg(current_db->db));
+            sqlite3_finalize(stmt);
+            Value v = {0}; v.type = VAL_NULL; return v;
+        }
+        sqlite3_step(stmt);
+        int affected = sqlite3_changes(current_db->db);
+        sqlite3_finalize(stmt);
+        Value result = {0}; result.type = VAL_INT; result.int_val = affected;
+        return result;
+    }
 
     char* err_msg = NULL;
     int rc = sqlite3_exec(current_db->db, sql, NULL, NULL, &err_msg);
@@ -226,41 +312,34 @@ Value native_db_query(struct Interpreter* interp, int argc, Value* args) {
         return v;
     }
 
-    // TODO: Bind parameters from args[1] if provided
-
-    // For now, print results directly (will return proper array later)
-    int col_count = sqlite3_column_count(stmt);
-    int row_count = 0;
-
-    // Print header
-    printf("\n");
-    for (int i = 0; i < col_count; i++) {
-        printf("%-15s ", sqlite3_column_name(stmt, i));
-    }
-    printf("\n");
-    for (int i = 0; i < col_count * 16; i++) {
-        printf("-");
-    }
-    printf("\n");
-
-    // Print rows
-    while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
-        for (int i = 0; i < col_count; i++) {
-            const char* val = (const char*)sqlite3_column_text(stmt, i);
-            printf("%-15s ", val ? val : "NULL");
+    // Bind parameters if provided
+    if (argc >= 2 && args[1].type == VAL_ARRAY) {
+        int brc = bind_params(stmt, &args[1]);
+        if (brc != SQLITE_OK) {
+            fprintf(stderr, "\033[1;31mBind Error:\033[0m %s\n", sqlite3_errmsg(current_db->db));
+            sqlite3_finalize(stmt);
+            Value v = {0}; v.type = VAL_NULL; return v;
         }
-        printf("\n");
-        row_count++;
     }
-    printf("\n");
+
+    // Build result array of struct instances
+    Array* rows = array_create(16);
+
+    while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+        StructInstance* inst = create_row_instance(stmt);
+        if (inst) {
+            Value row = {0};
+            row.type = VAL_STRUCT_INSTANCE;
+            row.struct_instance = inst;
+            array_push(rows, row);
+        }
+    }
 
     sqlite3_finalize(stmt);
 
-    // Return row count for now
-    // TODO: Return actual array of row objects
     Value result = {0};
-    result.type = VAL_INT;
-    result.int_val = row_count;
+    result.type = VAL_ARRAY;
+    result.array_val = rows;
     return result;
 }
 
