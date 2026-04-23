@@ -44,6 +44,20 @@
 - `uuid.nanoid(len)` - Generate NanoID-style string (default 21 chars)
 - `uuid.is_valid(str)` - Validate UUID format
 
+**sort Module 📊:**
+- `sort.asc(arr)` - Sort array ascending (in-place)
+- `sort.desc(arr)` - Sort array descending (in-place)
+- `sort.sorted(arr)` - Return new sorted copy
+- `sort.reverse(arr)` - Reverse array in-place
+- `sort.copy(arr)` - Shallow copy of array
+- `sort.min(arr)` / `sort.max(arr)` - Find min/max element
+- `sort.sum(arr)` - Sum numeric array elements
+- `sort.shuffle(arr)` - Fisher-Yates shuffle
+
+**New String Functions:**
+- `str.format(template, args...)` - Format string with `{}` placeholders
+- `str.interpolate(template, struct)` - Replace `{key}` with struct field values
+
 **process Module ⚙️:**
 - `process.exec(cmd)` - Execute command, return stdout
 - `process.exec_status(cmd)` - Execute command, return [stdout, exit_code]
