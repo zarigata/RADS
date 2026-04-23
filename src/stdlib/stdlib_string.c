@@ -584,10 +584,118 @@ extern Value make_null(void);
 extern Value make_int(long long val);
 extern Value make_float(double val);
 
+
+/* str.format(template, args...) - Simple template with {} placeholders */
+Value native_str_format(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1 || args[0].type != VAL_STRING) return make_null();
+    const char* tmpl = args[0].string_val;
+    size_t tmpl_len = strlen(tmpl);
+    int arg_idx = 1;
+    
+    /* Worst case: each char becomes itself, plus arg expansions */
+    size_t buf_cap = tmpl_len * 4 + 256;
+    char* buf = (char*)malloc(buf_cap);
+    if (!buf) return make_null();
+    size_t bp = 0;
+    
+    for (size_t i = 0; i < tmpl_len; i++) {
+        if (tmpl[i] == '{' && i + 1 < tmpl_len && tmpl[i + 1] == '}') {
+            /* Expand argument */
+            if (arg_idx < argc) {
+                Value v = args[arg_idx++];
+                if (v.type == VAL_INT) {
+                    bp += (size_t)snprintf(buf + bp, buf_cap - bp, "%lld", v.int_val);
+                } else if (v.type == VAL_FLOAT) {
+                    bp += (size_t)snprintf(buf + bp, buf_cap - bp, "%g", v.float_val);
+                } else if (v.type == VAL_STRING) {
+                    size_t slen = strlen(v.string_val);
+                    if (bp + slen >= buf_cap) {
+                        buf_cap = bp + slen + 256;
+                        buf = (char*)realloc(buf, buf_cap);
+                    }
+                    memcpy(buf + bp, v.string_val, slen);
+                    bp += slen;
+                } else if (v.type == VAL_BOOL) {
+                    const char* bs = v.bool_val ? "true" : "false";
+                    size_t slen = strlen(bs);
+                    memcpy(buf + bp, bs, slen);
+                    bp += slen;
+                } else if (v.type == VAL_NULL) {
+                    memcpy(buf + bp, "null", 4); bp += 4;
+                }
+            }
+            i++; /* skip '}' */
+        } else {
+            if (bp + 1 >= buf_cap) { buf_cap *= 2; buf = (char*)realloc(buf, buf_cap); }
+            buf[bp++] = tmpl[i];
+        }
+    }
+    buf[bp] = '\0';
+    Value result = make_string(buf);
+    free(buf);
+    return result;
+}
+
+/* str.interpolate(template, struct) - Replace {key} with struct field values */
+Value native_str_interpolate(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_STRUCT_INSTANCE) return make_null();
+    const char* tmpl = args[0].string_val;
+    StructInstance* inst = args[1].struct_instance;
+    size_t tmpl_len = strlen(tmpl);
+    
+    size_t buf_cap = tmpl_len * 4 + 256;
+    char* buf = (char*)malloc(buf_cap);
+    if (!buf) return make_null();
+    size_t bp = 0;
+    
+    for (size_t i = 0; i < tmpl_len; i++) {
+        if (tmpl[i] == '{') {
+            /* Find closing } */
+            size_t j = i + 1;
+            while (j < tmpl_len && tmpl[j] != '}') j++;
+            if (j < tmpl_len) {
+                /* Extract key name */
+                size_t key_len = j - i - 1;
+                char key[256];
+                if (key_len >= sizeof(key)) key_len = sizeof(key) - 1;
+                memcpy(key, tmpl + i + 1, key_len);
+                key[key_len] = '\0';
+                
+                /* Look up field */
+                FieldValue* fv = inst->fields;
+                while (fv) {
+                    if (strcmp(fv->name, key) == 0 && fv->value) {
+                        Value* v = fv->value;
+                        if (v->type == VAL_INT) bp += (size_t)snprintf(buf + bp, buf_cap - bp, "%lld", v->int_val);
+                        else if (v->type == VAL_FLOAT) bp += (size_t)snprintf(buf + bp, buf_cap - bp, "%g", v->float_val);
+                        else if (v->type == VAL_STRING) {
+                            size_t slen = strlen(v->string_val);
+                            if (bp + slen >= buf_cap) { buf_cap = bp + slen + 256; buf = (char*)realloc(buf, buf_cap); }
+                            memcpy(buf + bp, v->string_val, slen); bp += slen;
+                        } else if (v->type == VAL_BOOL) {
+                            const char* bs = v->bool_val ? "true" : "false";
+                            size_t slen = strlen(bs); memcpy(buf + bp, bs, slen); bp += slen;
+                        }
+                        break;
+                    }
+                    fv = fv->next;
+                }
+                i = j; /* skip past } */
+                continue;
+            }
+        }
+        if (bp + 1 >= buf_cap) { buf_cap *= 2; buf = (char*)realloc(buf, buf_cap); }
+        buf[bp++] = tmpl[i];
+    }
+    buf[bp] = '\0';
+    Value result = make_string(buf);
+    free(buf);
+    return result;
+}
+
 void stdlib_string_register(void) {
-    register_native("str.length", native_str_length);
-    register_native("str.upper", native_str_upper);
-    register_native("str.lower", native_str_lower);
     register_native("str.trim", native_str_trim);
     register_native("str.substring", native_str_substring);
     register_native("str.contains", native_str_contains);
@@ -615,4 +723,6 @@ void stdlib_string_register(void) {
     register_native("str.ljust", native_str_ljust);
     register_native("str.rjust", native_str_rjust);
     register_native("str.center", native_str_center);
+    register_native("str.format", native_str_format);
+    register_native("str.interpolate", native_str_interpolate);
 }
