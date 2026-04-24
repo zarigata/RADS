@@ -38,6 +38,16 @@
 - `hash.xorshift(str)` - Xorshift hash (64-bit)
 - `hash.bucket(str, n)` - Hash bucket index for hash tables
 
+**http Module 🌐:**
+- `http.get(url)` - HTTP GET request, returns response body
+- `http.post(url, body [, content_type])` - HTTP POST request
+- `http.put(url, body [, content_type])` - HTTP PUT request
+- `http.delete(url)` - HTTP DELETE request
+- `http.head(url)` - HTTP HEAD request, returns headers array
+- `http.status_code(url)` - Get HTTP status code as integer
+- `http.url_encode(str)` - URL-encode a string
+- `http.url_decode(str)` - URL-decode a string
+
 **uuid Module 🔑:**
 - `uuid.v4()` - Generate RFC 4122 v4 UUID
 - `uuid.short()` - Generate 8-char short ID

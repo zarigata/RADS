@@ -14,7 +14,7 @@ ifdef RELEASE
     CFLAGS += -D_FORTIFY_SOURCE=2
 endif
 
-LIBS = -lm -lreadline -lsqlite3
+LIBS = -lm -lreadline -lsqlite3 -lcurl
 LDFLAGS =
 
 TARGET = rads

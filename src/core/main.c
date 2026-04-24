@@ -38,6 +38,7 @@
 #include "stdlib_collections.h"
 #include "stdlib_hash.h"
 #include "stdlib_sort.h"
+#include "stdlib_http.h"
 #include "stdlib_os.h"
 
 // ANSI Color Codes for Chroma Effects
@@ -289,6 +290,7 @@ int run_repl() {
     stdlib_path_register();
     stdlib_hash_register();
     stdlib_sort_register();
+    stdlib_http_register();
     stdlib_async_utils_register();
     stdlib_websocket_register();
     stdlib_graphql_register();
@@ -505,6 +507,7 @@ int main(int argc, char* argv[]) {
     stdlib_path_register();
     stdlib_hash_register();
     stdlib_sort_register();
+    stdlib_http_register();
     stdlib_websocket_register();
     stdlib_graphql_register();
     stdlib_os_register();

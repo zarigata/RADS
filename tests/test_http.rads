@@ -1,0 +1,42 @@
+// HTTP Module Tests
+// Requires network access for live tests
+
+// Test 1: URL encoding
+let encoded = http.url_encode("hello world")
+assert(encoded == "hello%20world", "url_encode basic")
+
+let encoded_special = http.url_encode("a=b&c=d")
+assert(encoded_special != "a=b&c=d", "url_encode special chars")
+
+// Test 2: URL decoding
+let decoded = http.url_decode("hello%20world")
+assert(decoded == "hello world", "url_decode basic")
+
+// Test 3: Roundtrip
+let original = "test string with symbols !@#$"
+let rt = http.url_decode(http.url_encode(original))
+assert(rt == original, "url encode/decode roundtrip")
+
+// Test 4: GET request (live)
+let resp = http.get("https://httpbin.org/get")
+assert(resp != null, "http.get returns non-null")
+assert(string.contains(resp, "httpbin"), "http.get response contains expected content")
+
+// Test 5: Status code (live)
+let code200 = http.status_code("https://httpbin.org/status/200")
+assert(code200 == 200, "status_code returns 200")
+
+let code404 = http.status_code("https://httpbin.org/status/404")
+assert(code404 == 404, "status_code returns 404")
+
+// Test 6: POST request (live)
+let post_data = json.stringify({"test": "rads"})
+let post_resp = http.post("https://httpbin.org/post", post_data, "application/json")
+assert(post_resp != null, "http.post returns non-null")
+assert(string.contains(post_resp, "rads"), "http.post response contains data")
+
+// Test 7: HEAD request (live)
+let headers = http.head("https://httpbin.org/get")
+assert(headers != null, "http.head returns non-null")
+
+print("✅ All HTTP module tests passed!")
