@@ -54,6 +54,28 @@
 - `uuid.nanoid(len)` - Generate NanoID-style string (default 21 chars)
 - `uuid.is_valid(str)` - Validate UUID format
 
+**itertools Module 🔄:**
+- `itertools.count(n, [start, [step]])` - Generate arithmetic sequence
+- `itertools.cycle(arr, n)` - Cycle through array n times
+- `itertools.repeat(val, n)` - Repeat value n times into array
+- `itertools.chain(a, b)` - Concatenate two arrays
+- `itertools.zip(a, b)` - Zip two arrays into pairs
+- `itertools.enumerate(arr, [start])` - [index, value] pairs
+- `itertools.islice(arr, start, end, [step])` - Array slicing
+- `itertools.filter(arr, predicate)` - Filter by predicate ("even", "odd", "positive", "negative", "nonzero", "nonnull")
+- `itertools.map(arr, operation, [operand])` - Map operation ("negate", "double", "square", "abs", "increment", "decrement", "toupper", "tolower", "length", "type", "add", "multiply")
+- `itertools.reduce(arr, operation, [initial])` - Reduce ("sum", "product", "max", "min", "concat")
+- `itertools.takewhile(arr, predicate)` - Take while predicate holds
+- `itertools.dropwhile(arr, predicate)` - Drop while predicate holds
+- `itertools.combinations(arr, r)` - Generate C(n,r) combinations
+- `itertools.permutations(arr, [r])` - Generate P(n,r) permutations
+- `itertools.product(a, b)` - Cartesian product
+- `itertools.unique(arr)` - Remove duplicates preserving order
+- `itertools.flatten(arr)` - Flatten one level of nesting
+- `itertools.groupby(arr, key)` - Group by key ("type", "parity", "sign")
+- `itertools.starmap(pairs, operation)` - Map over unpacked pairs
+- `itertools.accumulate(arr, [operation])` - Running accumulation
+
 **sort Module 📊:**
 - `sort.asc(arr)` - Sort array ascending (in-place)
 - `sort.desc(arr)` - Sort array descending (in-place)

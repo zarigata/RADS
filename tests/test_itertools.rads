@@ -1,0 +1,87 @@
+// RADS itertools module test suite
+
+print("=== itertools.count ===");
+let nums = itertools.count(5, 0, 2);
+print(nums);  // [0, 2, 4, 6, 8]
+
+print("\n=== itertools.repeat ===");
+let reps = itertools.repeat("x", 3);
+print(reps);  // [x, x, x]
+
+print("\n=== itertools.chain ===");
+let chained = itertools.chain([1, 2], [3, 4]);
+print(chained);  // [1, 2, 3, 4]
+
+print("\n=== itertools.zip ===");
+let zipped = itertools.zip([1, 2, 3], ["a", "b", "c"]);
+print(zipped);  // [[1, a], [2, b], [3, c]]
+
+print("\n=== itertools.enumerate ===");
+let enumerated = itertools.enumerate(["x", "y", "z"], 1);
+print(enumerated);  // [[1, x], [2, y], [3, z]]
+
+print("\n=== itertools.filter ===");
+let evens = itertools.filter([1, 2, 3, 4, 5, 6], "even");
+print(evens);  // [2, 4, 6]
+let positives = itertools.filter([-2, -1, 0, 1, 2], "positive");
+print(positives);  // [1, 2]
+
+print("\n=== itertools.map ===");
+let squared = itertools.map([1, 2, 3, 4], "square");
+print(squared);  // [1, 4, 9, 16]
+let negated = itertools.map([1, -2, 3], "negate");
+print(negated);  // [-1, 2, -3]
+let types = itertools.map([1, "hello", true, null], "type");
+print(types);  // [int, string, bool, null]
+
+print("\n=== itertools.reduce ===");
+let sum = itertools.reduce([1, 2, 3, 4, 5], "sum");
+print(sum);  // 15
+let product = itertools.reduce([1, 2, 3, 4], "product");
+print(product);  // 24
+
+print("\n=== itertools.unique ===");
+let uniq = itertools.unique([1, 2, 2, 3, 1, 4]);
+print(uniq);  // [1, 2, 3, 4]
+
+print("\n=== itertools.flatten ===");
+let flat = itertools.flatten([[1, 2], [3, 4], [5]]);
+print(flat);  // [1, 2, 3, 4, 5]
+
+print("\n=== itertools.islice ===");
+let sl = itertools.islice([0, 1, 2, 3, 4, 5], 1, 5, 2);
+print(sl);  // [1, 3]
+
+print("\n=== itertools.takewhile ===");
+let tw = itertools.takewhile([1, 2, 3, -1, 4], "positive");
+print(tw);  // [1, 2, 3]
+
+print("\n=== itertools.dropwhile ===");
+let dw = itertools.dropwhile([1, 2, 3, -1, 4], "positive");
+print(dw);  // [-1, 4]
+
+print("\n=== itertools.cycle ===");
+let cyc = itertools.cycle(["a", "b"], 3);
+print(cyc);  // [a, b, a, b, a, b]
+
+print("\n=== itertools.combinations ===");
+let combos = itertools.combinations([1, 2, 3], 2);
+print(combos);  // [[1,2],[1,3],[2,3]]
+
+print("\n=== itertools.product ===");
+let prod = itertools.product([1, 2], ["a", "b"]);
+print(prod);  // [[1,a],[1,b],[2,a],[2,b]]
+
+print("\n=== itertools.accumulate ===");
+let acc = itertools.accumulate([1, 2, 3, 4, 5], "sum");
+print(acc);  // [1, 3, 6, 10, 15]
+
+print("\n=== itertools.groupby ===");
+let grp = itertools.groupby([1, 2, 3, 4, 5, 6], "parity");
+print(grp);  // [[1,3,5],[2,4,6]]
+
+print("\n=== itertools.starmap ===");
+let sm = itertools.starmap([[1, 2], [3, 4], [5, 6]], "add");
+print(sm);  // [3, 7, 11]
+
+print("\n✅ All itertools tests completed!");

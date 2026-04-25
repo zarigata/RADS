@@ -38,6 +38,7 @@
 #include "stdlib_collections.h"
 #include "stdlib_hash.h"
 #include "stdlib_sort.h"
+#include "stdlib_itertools.h"
 #include "stdlib_http.h"
 #include "stdlib_os.h"
 
@@ -298,6 +299,7 @@ int run_repl() {
     stdlib_process_register();
     stdlib_uuid_register();
     stdlib_collections_register();
+    stdlib_itertools_register();
     int line_num = 1;
 
     // RGB Chroma color cycle for prompt (like RGB keyboard)
@@ -514,6 +516,7 @@ int main(int argc, char* argv[]) {
     stdlib_process_register();
     stdlib_uuid_register();
     stdlib_collections_register();
+    stdlib_itertools_register();
 
     // Tokenize
     Lexer lexer;
