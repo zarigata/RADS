@@ -86,6 +86,16 @@
 - `sort.sum(arr)` - Sum numeric array elements
 - `sort.shuffle(arr)` - Fisher-Yates shuffle
 
+**struct Module 📦:**
+- `struct.pack(fmt, v1, v2, ...)` - Pack values into binary string
+- `struct.unpack(fmt, data)` - Unpack binary data into array
+- `struct.calcsize(fmt)` - Calculate byte size for format
+- `struct.pack_into(fmt, buf, offset, values...)` - Pack into buffer at offset
+- `struct.unpack_from(fmt, buf, [offset])` - Unpack from buffer at offset
+- `struct.iter_unpack(fmt, data)` - Iteratively unpack all records
+  - Format chars: `b B c ? h H i I l L q Q f d`
+  - Byte order: `@ = < > !`
+
 **New String Functions:**
 - `str.format(template, args...)` - Format string with `{}` placeholders
 - `str.interpolate(template, struct)` - Replace `{key}` with struct field values

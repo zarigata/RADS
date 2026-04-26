@@ -1,0 +1,72 @@
+// Test: struct module
+
+// calcsize
+let s = struct.calcsize(">i")
+assert(s == 4, "calcsize i = 4")
+
+let s2 = struct.calcsize(">ih")
+assert(s2 == 6, "calcsize ih = 6")
+
+let s3 = struct.calcsize("<Qd")
+assert(s3 == 16, "calcsize Qd = 16")
+
+// pack/unpack round-trip: int
+let packed = struct.pack(">i", 42)
+let vals = struct.unpack(">i", packed)
+assert(vals[0] == 42, "pack/unpack int 42")
+
+// pack/unpack: short
+let packed2 = struct.pack("<h", -100)
+let vals2 = struct.unpack("<h", packed2)
+assert(vals2[0] == -100, "pack/unpack short -100")
+
+// pack/unpack: unsigned short
+let packed3 = struct.pack(">H", 50000)
+let vals3 = struct.unpack(">H", packed3)
+assert(vals3[0] == 50000, "pack/unpack ushort 50000")
+
+// pack/unpack: byte
+let packed4 = struct.pack("<B", 255)
+let vals4 = struct.unpack("<B", packed4)
+assert(vals4[0] == 255, "pack/unpack byte 255")
+
+// pack/unpack: signed byte
+let packed5 = struct.pack("<b", -128)
+let vals5 = struct.unpack("<b", packed5)
+assert(vals5[0] == -128, "pack/unpack sbyte -128")
+
+// pack/unpack: bool
+let packed6 = struct.pack("<?", 1)
+let vals6 = struct.unpack("<?", packed6)
+assert(vals6[0] == true, "pack/unpack bool true")
+
+// pack/unpack: multi-field
+let packed7 = struct.pack(">iHb", 1000, 200, 42)
+let vals7 = struct.unpack(">iHb", packed7)
+assert(vals7[0] == 1000, "multi-field i")
+assert(vals7[1] == 200, "multi-field H")
+assert(vals7[2] == 42, "multi-field b")
+
+// pack/unpack: float
+let packed8 = struct.pack("<f", 3.14)
+let vals8 = struct.unpack("<f", packed8)
+assert(vals8[0] > 3.0 && vals8[0] < 3.3, "pack/unpack float ~3.14")
+
+// pack/unpack: double
+let packed9 = struct.pack(">d", 2.718281828)
+let vals9 = struct.unpack(">d", packed9)
+assert(vals9[0] > 2.718 && vals9[0] < 2.719, "pack/unpack double ~2.718")
+
+// unpack_from
+let buf = struct.pack(">iH", 100, 500)
+let from_vals = struct.unpack_from(">H", buf, 4)
+assert(from_vals[0] == 500, "unpack_from at offset")
+
+// iter_unpack
+let multi = struct.pack("<hh", 10, 20)
+let records = struct.iter_unpack("<h", multi)
+assert(array.count(records) == 2, "iter_unpack count")
+assert(records[0][0] == 10, "iter_unpack first")
+assert(records[1][0] == 20, "iter_unpack second")
+
+print("struct module: all tests passed")
