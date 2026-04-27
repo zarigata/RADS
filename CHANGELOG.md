@@ -2,6 +2,52 @@
 
 All notable changes to RADS programming language will be documented in this file.
 
+## 🎨 [0.0.12] - 2026-04-27
+
+### Codename: CHROMATIC
+
+**Theme:** Terminal Styling & Version Management
+
+### Added
+
+#### color Module 🎨
+Terminal ANSI color and styling — 38 functions for CLI application output.
+
+```rads
+import color;
+
+echo(color.red("Error!"));
+echo(color.green("Success!"));
+echo(color.bold(color.blue("Important")));
+echo(color.rgb(255, 128, 0, "Custom orange"));
+echo(color.strip(raw_text));  // Remove ANSI escapes
+echo(color.supports());       // Check terminal support
+```
+
+**Functions:** 8 foreground colors, 7 bright foreground, 8 background, 7 styles
+(bold/dim/italic/underline/blink/reverse/hidden/strikethrough), plus
+`rgb()`, `bg_rgb()`, `strip()`, `code()`, `reset()`, `supports()`.
+
+#### semver Module 📦
+Semantic version parsing and comparison — 16 functions.
+
+```rads
+import semver;
+
+turbo v = semver.parse("1.2.3-alpha+build.1");
+turbo major = semver.major(v);    // 1
+turbo minor = semver.minor(v);    // 2
+turbo patch = semver.patch(v);    // 3
+
+semver.gt("2.0.0", "1.9.9");      // true
+semver.bump_patch("1.2.3");      // "1.2.4"
+semver.bump_minor("1.2.3");      // "1.3.0"
+semver.bump_major("1.2.3");      // "2.0.0"
+```
+
+**Functions:** parse, valid, major, minor, patch, prerelease, build, compare,
+gt, gte, lt, lte, eq, bump_major, bump_minor, bump_patch.
+
 ## 💫 [0.0.11] - 2026-03-01
 
 ### Codename: PULSAR

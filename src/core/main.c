@@ -42,6 +42,8 @@
 #include "stdlib_http.h"
 #include "stdlib_struct.h"
 #include "stdlib_os.h"
+#include "stdlib_color.h"
+#include "stdlib_semver.h"
 
 // ANSI Color Codes for Chroma Effects
 #define COLOR_RESET     "\033[0m"
@@ -302,6 +304,8 @@ int run_repl() {
     stdlib_uuid_register();
     stdlib_collections_register();
     stdlib_itertools_register();
+    stdlib_color_register();
+    stdlib_semver_register();
     int line_num = 1;
 
     // RGB Chroma color cycle for prompt (like RGB keyboard)
@@ -520,6 +524,8 @@ int main(int argc, char* argv[]) {
     stdlib_uuid_register();
     stdlib_collections_register();
     stdlib_itertools_register();
+    stdlib_color_register();
+    stdlib_semver_register();
 
     // Tokenize
     Lexer lexer;
