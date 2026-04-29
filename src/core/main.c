@@ -47,6 +47,9 @@
 #include "stdlib_logging.h"
 #include "stdlib_statistics.h"
 #include "stdlib_heapq.h"
+#include "stdlib_buffer.h"
+#include "stdlib_textwrap.h"
+#include "stdlib_pprint.h"
 
 // ANSI Color Codes for Chroma Effects
 #define COLOR_RESET     "\033[0m"
@@ -312,6 +315,9 @@ int run_repl() {
     stdlib_logging_register();
     stdlib_statistics_register();
     stdlib_heapq_register();
+    stdlib_buffer_register();
+    stdlib_textwrap_register();
+    stdlib_pprint_register();
     int line_num = 1;
 
     // RGB Chroma color cycle for prompt (like RGB keyboard)
@@ -535,6 +541,9 @@ int main(int argc, char* argv[]) {
     stdlib_logging_register();
     stdlib_statistics_register();
     stdlib_heapq_register();
+    stdlib_buffer_register();
+    stdlib_textwrap_register();
+    stdlib_pprint_register();
 
     // Tokenize
     Lexer lexer;

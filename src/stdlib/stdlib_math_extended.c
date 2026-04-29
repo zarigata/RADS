@@ -186,12 +186,6 @@ Value stdlib_math_srand(struct Interpreter* interp, int argc, Value* args) {
 }
 
 void stdlib_math_extended_register(void) {
-    register_native("math.min", (NativeFn)stdlib_math_min);
-    register_native("math.max", (NativeFn)stdlib_math_max);
-    register_native("math.clamp", (NativeFn)stdlib_math_clamp);
-    register_native("math.floor", (NativeFn)stdlib_math_floor);
-    register_native("math.ceil", (NativeFn)stdlib_math_ceil);
-    register_native("math.round", (NativeFn)stdlib_math_round);
-    register_native("math.random", (NativeFn)stdlib_math_random);
+    // Only register functions not already in stdlib_math.c
     register_native("math.srand", (NativeFn)stdlib_math_srand);
 }

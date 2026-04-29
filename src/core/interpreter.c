@@ -319,6 +319,17 @@ void register_native(const char* name, NativeFn fn) {
     native_functions = binding;
 }
 
+void register_native_fn(const char* module, const char* name, NativeFn fn) {
+    size_t mod_len = strlen(module);
+    size_t name_len = strlen(name);
+    char* full_name = malloc(mod_len + 1 + name_len + 1);
+    memcpy(full_name, module, mod_len);
+    full_name[mod_len] = '.';
+    memcpy(full_name + mod_len + 1, name, name_len + 1);
+    register_native(full_name, fn);
+    free(full_name);
+}
+
 static NativeFn find_native(const char* name) {
     NativeBinding* current = native_functions;
     while (current) {

@@ -86,6 +86,7 @@ typedef enum {
 } FunctionType;
 
 void register_native(const char* name, NativeFn fn);
+void register_native_fn(const char* module, const char* name, NativeFn fn);
 uv_loop_t* interpreter_init_event_loop(void);
 void interpreter_cleanup_event_loop(void);
 void interpreter_cleanup_environment(void);
