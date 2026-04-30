@@ -50,6 +50,7 @@
 #include "stdlib_buffer.h"
 #include "stdlib_textwrap.h"
 #include "stdlib_pprint.h"
+#include "stdlib_bisect.h"
 
 // ANSI Color Codes for Chroma Effects
 #define COLOR_RESET     "\033[0m"
@@ -82,7 +83,7 @@
 #define CURSOR_BAR_STEADY       "\033[6 q"  // Steady bar
 
 void print_usage() {
-    printf("RADS Programming Language v0.0.11 \"PULSAR\"\n");
+    printf("RADS Programming Language v0.0.12 \"CHROMATIC\"\n");
     printf("Usage: rads [options] [file]\n\n");
     printf("Options:\n");
     printf("  -h, --help     Show this help message\n");
@@ -96,7 +97,7 @@ void print_usage() {
 void print_version() {
     printf("\n");
     printf("%s┌────────────────────────────────────────┐%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
-    printf("%s│ %sRADS v0.0.11 \"PULSAR\" 💫%s           %s│%s\n",
+    printf("%s│ %sRADS v0.0.12 \"CHROMATIC\" 🎨%s           %s│%s\n",
             COLOR_BRIGHT_CYAN, COLOR_BRIGHT_MAGENTA,
             COLOR_WHITE, COLOR_BRIGHT_CYAN, COLOR_RESET);
     printf("%s│ %sRapid Asynchronous Data Server%s     %s│%s\n",
@@ -207,7 +208,7 @@ void print_repl_welcome() {
 
     printf(COLOR_BRIGHT_CYAN "  ╠═══════════════════════════════════════════════════════════╣\n" COLOR_RESET);
     printf(COLOR_BRIGHT_CYAN "  ║  " COLOR_RESET);
-    printf(COLOR_CYAN "🌌 Interactive REPL v0.0.11 PULSAR" COLOR_RESET);
+    printf(COLOR_CYAN "🌌 Interactive REPL v0.0.12 CHROMATIC" COLOR_RESET);
     printf(COLOR_DIM " - " COLOR_RESET);
     printf(COLOR_BRIGHT_CYAN "TURBO" COLOR_RESET);
     printf(COLOR_DIM " & " COLOR_RESET);
@@ -318,6 +319,7 @@ int run_repl() {
     stdlib_buffer_register();
     stdlib_textwrap_register();
     stdlib_pprint_register();
+    stdlib_bisect_register();
     int line_num = 1;
 
     // RGB Chroma color cycle for prompt (like RGB keyboard)
@@ -497,7 +499,7 @@ int main(int argc, char* argv[]) {
     }
     
     // Normal execution mode
-    printf("%s🌌 RADS v0.0.11 PULSAR%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
+    printf("%s🌌 RADS v0.0.12 CHROMATIC%s\n", COLOR_BRIGHT_CYAN, COLOR_RESET);
     printf("%sExecuting:%s %s%s%s\n\n",
            COLOR_BRIGHT_YELLOW, COLOR_RESET,
            COLOR_BRIGHT_MAGENTA, filename, COLOR_RESET);
@@ -544,6 +546,7 @@ int main(int argc, char* argv[]) {
     stdlib_buffer_register();
     stdlib_textwrap_register();
     stdlib_pprint_register();
+    stdlib_bisect_register();
 
     // Tokenize
     Lexer lexer;

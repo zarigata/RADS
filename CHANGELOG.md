@@ -48,6 +48,33 @@ semver.bump_major("1.2.3");      // "2.0.0"
 **Functions:** parse, valid, major, minor, patch, prerelease, build, compare,
 gt, gte, lt, lte, eq, bump_major, bump_minor, bump_patch.
 
+### Added
+
+#### bisect Module 🔍
+Binary search utilities for sorted arrays — 8 functions.
+
+```rads
+import bisect;
+
+turbo arr = [1, 3, 5, 7, 9];
+turbo pos = bisect.bisect(arr, 4);     // 2
+bisect.insort(arr, 4);                // [1, 3, 4, 5, 7, 9]
+turbo idx = bisect.index(arr, 5);     // 3 (or -1)
+turbo sub = bisect.range(arr, 3, 7);  // [3, 4, 5, 6]
+```
+
+**Functions:** bisect, bisect_left, bisect_right, insort, insort_left,
+insort_right, index, range.
+
+### Fixed
+
+- `stdlib_math_extended.c` contained ~160 lines of dead code: `min`, `max`,
+  `clamp`, `floor`, `ceil`, `round`, `random` were duplicated from
+  `stdlib_math.c` but never registered. Only `srand()` was actually wired.
+  Removed the dead duplicates to reduce build size and confusion.
+- Version strings updated from v0.0.11 PULSAR to v0.0.12 CHROMATIC in
+  `main.c` (version banner, REPL welcome, file execution header).
+
 ## 💫 [0.0.11] - 2026-03-01
 
 ### Codename: PULSAR

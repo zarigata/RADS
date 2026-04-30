@@ -1,0 +1,36 @@
+// Test: bisect module (v0.0.12+)
+import bisect;
+
+// Test bisect.bisect_right
+turbo arr1 = [1, 3, 5, 7, 9];
+turbo pos1 = bisect.bisect(arr1, 4);
+echo("bisect([1,3,5,7,9], 4) = " + pos1);
+// Expected: 2
+
+// Test bisect.bisect_left
+turbo pos2 = bisect.bisect_left(arr1, 5);
+echo("bisect_left([1,3,5,7,9], 5) = " + pos2);
+// Expected: 2 (left of existing 5)
+
+// Test bisect.bisect_right with duplicate
+turbo pos3 = bisect.bisect_right(arr1, 5);
+echo("bisect_right([1,3,5,7,9], 5) = " + pos3);
+// Expected: 3 (right of existing 5)
+
+// Test bisect.index (exact match)
+turbo idx = bisect.index(arr1, 7);
+echo("index([1,3,5,7,9], 7) = " + idx);
+// Expected: 3
+
+// Test bisect.index (not found)
+turbo idx2 = bisect.index(arr1, 6);
+echo("index([1,3,5,7,9], 6) = " + idx2);
+// Expected: -1
+
+// Test bisect.range
+turbo arr2 = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+turbo sub = bisect.range(arr2, 3, 7);
+echo("range([1..9], 3, 7) count = " + length(sub));
+// Expected: 4 (3,4,5,6)
+
+echo("✅ bisect module tests complete");
