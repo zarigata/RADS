@@ -52,6 +52,9 @@
 #include "stdlib_pprint.h"
 #include "stdlib_bisect.h"
 #include "stdlib_functools.h"
+#include "stdlib_fnmatch.h"
+#include "stdlib_copy.h"
+#include "stdlib_queue.h"
 #include "stdlib_operator.h"
 
 // ANSI Color Codes for Chroma Effects
@@ -324,6 +327,9 @@ int run_repl() {
     stdlib_bisect_register();
     stdlib_functools_register();
     stdlib_operator_register();
+    stdlib_fnmatch_register();
+    stdlib_copy_register();
+    stdlib_queue_register();
     int line_num = 1;
 
     // RGB Chroma color cycle for prompt (like RGB keyboard)
@@ -553,6 +559,9 @@ int main(int argc, char* argv[]) {
     stdlib_bisect_register();
     stdlib_functools_register();
     stdlib_operator_register();
+    stdlib_fnmatch_register();
+    stdlib_copy_register();
+    stdlib_queue_register();
 
     // Tokenize
     Lexer lexer;
