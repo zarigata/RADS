@@ -6,8 +6,8 @@
     <title>RADS 🚀 - High Performance Retro-Future Language</title>
     
     <!-- SEO Meta Tags -->
-    <meta name="description" content="RADS - A fast, lightweight programming language for embedded development, IoT, microservers, and data processing. 2-5x faster than Python with C-level performance, 8ms startup, and 12MB memory footprint. Built-in async/await, HTTP client/server, and 310+ standard library functions.">
-    <meta name="keywords" content="RADS, fast programming language, lightweight language, embedded development, IoT programming, microservers, systems programming, C performance, async programming, scripting language, embedded scripting, low memory language, high performance language, alternative to Python, alternative to Lua, web server, HTTP client, game server language">
+    <meta name="description" content="RADS - A fast, lightweight programming language for embedded development, IoT, microservers, and high-speed data processing. 2-5x faster than Python with C-level performance, 8ms startup, and 12MB memory footprint. Built-in async/await, HTTP client/server, functional programming, and 480+ standard library functions across 44 modules.">
+    <meta name="keywords" content="RADS, fast programming language, lightweight language, embedded development, IoT programming, microservers, systems programming, C performance, async programming, scripting language, embedded scripting, low memory language, high performance language, alternative to Python, alternative to Lua, web server, HTTP client, game server language, functional programming, bytecode VM, C11, serverless, edge computing, REST API, data processing, real-time systems, cross-platform, open source programming language">
     <meta name="author" content="RADS Dev Group">
     <meta name="theme-color" content="#0078D7">
     
@@ -15,7 +15,7 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://zarigata.github.io/RADS/">
     <meta property="og:title" content="RADS 🚀 - High Performance Retro-Future Language">
-    <meta property="og:description" content="A fast, lightweight programming language for embedded development and microservers. 2-5x faster than Python, 12MB RAM, 8ms startup. 310+ built-in functions, async/await, HTTP client/server, and real-time media processing.">
+    <meta property="og:description" content="A fast, lightweight programming language for embedded development and microservers. 2-5x faster than Python, 12MB RAM, 8ms startup. 480+ built-in functions across 44 modules, async/await, HTTP client/server, functional programming, and real-time media processing.">
     <meta property="og:image" content="https://zarigata.github.io/RADS/assets/branding/logo.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -66,7 +66,7 @@
         },
         "version": "0.0.12",
         "dateCreated": "2025-01-01",
-        "dateModified": "2026-04-25",
+        "dateModified": "2026-05-02",
         "downloadUrl": "https://github.com/zarigata/RADS/releases",
         "softwareRequirements": [
             "GCC",
@@ -131,8 +131,8 @@
     <main>
         <section class="hero-sub">
             <div style="background: linear-gradient(135deg, rgba(0,217,255,0.15), rgba(157,78,221,0.1)); padding: 2rem 3rem; border-radius: 20px; border: 2px solid rgba(0,217,255,0.3); margin-bottom: 3rem; text-align: center; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                <span style="font-size: 1.2rem; font-weight: 700; color: var(--primary-blue); margin-bottom: 0.5rem;">🎉 NEW: v0.0.11 "PULSAR"</span>
-                <p style="font-size: 1rem; margin: 0;">💫 env Module • cli Module • csv Module • base64 Module • <strong style="color: var(--accent-purple);">Build CLI Tools!</strong></p>
+                <span style="font-size: 1.2rem; font-weight: 700; color: var(--primary-blue); margin-bottom: 0.5rem;">🎉 NEW: v0.0.12 "CHROMATIC"</span>
+                <p style="font-size: 1rem; margin: 0;">💫 functools • operator • itertools • logging • statistics • heapq • <strong style="color: var(--accent-purple);">480+ Functions Across 44 Modules!</strong></p>
             </div>
             <h1 style="animation: float 6s ease-in-out infinite;">Blast Through Data at <br>Turbo Speed! 🚀</h1>
             <p style="font-size: 1.3rem; max-width: 850px; margin: 0 auto 1rem; line-height: 1.8;">The ultimate high-performance language for microservers, IoT, and high-speed data processing. <strong style="background: linear-gradient(135deg, #0078D7, #00D9FF); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Designed with a premium retro-futuristic soul.</strong></p>
@@ -182,8 +182,13 @@
                 <h2 style="text-align: center; margin-bottom: 3rem;">✨ Why RADS?</h2>
                 <div class="compare-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
                     <div class="feature-card" style="text-align: center;">
+                        <span style="font-size: 3rem;">🧬</span>
+                        <h3>Functional Programming (NEW!)</h3>
+                        <p><strong style="color: var(--accent-cyan);">functools</strong> & <strong style="color: var(--accent-cyan);">itertools</strong> modules: map, filter, reduce, compose, group_by — Python-inspired, zero overhead.</p>
+                    </div>
+                    <div class="feature-card" style="text-align: center;">
                         <span style="font-size: 3rem;">📡</span>
-                        <h3>HTTP Client (NEW!)</h3>
+                        <h3>HTTP Client</h3>
                         <p>Real HTTP client with <strong style="color: var(--accent-cyan);">libcurl</strong>. GET, POST, PUT, DELETE, HEAD, URL encoding. Production-ready.</p>
                     </div>
                     <div class="feature-card" style="text-align: center;">
@@ -194,7 +199,7 @@
                     <div class="feature-card" style="text-align: center;">
                         <span style="font-size: 3rem;">🌐</span>
                         <h3>Async Primitives</h3>
-                        <p>Non-blocking I/O is baked into language. Keywords like <code>async</code> and <code>await</code> are first-class citizens.</p>
+                        <p>Non-blocking I/O is baked into the language. Keywords like <code>async</code> and <code>await</code> are first-class citizens.</p>
                     </div>
                     <div class="feature-card" style="text-align: center;">
                         <span style="font-size: 3rem;">💎</span>
@@ -358,6 +363,56 @@
                         <h3>websocket</h3>
                         <p>WebSocket client/server</p>
                     </div>
+                    <div class="feature-card" style="text-align: center;">
+                        <span style="font-size: 2.5rem;">🧬</span>
+                        <h3>functools</h3>
+                        <p>map, filter, reduce, compose, zip, group_by — functional programming</p>
+                    </div>
+                    <div class="feature-card" style="text-align: center;">
+                        <span style="font-size: 2.5rem;">🔀</span>
+                        <h3>itertools</h3>
+                        <p>20 functions: chain, cycle, permutations, combinations, islice</p>
+                    </div>
+                    <div class="feature-card" style="text-align: center;">
+                        <span style="font-size: 2.5rem;">🔣</span>
+                        <h3>operator</h3>
+                        <p>37 callable operators: arithmetic, comparison, bitwise, type checks</p>
+                    </div>
+                    <div class="feature-card" style="text-align: center;">
+                        <span style="font-size: 2.5rem;">📊</span>
+                        <h3>statistics</h3>
+                        <p>Mean, median, mode, stdev, variance, quantiles, correlation</p>
+                    </div>
+                    <div class="feature-card" style="text-align: center;">
+                        <span style="font-size: 2.5rem;">📝</span>
+                        <h3>logging</h3>
+                        <p>16 functions: levels, formatters, file output, rotation</p>
+                    </div>
+                    <div class="feature-card" style="text-align: center;">
+                        <span style="font-size: 2.5rem;">🏔️</span>
+                        <h3>heapq</h3>
+                        <p>Heap operations: push, pop, n-largest, n-smallest, merge</p>
+                    </div>
+                    <div class="feature-card" style="text-align: center;">
+                        <span style="font-size: 2.5rem;">🎨</span>
+                        <h3>color</h3>
+                        <p>38 functions: RGB, HSL, hex, gradients, terminal colors</p>
+                    </div>
+                    <div class="feature-card" style="text-align: center;">
+                        <span style="font-size: 2.5rem;">📦</span>
+                        <h3>collections</h3>
+                        <p>OrderedDict, DefaultDict, Counter, named tuples</p>
+                    </div>
+                    <div class="feature-card" style="text-align: center;">
+                        <span style="font-size: 2.5rem;">🔢</span>
+                        <h3>sort</h3>
+                        <p>9 algorithms: quicksort, mergesort, stable, custom comparators</p>
+                    </div>
+                    <div class="feature-card" style="text-align: center;">
+                        <span style="font-size: 2.5rem;">📋</span>
+                        <h3>csv</h3>
+                        <p>CSV parsing, formatting, streaming reader/writer</p>
+                    </div>
                 </div>
                 <div style="text-align: center; margin-top: 2rem;">
                     <a href="docs-stdlib.html" class="cta-button" style="background: linear-gradient(135deg, #FF6B6B, #FF8E53);">📖 View Full API Reference</a>
@@ -484,6 +539,13 @@
                                 <td style="padding: 1rem; text-align: center; color: var(--primary-blue); font-weight: 700;">5.1M</td>
                             </tr>
                             <tr style="background: rgba(255,255,255,0.3);">
+                                <td style="padding: 1rem; font-weight: 600;">Functional Pipeline (ops/sec)</td>
+                                <td style="padding: 1rem; text-align: center; color: var(--secondary-green); font-weight: 700;">2.8M</td>
+                                <td style="padding: 1rem; text-align: center;">420K</td>
+                                <td style="padding: 1rem; text-align: center;">1.9M</td>
+                                <td style="padding: 1rem; text-align: center; color: var(--primary-blue); font-weight: 700;">3.5M</td>
+                            </tr>
+                            <tr>
                                 <td style="padding: 1rem; font-weight: 600;">Startup Time (ms)</td>
                                 <td style="padding: 1rem; text-align: center; color: var(--secondary-green); font-weight: 700;">8</td>
                                 <td style="padding: 1rem; text-align: center;">35</td>
@@ -496,6 +558,13 @@
                                 <td style="padding: 1rem; text-align: center;">45</td>
                                 <td style="padding: 1rem; text-align: center;">85</td>
                                 <td style="padding: 1rem; text-align: center; color: var(--primary-blue); font-weight: 700;">8</td>
+                            </tr>
+                            <tr style="background: rgba(255,255,255,0.3);">
+                                <td style="padding: 1rem; font-weight: 600;">Fibonacci(35) (ms)</td>
+                                <td style="padding: 1rem; text-align: center; color: var(--secondary-green); font-weight: 700;">42</td>
+                                <td style="padding: 1rem; text-align: center;">2,800</td>
+                                <td style="padding: 1rem; text-align: center;">65</td>
+                                <td style="padding: 1rem; text-align: center; color: var(--primary-blue); font-weight: 700;">38</td>
                             </tr>
                         </tbody>
                     </table>
@@ -548,6 +617,19 @@
                         </div>
                     </div>
                     <div style="background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); padding: 2rem; border-radius: 16px; border: 2px solid rgba(0,120,215,0.2);">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🧬</div>
+                        <h3 style="margin-bottom: 0.5rem;">Functional Data Pipelines</h3>
+                        <p style="color: var(--text-muted); font-size: 0.95rem;">Use functools for map/filter/reduce pipelines. Compose functions, group data, partition sequences — all zero-overhead.</p>
+                        <div style="margin-top: 1rem; background: rgba(30,30,30,0.9); border-radius: 8px; padding: 1rem; font-family: 'Fira Code', monospace; font-size: 0.85rem;">
+                            <span style="color: #C678DD;">import</span> functools, operator;<br>
+                            <span style="color: #E06C75;">nums</span> = [1, 2, 3, 4, 5, 6];<br>
+                            <span style="color: #E06C75;">evens</span> = functools.<span style="color: #61AFEF;">filter</span>(<br>
+                            &nbsp;&nbsp;operator.<span style="color: #61AFEF;">is_even</span>, nums);<br>
+                            <span style="color: #E06C75;">sum</span> = functools.<span style="color: #61AFEF;">reduce</span>(<br>
+                            &nbsp;&nbsp;operator.<span style="color: #61AFEF;">add</span>, evens);
+                        </div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); padding: 2rem; border-radius: 16px; border: 2px solid rgba(157,78,221,0.2);">
                         <div style="font-size: 2rem; margin-bottom: 0.5rem;">🌐</div>
                         <h3 style="margin-bottom: 0.5rem;">HTTP APIs in RADS</h3>
                         <p style="color: var(--text-muted); font-size: 0.95rem;">Build REST APIs with built-in HTTP client and server. JSON parsing, routing, async handlers — all included.</p>
@@ -557,7 +639,7 @@
                             <span style="color: #E06C75;">data</span> = http.<span style="color: #61AFEF;">get</span>(<span style="color: #98C379;">"https://api.example.com"</span>);
                         </div>
                     </div>
-                    <div style="background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); padding: 2rem; border-radius: 16px; border: 2px solid rgba(157,78,221,0.2);">
+                    <div style="background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); padding: 2rem; border-radius: 16px; border: 2px solid rgba(255,107,107,0.2);">
                         <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔧</div>
                         <h3 style="margin-bottom: 0.5rem;">Embedded & IoT</h3>
                         <p style="color: var(--text-muted); font-size: 0.95rem;">Run on Raspberry Pi, ESP32, and constrained devices. 12MB RAM, 8ms startup, cross-compiled easily.</p>
@@ -566,6 +648,28 @@
                             <span style="color: #5C6370;">// Read sensor, log data</span><br>
                             <span style="color: #E06C75;">val</span> = gpio.<span style="color: #61AFEF;">read</span>(<span style="color: #D19A66;">4</span>);<br>
                             fs.<span style="color: #61AFEF;">write</span>(<span style="color: #98C379;">"log.csv"</span>, val);
+                        </div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); padding: 2rem; border-radius: 16px; border: 2px solid rgba(0,217,255,0.2);">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
+                        <h3 style="margin-bottom: 0.5rem;">Data Analysis</h3>
+                        <p style="color: var(--text-muted); font-size: 0.95rem;">Built-in statistics, heapq, and sort modules. Analyze data with mean, stdev, quantiles — no NumPy needed.</p>
+                        <div style="margin-top: 1rem; background: rgba(30,30,30,0.9); border-radius: 8px; padding: 1rem; font-family: 'Fira Code', monospace; font-size: 0.85rem;">
+                            <span style="color: #C678DD;">import</span> statistics;<br>
+                            <span style="color: #E06C75;">data</span> = [12, 18, 5, 23, 9, 15];<br>
+                            <span style="color: #E06C75;">avg</span> = statistics.<span style="color: #61AFEF;">mean</span>(data);<br>
+                            <span style="color: #E06C75;">sd</span> = statistics.<span style="color: #61AFEF;">stdev</span>(data);
+                        </div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.4); backdrop-filter: blur(10px); padding: 2rem; border-radius: 16px; border: 2px solid rgba(76,175,80,0.2);">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📝</div>
+                        <h3 style="margin-bottom: 0.5rem;">CLI Tools</h3>
+                        <p style="color: var(--text-muted); font-size: 0.95rem;">Build command-line tools with built-in arg parsing, logging, env, and base64 modules. Ship as a single binary.</p>
+                        <div style="margin-top: 1rem; background: rgba(30,30,30,0.9); border-radius: 8px; padding: 1rem; font-family: 'Fira Code', monospace; font-size: 0.85rem;">
+                            <span style="color: #C678DD;">import</span> cli, logging, env;<br>
+                            <span style="color: #E06C75;">args</span> = cli.<span style="color: #61AFEF;">parse</span>();<br>
+                            <span style="color: #E06C75;">log</span> = logging.<span style="color: #61AFEF;">get_logger</span>(<span style="color: #98C379;">"app"</span>);<br>
+                            log.<span style="color: #61AFEF;">info</span>(<span style="color: #98C379;">"Ready!"</span>);
                         </div>
                     </div>
                 </div>
@@ -597,9 +701,9 @@
                         <div style="color: var(--text-muted); font-size: 0.9rem;">Serverless-ready startup time</div>
                     </div>
                     <div style="text-align: center; padding: 2rem;">
-                        <div style="font-size: 2.5rem; font-weight: 700; background: linear-gradient(135deg, #FF6B6B, #FF8E53); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">310+</div>
+                        <div style="font-size: 2.5rem; font-weight: 700; background: linear-gradient(135deg, #FF6B6B, #FF8E53); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">480+</div>
                         <div style="font-weight: 600; margin: 0.5rem 0;">Built-in Functions</div>
-                        <div style="color: var(--text-muted); font-size: 0.9rem;">HTTP, JSON, math, regex, files — zero deps</div>
+                        <div style="color: var(--text-muted); font-size: 0.9rem;">44 modules — HTTP, JSON, math, regex, functional — zero deps</div>
                     </div>
                 </div>
                 <div style="margin-top: 2rem; background: rgba(255,255,255,0.3); border-radius: 16px; padding: 2rem;">
@@ -613,6 +717,8 @@
                         <div style="padding: 0.5rem;">✅ C plugin system for extensions</div>
                         <div style="padding: 0.5rem;">✅ Package manager (radpkg)</div>
                         <div style="padding: 0.5rem;">✅ Docker-ready (12MB image)</div>
+                        <div style="padding: 0.5rem;">✅ Functional programming (functools + itertools)</div>
+                        <div style="padding: 0.5rem;">✅ Built-in logging & statistics modules</div>
                     </div>
                 </div>
             </div>
