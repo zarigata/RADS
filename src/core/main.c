@@ -55,6 +55,8 @@
 #include "stdlib_fnmatch.h"
 #include "stdlib_copy.h"
 #include "stdlib_queue.h"
+#include "stdlib_glob.h"
+#include "stdlib_enum.h"
 #include "stdlib_operator.h"
 
 // ANSI Color Codes for Chroma Effects
@@ -330,6 +332,8 @@ int run_repl() {
     stdlib_fnmatch_register();
     stdlib_copy_register();
     stdlib_queue_register();
+    stdlib_glob_register();
+    stdlib_enum_register();
     int line_num = 1;
 
     // RGB Chroma color cycle for prompt (like RGB keyboard)
@@ -562,6 +566,8 @@ int main(int argc, char* argv[]) {
     stdlib_fnmatch_register();
     stdlib_copy_register();
     stdlib_queue_register();
+    stdlib_glob_register();
+    stdlib_enum_register();
 
     // Tokenize
     Lexer lexer;
