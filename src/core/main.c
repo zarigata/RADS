@@ -58,6 +58,10 @@
 #include "stdlib_glob.h"
 #include "stdlib_enum.h"
 #include "stdlib_operator.h"
+#include "stdlib_secrets.h"
+#include "stdlib_tempfile.h"
+#include "stdlib_calendar.h"
+#include "stdlib_traceback.h"
 
 // ANSI Color Codes for Chroma Effects
 #define COLOR_RESET     "\033[0m"
@@ -88,6 +92,64 @@
 #define CURSOR_UNDERLINE_STEADY "\033[4 q"  // Steady underline
 #define CURSOR_BAR_BLINK        "\033[5 q"  // Blinking bar (I-beam)
 #define CURSOR_BAR_STEADY       "\033[6 q"  // Steady bar
+
+static void stdlib_register_all(void) {
+    stdlib_io_register();
+    stdlib_media_register();
+    stdlib_net_register();
+    stdlib_ffi_register();
+    stdlib_string_register();
+    stdlib_string_advanced_register();
+    stdlib_math_register();
+    stdlib_math_extended_register();
+    stdlib_array_register();
+    stdlib_fs_register();
+    stdlib_json_register();
+    stdlib_db_register();
+    stdlib_webengine_register();
+    stdlib_datetime_register();
+    stdlib_regex_register();
+    stdlib_test_register();
+    stdlib_env_register();
+    stdlib_cli_register();
+    stdlib_csv_register();
+    stdlib_base64_register();
+    stdlib_random_register();
+    stdlib_time_register();
+    stdlib_path_register();
+    stdlib_hash_register();
+    stdlib_sort_register();
+    stdlib_http_register();
+    stdlib_async_utils_register();
+    stdlib_websocket_register();
+    stdlib_graphql_register();
+    stdlib_os_register();
+    stdlib_struct_register();
+    stdlib_process_register();
+    stdlib_uuid_register();
+    stdlib_collections_register();
+    stdlib_itertools_register();
+    stdlib_color_register();
+    stdlib_semver_register();
+    stdlib_logging_register();
+    stdlib_statistics_register();
+    stdlib_heapq_register();
+    stdlib_buffer_register();
+    stdlib_textwrap_register();
+    stdlib_pprint_register();
+    stdlib_bisect_register();
+    stdlib_functools_register();
+    stdlib_operator_register();
+    stdlib_fnmatch_register();
+    stdlib_copy_register();
+    stdlib_queue_register();
+    stdlib_glob_register();
+    stdlib_enum_register();
+    stdlib_secrets_register();
+    stdlib_tempfile_register();
+    stdlib_calendar_register();
+    stdlib_traceback_register();
+}
 
 void print_usage() {
     printf("RADS Programming Language v0.0.12 \"CHROMATIC\"\n");
@@ -283,57 +345,7 @@ int run_repl() {
     print_repl_welcome();
 
     // Initialize standard library
-    stdlib_io_register();
-    stdlib_media_register();
-    stdlib_net_register();
-    stdlib_ffi_register();
-    stdlib_string_register();
-    stdlib_string_advanced_register();
-    stdlib_math_register();
-    stdlib_math_extended_register();
-    stdlib_array_register();
-    stdlib_fs_register();
-    stdlib_json_register();
-    stdlib_db_register();
-    stdlib_webengine_register();
-    stdlib_datetime_register();
-    stdlib_regex_register();
-    stdlib_test_register();
-    stdlib_env_register();
-    stdlib_cli_register();
-    stdlib_csv_register();
-    stdlib_base64_register();
-    stdlib_random_register();
-    stdlib_time_register();
-    stdlib_path_register();
-    stdlib_hash_register();
-    stdlib_sort_register();
-    stdlib_http_register();
-    stdlib_async_utils_register();
-    stdlib_websocket_register();
-    stdlib_graphql_register();
-    stdlib_os_register();
-    stdlib_struct_register();
-    stdlib_process_register();
-    stdlib_uuid_register();
-    stdlib_collections_register();
-    stdlib_itertools_register();
-    stdlib_color_register();
-    stdlib_semver_register();
-    stdlib_logging_register();
-    stdlib_statistics_register();
-    stdlib_heapq_register();
-    stdlib_buffer_register();
-    stdlib_textwrap_register();
-    stdlib_pprint_register();
-    stdlib_bisect_register();
-    stdlib_functools_register();
-    stdlib_operator_register();
-    stdlib_fnmatch_register();
-    stdlib_copy_register();
-    stdlib_queue_register();
-    stdlib_glob_register();
-    stdlib_enum_register();
+    stdlib_register_all();
     int line_num = 1;
 
     // RGB Chroma color cycle for prompt (like RGB keyboard)
@@ -517,57 +529,7 @@ int main(int argc, char* argv[]) {
     printf("%sExecuting:%s %s%s%s\n\n",
            COLOR_BRIGHT_YELLOW, COLOR_RESET,
            COLOR_BRIGHT_MAGENTA, filename, COLOR_RESET);
-    stdlib_io_register();
-    stdlib_media_register();
-    stdlib_net_register();
-    stdlib_ffi_register();
-    stdlib_string_register();
-    stdlib_string_advanced_register();
-    stdlib_math_register();
-    stdlib_math_extended_register();
-    stdlib_array_register();
-    stdlib_fs_register();
-    stdlib_json_register();
-    stdlib_db_register();
-    stdlib_webengine_register();
-    stdlib_async_utils_register();
-    stdlib_datetime_register();
-    stdlib_regex_register();
-    stdlib_test_register();
-    stdlib_env_register();
-    stdlib_cli_register();
-    stdlib_csv_register();
-    stdlib_base64_register();
-    stdlib_random_register();
-    stdlib_time_register();
-    stdlib_path_register();
-    stdlib_hash_register();
-    stdlib_sort_register();
-    stdlib_http_register();
-    stdlib_websocket_register();
-    stdlib_graphql_register();
-    stdlib_os_register();
-    stdlib_struct_register();
-    stdlib_process_register();
-    stdlib_uuid_register();
-    stdlib_collections_register();
-    stdlib_itertools_register();
-    stdlib_color_register();
-    stdlib_semver_register();
-    stdlib_logging_register();
-    stdlib_statistics_register();
-    stdlib_heapq_register();
-    stdlib_buffer_register();
-    stdlib_textwrap_register();
-    stdlib_pprint_register();
-    stdlib_bisect_register();
-    stdlib_functools_register();
-    stdlib_operator_register();
-    stdlib_fnmatch_register();
-    stdlib_copy_register();
-    stdlib_queue_register();
-    stdlib_glob_register();
-    stdlib_enum_register();
+    stdlib_register_all();
 
     // Tokenize
     Lexer lexer;
