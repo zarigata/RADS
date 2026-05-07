@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include "../gc/gc.h"
 
 static Value eval_expression(ASTNode* node);
 static ExecResult exec_statement(ASTNode* node);
@@ -64,6 +65,7 @@ Value make_null() {
 Value make_bool(bool val) { Value v = { .type = VAL_BOOL, .bool_val = val }; return v; }
 Value make_int(long long val) { Value v = { .type = VAL_INT, .int_val = val }; return v; }
 Value make_float(double val) { Value v = { .type = VAL_FLOAT, .float_val = val }; return v; }
+Value make_error(const char* val) { Value v = { .type = 999, .string_val = strdup(val) }; return v; }
 Value make_string(const char* val) { Value v = { .type = VAL_STRING, .string_val = strdup(val) }; return v; }
 
 Array* array_create(size_t capacity) {

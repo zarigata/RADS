@@ -61,18 +61,20 @@ BUILD_DIR = build
 BIN_DIR = bin
 
 # Source files
-CORE_SOURCES = $(wildcard $(SRC_CORE_DIR)/*.c)
+CORE_SOURCES = $(filter-out $(SRC_CORE_DIR)/minimal_main.c, $(wildcard $(SRC_CORE_DIR)/*.c))
 STDLIB_SOURCES = $(wildcard $(SRC_STDLIB_DIR)/*.c)
 VM_SOURCES = $(wildcard src/vm/*.c)
 PROFILER_SOURCES = $(wildcard src/profiler/*.c)
 DEBUG_SOURCES = $(filter-out src/debug/debug_protocol.c, $(wildcard src/debug/*.c))
-SOURCES = $(CORE_SOURCES) $(STDLIB_SOURCES) $(VM_SOURCES) $(PROFILER_SOURCES) $(DEBUG_SOURCES)
+GC_SOURCES = $(wildcard src/gc/*.c)
+SOURCES = $(CORE_SOURCES) $(STDLIB_SOURCES) $(VM_SOURCES) $(PROFILER_SOURCES) $(DEBUG_SOURCES) $(GC_SOURCES)
 
 OBJECTS = $(patsubst $(SRC_CORE_DIR)/%.c,$(BUILD_DIR)/core/%.o,$(CORE_SOURCES)) \
           $(patsubst $(SRC_STDLIB_DIR)/%.c,$(BUILD_DIR)/stdlib/%.o,$(STDLIB_SOURCES)) \
           $(patsubst src/vm/%.c,$(BUILD_DIR)/vm/%.o,$(VM_SOURCES)) \
           $(patsubst src/profiler/%.c,$(BUILD_DIR)/profiler/%.o,$(PROFILER_SOURCES)) \
-          $(patsubst src/debug/%.c,$(BUILD_DIR)/debug/%.o,$(DEBUG_SOURCES))
+          $(patsubst src/debug/%.c,$(BUILD_DIR)/debug/%.o,$(DEBUG_SOURCES)) \
+          $(patsubst src/gc/%.c,$(BUILD_DIR)/gc/%.o,$(GC_SOURCES))
 
 # Tools
 RSTAR = bin/rstar
@@ -103,6 +105,9 @@ $(BUILD_DIR)/profiler/%.o: src/profiler/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/debug/%.o: src/debug/%.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/gc/%.o: src/gc/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Link executable with hardening

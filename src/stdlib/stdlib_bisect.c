@@ -18,6 +18,7 @@
 #include "stdlib_bisect.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 extern Value make_int(long long val);
 extern Value make_null(void);

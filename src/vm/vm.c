@@ -16,6 +16,14 @@ void vm_init(VM* vm) {
     vm->globals = NULL;
     vm->debug_mode = false;
     vm->instruction_count = 0;
+    vm->gc_state = NULL;
+
+    // Initialize garbage collector
+    vm->gc_state = gc_init(vm);
+    if (!vm->gc_state) {
+        fprintf(stderr, "Error: Failed to initialize garbage collector\n");
+        return;
+    }
 
     memset(&vm->natives, 0, sizeof(vm->natives));
 }
@@ -26,6 +34,12 @@ void vm_free(VM* vm) {
     }
     if (vm->globals) {
         free(vm->globals);
+    }
+    
+    // Cleanup garbage collector
+    if (vm->gc_state) {
+        gc_cleanup(vm->gc_state);
+        vm->gc_state = NULL;
     }
 }
 

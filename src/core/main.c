@@ -131,8 +131,8 @@ static void stdlib_register_all(void) {
     stdlib_itertools_register();
     stdlib_color_register();
     stdlib_semver_register();
-    stdlib_logging_register();
-    stdlib_statistics_register();
+    // stdlib_logging_register();  // Temporarily disabled
+    // stdlib_statistics_register();  // Temporarily disabled
     stdlib_heapq_register();
     stdlib_buffer_register();
     stdlib_textwrap_register();

@@ -48,7 +48,7 @@ Type* typecheck_create_generic(const char* name, const char* base_type, char** p
     if (!type) return NULL;
 
     type->name = strdup(name);
-    type->base_type = strdup(base_type);
+    type->base_type = strdup(base_type ? base_type : "unknown");
     type->is_polymorphic = param_count > 0;
 
     type->param_count = param_count;
@@ -107,16 +107,17 @@ Type* typecheck_instantiate_generic(Type* generic_type, char** concrete_params, 
 int typecheck_check_type_compatibility(Type* type1, Type* type2) {
     if (!type1 || !type2) return 0;
 
-    if (strcmp(type1->base_type, type2->base_type) != 0) {
-        return 0;
+    // For instantiated types, check if they have the same base type
+    if (!type1->is_polymorphic && !type2->is_polymorphic) {
+        return strcmp(type1->base_type, type2->base_type) == 0;
     }
 
+    // For polymorphic types, check if they're the same generic type
     if (type1->is_polymorphic && type2->is_polymorphic) {
-        if (strcmp(type1->name, type2->name) == 0) {
-            return 1;
-        }
+        return strcmp(type1->name, type2->name) == 0;
     }
 
+    // Mixed polymorphic and non-polymorphic are not compatible
     return 0;
 }
 

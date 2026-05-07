@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "stdlib_string.h"
+#include "../core/interpreter.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -425,7 +426,7 @@ Value native_str_split(struct Interpreter* interp, int argc, Value* args) {
         p++;
     }
     
-    Value v; v.type = VAL_ARRAY; v.array_val = create_array(count);
+    Value v; v.type = VAL_ARRAY; v.array_val = array_create(count);
     p = str;
     char buffer[1024]; int buf_idx = 0;
     

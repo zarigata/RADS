@@ -1,7 +1,7 @@
 #!/bin/bash
 
 RADS_TEST_DIR="tests"
-RADS_BIN="./bin/rads"
+RADS_BIN="./rads-minimal"
 
 total_passed=0
 total_failed=0

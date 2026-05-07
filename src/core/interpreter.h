@@ -67,6 +67,7 @@ typedef struct Value {
 
 typedef struct Interpreter {
     uv_loop_t* event_loop;
+    struct GCState* gc_state;
 } Interpreter;
 
 // Interpreter functions
@@ -95,6 +96,7 @@ Value interpreter_execute_callback(Value callback, int argc, Value* args);
 
 Value make_int(long long val);
 Value make_float(double val);
+Value make_error(const char* val);
 Value make_string(const char* val);
 Value make_bool(bool val);
 Value make_null(void);
