@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include "../gc/gc.h"
 
 typedef enum {
     OP_NOP = 0,
@@ -145,6 +146,7 @@ typedef struct VM {
     } natives;
     bool debug_mode;
     int instruction_count;
+    GCState* gc_state;
 } VM;
 
 void vm_init(VM* vm);

@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
+#include "../vm/vm.h"
 
 // ============================================================================
 // ADVANCED GARBAGE COLLECTION - Generational GC with Write Barriers
