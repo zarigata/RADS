@@ -126,7 +126,7 @@ jobs:
           path: "${{ steps.validate-package.outputs.name }}-${{ steps.validate-package.outputs.version }}.tar.gz"
 
       - name: Update Registry Database
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.GH_REGISTRY_TOKEN }}
           script: |
