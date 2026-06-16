@@ -20,7 +20,7 @@
     "next": "14.2.20",
     "swr": "^2.2.5",
     "axios": "^1.7.9",
-    "jose": "^5.9.6",
+    "jose": "^6.2.2",
     "clsx": "^2.1.1",
     "tailwind-merge": "^2.6.0",
     "class-variance-authority": "^0.7.1",
