@@ -20,7 +20,7 @@ regex = "1.11"
 log = "0.4"
 env_logger = "0.11"
 tower = "0.5"
-tower-http = "0.5"
+tower-http = "0.7"
 futures = "0.3"
 
 [dev-dependencies]
