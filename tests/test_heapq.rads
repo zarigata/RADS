@@ -1,0 +1,58 @@
+// Test: heapq module (nightshift 2026-10-12)
+// heapq functions are auto-registered natives; no import needed.
+
+blast main() {
+    // heapify establishes the min-heap invariant
+    turbo h = [9, 5, 7, 1, 3];
+    heapq.heapify(h);
+    if (heapq.is_heap(h) == true) { echo("PASS: heapify + is_heap"); }
+    else { echo("FAIL: is_heap after heapify"); }
+
+    // heappush keeps order; heappop returns smallest first
+    heapq.heappush(h, 0);
+    if (heapq.heappop(h) == 0) { echo("PASS: push/pop smallest (0)"); }
+    else { echo("FAIL: push/pop smallest"); }
+    if (heapq.heappop(h) == 1) { echo("PASS: pop next smallest (1)"); }
+    else { echo("FAIL: pop next smallest"); }
+
+    // edge: heappop on empty heap reports error and returns null
+    turbo empty = [];
+    heapq.heapify(empty);
+    turbo nothing = heapq.heappop(empty);
+    if (nothing == null) { echo("PASS: pop empty -> null"); }
+    else { echo("FAIL: pop empty should be null"); }
+
+    // heappushpop(heap, v): push v, then pop and return the smallest.
+    // Python fast path: if v <= root, v comes straight back untouched.
+    turbo hp = [1, 2, 3];
+    heapq.heapify(hp);
+    if (heapq.heappushpop(hp, 9) == 1) { echo("PASS: pushpop(9) returns old root 1"); }
+    else { echo("FAIL: pushpop(9), got " + heapq.heappushpop(hp, 9)); }
+    if (heapq.heappushpop(hp, 0) == 0) { echo("PASS: pushpop(0) returns 0 immediately"); }
+    else { echo("FAIL: pushpop(0) should return 0"); }
+
+    // heapreplace always returns the old root
+    turbo hr = [1, 2, 3];
+    heapq.heapify(hr);
+    if (heapq.heapreplace(hr, 10) == 1) { echo("PASS: heapreplace old root"); }
+    else { echo("FAIL: heapreplace old root"); }
+
+    // nlargest / nsmallest return arrays in sorted order
+    turbo data = [4, 10, 2, 8, 6];
+    turbo big = heapq.nlargest(2, data);
+    if (big[0] == 10 && big[1] == 8) { echo("PASS: nlargest(2) = [10, 8]"); }
+    else { echo("FAIL: nlargest got " + big); }
+    turbo small = heapq.nsmallest(2, data);
+    if (small[0] == 2 && small[1] == 4) { echo("PASS: nsmallest(2) = [2, 4]"); }
+    else { echo("FAIL: nsmallest got " + small); }
+
+    // edge: k larger than array clamps to n
+    turbo clamp = heapq.nlargest(99, [1, 2]);
+    if (clamp.length == 2) { echo("PASS: nlargest clamps k to n"); }
+    else { echo("FAIL: nlargest clamp len=" + clamp.length); }
+
+    // merge of two sorted arrays keeps all elements
+    turbo m = heapq.merge([1, 3, 5], [2, 4, 6]);
+    if (m.length == 6 && m[0] == 1 && m[5] == 6) { echo("PASS: merge ordered, len 6"); }
+    else { echo("FAIL: merge len=" + m.length); }
+}

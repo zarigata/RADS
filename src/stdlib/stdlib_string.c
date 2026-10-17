@@ -425,7 +425,7 @@ Value native_str_split(struct Interpreter* interp, int argc, Value* args) {
         p++;
     }
     
-    Value v; v.type = VAL_ARRAY; v.array_val = create_array(count);
+    Value v; v.type = VAL_ARRAY; v.array_val = array_create((size_t)count);
     p = str;
     char buffer[1024]; int buf_idx = 0;
     
@@ -583,7 +583,8 @@ Value native_str_center(struct Interpreter* interp, int argc, Value* args) {
 extern Value make_null(void);
 extern Value make_int(long long val);
 extern Value make_float(double val);
-
+extern Array* array_create(size_t capacity); /* used by str.split to build results */
+extern void array_push(Array* arr, Value v);
 
 /* str.format(template, args...) - Simple template with {} placeholders */
 Value native_str_format(struct Interpreter* interp, int argc, Value* args) {

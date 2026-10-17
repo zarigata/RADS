@@ -25,6 +25,10 @@ test_files=(
     "v0_0_7_comprehensive.rads"
     "test_debugger.rads"
     "test_typecheck.rads"
+    "test_heapq.rads"
+    "test_logging.rads"
+    "test_statistics.rads"
+    "test_nostalgia.rads"
 )
 
 for test_file in "${test_files[@]}"; do
