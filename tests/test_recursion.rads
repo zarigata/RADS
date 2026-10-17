@@ -1,0 +1,42 @@
+// Recursion & scoping regression test
+// Guards the call-frame environment fix: parameters used to be bound into the
+// single global environment, so fib(n-1) + fib(n-2) corrupted itself
+// (fib(25) returned -575 instead of 75025).
+
+blast fib(i32 n) -> i32 {
+    if (n < 2) { return n; }
+    return fib(n - 1) + fib(n - 2);
+}
+
+blast shadow(i32 n) -> i32 {
+    // parameter must shadow the global n, not overwrite it
+    return n * 2;
+}
+
+blast counter(i32 depth) -> i32 {
+    // recursion depth with distinct frames
+    if (depth <= 0) { return 0; }
+    return 1 + counter(depth - 1);
+}
+
+blast main() {
+    echo("=== Recursion & Scoping Tests ===");
+    echo("fib(2) = " + fib(2));
+    echo("fib(10) = " + fib(10));
+    echo("fib(20) = " + fib(20));
+    echo("fib(25) = " + fib(25));
+
+    turbo i32 n = 1000;
+    echo("global n before = " + n);
+    turbo i32 r = shadow(21);
+    echo("shadow(21) = " + r + " (expect 42)");
+    echo("global n after  = " + n + " (expect 1000, must be unclobbered)");
+
+    echo("counter(50) = " + counter(50) + " (expect 50)");
+
+    if (fib(25) == 75025) {
+        echo("PASS: fib(25) == 75025");
+    } else {
+        echo("FAIL: fib(25) != 75025");
+    }
+}

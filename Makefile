@@ -129,18 +129,22 @@ $(RADS_MASK): tools/rads-mask/src/*.c tools/rads-mask/src/converter/*.c | $(BIN_
 	@echo "✅ rads-mask built successfully in bin/rads-mask"
 
 # Debug build with ASAN/UBSAN
-debug: CFLAGS += $(DEBUG_FLAGS)
-debug: clean $(TARGET)
+# NOTE: clean and the build are sequenced via recursive sub-makes on purpose.
+# As sibling prerequisites (debug: clean $(TARGET)) they race under `make -j`:
+# clean's rm -rf can delete build/ while object compiles are in flight.
+debug:
+	$(MAKE) clean
+	$(MAKE) $(TARGET) CFLAGS="$(CFLAGS) $(DEBUG_FLAGS)"
 
 # Sanitize build (ASAN + UBSAN + Leak detection)
-sanitize: CFLAGS += $(SANITIZE_FLAGS)
-sanitize: LDFLAGS += -fsanitize=address,undefined
-sanitize: clean $(TARGET)
+sanitize:
+	$(MAKE) clean
+	$(MAKE) $(TARGET) CFLAGS="$(CFLAGS) $(SANITIZE_FLAGS)" LDFLAGS="$(LDFLAGS) -fsanitize=address,undefined"
 
 # Release build with maximum hardening
-release: CFLAGS += -D_FORTIFY_SOURCE=2 -O3 -DNDEBUG
-release: CFLAGS := $(filter-out -O2,$(CFLAGS)) -O3
-release: clean $(TARGET)
+release:
+	$(MAKE) clean
+	$(MAKE) $(TARGET) CFLAGS="$(filter-out -O2,$(CFLAGS)) -O3 -D_FORTIFY_SOURCE=2 -DNDEBUG"
 	@echo "✅ Release build with security hardening complete"
 
 # Clean build artifacts

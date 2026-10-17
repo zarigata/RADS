@@ -309,7 +309,7 @@ I've successfully built a **professional, industry-ready** RADS Package Registry
 - **User Guide:** docs/registry-architecture/USER_GUIDE.md
 - **Package Author Guide:** docs/registry-architecture/AUTHOR_GUIDE.md
 - **Publishing Workflow:** docs/registry-architecture/PUBLISHING_WORKFLOW.md
-- **Final Completion Report:** docs/registry-architecture/FINAL_COMPLETION_REPORT.md
+- **Final Completion Report:** docs/archive/registry-architecture/FINAL_COMPLETION_REPORT.md
 
 ### For Users
 - Browse packages: https://zarigata.github.io/RADS/packages

@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "date": "2026-10-11T16:41:04Z",
+    "rads": "v0.0.9-49-ge165332",
+    "python": "3.13.5",
+    "node": "v20.19.2",
+    "iterations": 3,
+    "cpu": "Intel(R) Core(TM) i7-6700T CPU @ 2.80GHz"
+  },
+  "results": {
+    "fib": {
+      "rads": 3050.2,
+      "python": 57.0,
+      "node": 100.0
+    },
+    "string_build": {
+      "rads": 45.8,
+      "python": 19.1,
+      "node": 98.5
+    },
+    "array_churn": {
+      "rads": 65.2,
+      "python": 13.2,
+      "node": 97.3
+    },
+    "file_io": {
+      "rads": 22.0,
+      "python": 31.3,
+      "node": 118.6
+    }
+  }
+}

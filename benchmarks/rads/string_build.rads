@@ -1,0 +1,13 @@
+// string_build.rads — string concatenation in a loop (allocation churn)
+blast main() {
+    str s = "";
+    cruise (i in 0..5000) {
+        s = s + "rads" + i + ";";
+    }
+    str tail = "rads4999;";
+    if (str.contains(s, tail)) {
+        echo("string_build done ok=true");
+    } else {
+        echo("string_build done ok=FALSE");
+    }
+}

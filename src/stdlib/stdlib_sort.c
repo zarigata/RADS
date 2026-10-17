@@ -9,6 +9,7 @@ extern Value make_int(long long val);
 extern Value make_float(double val);
 extern Value make_bool(bool val);
 extern Value make_null(void);
+extern Value value_clone(Value v); // owning-reference helper for natives
 extern Array* array_create(size_t capacity);
 extern void array_push(Array* arr, Value v);
 
@@ -47,7 +48,7 @@ Value native_sort_asc(struct Interpreter* interp, int argc, Value* args) {
     (void)interp;
     if (argc < 1 || args[0].type != VAL_ARRAY) return make_null();
     Array* arr = args[0].array_val;
-    if (arr->count == 0) return args[0];
+    if (arr->count == 0) return value_clone(args[0]); /* owning ref */
 
     ValueType t = arr->items[0].type;
     if (t != VAL_INT && t != VAL_FLOAT && t != VAL_STRING) return make_null();
@@ -61,7 +62,7 @@ Value native_sort_asc(struct Interpreter* interp, int argc, Value* args) {
     else if (t == VAL_FLOAT) qsort(arr->items, arr->count, sizeof(Value), cmp_float_asc);
     else                     qsort(arr->items, arr->count, sizeof(Value), cmp_string_asc);
 
-    return args[0];
+    return value_clone(args[0]); /* owning ref */
 }
 
 /* sort.desc(arr) - Sort descending */
@@ -69,7 +70,7 @@ Value native_sort_desc(struct Interpreter* interp, int argc, Value* args) {
     (void)interp;
     if (argc < 1 || args[0].type != VAL_ARRAY) return make_null();
     Array* arr = args[0].array_val;
-    if (arr->count == 0) return args[0];
+    if (arr->count == 0) return value_clone(args[0]); /* owning ref */
 
     ValueType t = arr->items[0].type;
     if (t != VAL_INT && t != VAL_FLOAT && t != VAL_STRING) return make_null();
@@ -82,7 +83,7 @@ Value native_sort_desc(struct Interpreter* interp, int argc, Value* args) {
     else if (t == VAL_FLOAT) qsort(arr->items, arr->count, sizeof(Value), cmp_float_desc);
     else                     qsort(arr->items, arr->count, sizeof(Value), cmp_string_desc);
 
-    return args[0];
+    return value_clone(args[0]); /* owning ref */
 }
 
 /* sort.reverse(arr) - Reverse array in-place */
@@ -97,7 +98,7 @@ Value native_sort_reverse(struct Interpreter* interp, int argc, Value* args) {
         arr->items[hi] = tmp;
         lo++; hi--;
     }
-    return args[0];
+    return value_clone(args[0]); /* owning ref */
 }
 
 /* sort.copy(arr) - Shallow copy of array */
@@ -189,7 +190,7 @@ Value native_sort_shuffle(struct Interpreter* interp, int argc, Value* args) {
         arr->items[i] = arr->items[j];
         arr->items[j] = tmp;
     }
-    return args[0];
+    return value_clone(args[0]); /* owning ref */
 }
 
 /* Registration */

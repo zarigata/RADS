@@ -109,6 +109,7 @@ Value stdlib_env_list(Interpreter* interp, int argc, Value* args) {
     StructInstance* instance = malloc(sizeof(StructInstance));
     if (!instance) return make_null();
     
+    instance->definition = NULL; // run 28: never leave uninit — readers deref it
     instance->fields = NULL;
     FieldValue* last_field = NULL;
     

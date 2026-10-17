@@ -1,0 +1,52 @@
+// Regression (run 14): BC_CMPF fused compare-and-branch.
+// if/loop conditions of the shape `local <cmp> int-literal` now compile to a
+// single BC_CMPF instead of GETL+INT+BIN+JMPF. The fused handler must fold
+// non-int slots exactly like binop_apply + bc_truthy would:
+//   LT/LTE/GT/GTE non-int lhs  -> null  -> falsy -> else/jump
+//   EQ mixed-type              -> false -> falsy -> else/jump
+//   NEQ mixed-type             -> true  -> truthy -> then/no-jump
+// and int slots must match the old 4-opcode path bitwise.
+
+blast main() {
+    // Shape 1: every operator, both branches — the fib shape is t1.
+    turbo n = 5;
+    if (n < 2)   { echo("s1LT_T"); }  else { echo("s1LT_F"); }
+    if (n <= 5)  { echo("s1LTE_T"); } else { echo("s1LTE_F"); }
+    if (n > 5)   { echo("s1GT_T"); }  else { echo("s1GT_F"); }
+    if (n >= 6)  { echo("s1GTE_T"); } else { echo("s1GTE_F"); }
+    if (n == 5)  { echo("s1EQ_T"); }  else { echo("s1EQ_F"); }
+    if (n != 5)  { echo("s1NEQ_T"); } else { echo("s1NEQ_F"); }
+
+    // Shape 2: loop-condition fusion — 4 iterations, then fallthrough
+    turbo i = 0;
+    loop (i < 4) {
+        echo("s2 " + i);
+        i = i + 1;
+    }
+
+    // Shape 3: non-int slots must fold like binop_apply
+    turbo f = 1.5;
+    if (f < 2)   { echo("s3flt_T"); }  else { echo("s3flt_F"); }   // null -> F
+    if (f == 2)  { echo("s3eq_T"); }   else { echo("s3eq_F"); }    // mixed -> F
+    if (f != 2)  { echo("s3neq_T"); }  else { echo("s3neq_F"); }   // mixed -> T
+    turbo s = "hi";
+    if (s < 2)   { echo("s3str_T"); }  else { echo("s3str_F"); }   // null -> F
+    turbo z = null;
+    if (z < 2)   { echo("s3nul_T"); }  else { echo("s3nul_F"); }   // null -> F
+
+    // Shape 4: negative literals and boundary equality
+    turbo m = -3;
+    if (m < -1)  { echo("s4a_T"); }    else { echo("s4a_F"); }
+    if (m == -3) { echo("s4b_T"); }    else { echo("s4b_F"); }
+    turbo big = 1000000000000;
+    if (big > 999999999999) { echo("s4c_T"); } else { echo("s4c_F"); }
+
+    // Shape 5: fused cond inside nested loops + else-if chain
+    cruise (a in 0..3) {
+        if (a < 2) {
+            if (a == 1) { echo("s5 one"); } else { echo("s5 zero"); }
+        } else {
+            echo("s5 big " + a);
+        }
+    }
+}

@@ -1,0 +1,20 @@
+// Regression: pythonic syntax aliases (run 16)
+// - '#' line comments (like Python), both standalone and trailing
+// - 'let' as alias for 'turbo' declarations
+// '#' inside string literals must NOT start a comment.
+blast main() {
+    # full-line pythonic comment
+    let msg = "hex #ff0000 survives";  # trailing pythonic comment
+    echo(msg);
+    let total = 0;
+    let arr = [1, 2, 3];
+    let idx = 0;
+    loop (idx < 3) {
+        total = total + arr[idx];
+        idx = idx + 1;
+    }
+    echo(total);
+    if (total == 6) {
+        echo("pythonic syntax OK");  // classic comment still fine
+    }
+}

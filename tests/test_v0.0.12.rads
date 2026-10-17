@@ -134,7 +134,7 @@ test.describe("json.stringify — full serializer", fn() {
     test.it("stringifies pretty", fn() {
         let data = json.parse("{\"a\":1,\"b\":2}")
         let s = json.stringify_pretty(data)
-        test.expect(str.contains(s, "\\n")).toBeTruthy()
+        test.expect(str.contains(s, "\n")).toBeTruthy()
     })
 
     test.it("round-trips JSON", fn() {

@@ -1,0 +1,100 @@
+// ═══════════════════════════════════════════
+// Run 23: dict end-to-end — literals, keyed read/write, methods,
+// json.parse objects as dicts, array index-assign, BC-compiled paths.
+// ═══════════════════════════════════════════
+
+test.describe("dicts", fn() {
+    test.it("literals + keyed read", fn() {
+        let d = {"a": 1, "b": 2}
+        test.expect(d["a"]).toBe(1)
+        test.expect(d["b"]).toBe(2)
+        test.expect(len(d)).toBe(2)
+        test.expect(d["missing"]).toBe(null)
+    })
+
+    test.it("keyed write + overwrite", fn() {
+        let d = {"a": 1}
+        d["c"] = 3
+        test.expect(len(d)).toBe(2)
+        test.expect(d["c"]).toBe(3)
+        d["a"] = 100
+        test.expect(d["a"]).toBe(100)
+    })
+
+    test.it("get with default", fn() {
+        let d = {"b": 2}
+        test.expect(d.get("b")).toBe(2)
+        test.expect(d.get("zzz", 42)).toBe(42)
+    })
+
+    test.it("contains / pop", fn() {
+        let d = {"a": 1, "b": 2}
+        test.expect(d.contains("b")).toBe(true)
+        test.expect(d.contains("q")).toBe(false)
+        test.expect(d.pop("b")).toBe(2)
+        test.expect(d.contains("b")).toBe(false)
+    })
+
+    test.it("update / setdefault", fn() {
+        let d = {"a": 1}
+        d.update({"x": 10})
+        test.expect(d["x"]).toBe(10)
+        test.expect(d.setdefault("y", 7)).toBe(7)
+        test.expect(d["y"]).toBe(7)
+    })
+
+    test.it("copy independence", fn() {
+        let d = {"a": 100}
+        let f = d.copy()
+        f["a"] = 999
+        test.expect(d["a"]).toBe(100)
+        test.expect(f["a"]).toBe(999)
+    })
+
+    test.it("nested dicts", fn() {
+        let nest = {"outer": {"inner": 5}}
+        test.expect(nest["outer"]["inner"]).toBe(5)
+    })
+
+    test.it("empty literal + fill", fn() {
+        let g = {}
+        g["k"] = 1
+        test.expect(len(g)).toBe(1)
+        test.expect(g["k"]).toBe(1)
+    })
+
+    test.it("keys() / values()", fn() {
+        let h = {"one": 1, "two": 2}
+        test.expect(h.keys()[0]).toBe("one")
+        test.expect(h.keys()[1]).toBe("two")
+        test.expect(h.values()[0]).toBe(1)
+        test.expect(h.values()[1]).toBe(2)
+    })
+
+    test.it("json.parse objects are dicts", fn() {
+        let j = json.parse("{\"name\": \"rads\", \"v\": 12}")
+        test.expect(j["name"]).toBe("rads")
+        test.expect(j["v"]).toBe(12)
+    })
+
+    test.it("array index-assign (fixed run 23)", fn() {
+        let a = [1, 2, 3]
+        a[0] = 9
+        test.expect(a[0]).toBe(9)
+        a[2] = 30
+        test.expect(a[2]).toBe(30)
+    })
+})
+
+// BC-compiled function path (module level: blast registers globally)
+blast probe(dd) {
+    dd["new"] = 77
+    return dd["new"] + len(dd)
+}
+test.describe("dicts in compiled functions", fn() {
+    test.it("dict mutation inside blast", fn() {
+        test.expect(probe({"k": 1})).toBe(79)
+    })
+})
+
+test.run()

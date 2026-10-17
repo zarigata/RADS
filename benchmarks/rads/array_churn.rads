@@ -1,0 +1,17 @@
+// array_churn.rads — array push/pop/map churn (container workload; no dict type in RADS)
+blast doubleit(i32 x) -> i32 {
+    return x * 2;
+}
+
+blast main() {
+    turbo arr = [];
+    cruise (i in 0..20000) {
+        array.push(arr, i % 97);
+    }
+    turbo i32 acc = 0;
+    cruise (i in 0..5000) {
+        acc = acc + array.pop(arr);
+    }
+    turbo mapped = array.map(arr, doubleit);
+    echo("acc = " + acc + ", last mapped = " + array.pop(mapped));
+}

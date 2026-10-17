@@ -1,0 +1,12 @@
+// file_io.rads — file write/read/append cycle via io stdlib
+blast main() {
+    turbo str path = "benchmarks/tmp_io_rads.txt";
+    turbo bool ok = true;
+    cruise (i in 0..200) {
+        ok = io.write_file(path, "line of benchmark data " + i + "\n");
+        turbo str back = io.read_file(path);
+        ok = io.append_file(path, "appended " + i + "\n");
+        back = io.read_file(path);
+    }
+    echo("file_io done ok=" + ok);
+}

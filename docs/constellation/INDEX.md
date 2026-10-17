@@ -8,7 +8,7 @@
 
 **New to Constellation?** Start here:
 
-1. **[V0.0.4_RECOVERY.md](V0.0.4_RECOVERY.md)** - Quick overview and context recovery
+1. **[V0.0.4_RECOVERY.md](../archive/constellation/V0.0.4_RECOVERY.md)** - Quick overview and context recovery
 2. **[../roadmap/V0.0.4_PLAN.md](../roadmap/V0.0.4_PLAN.md)** - Complete feature specification
 3. **[RNP_PROTOCOL.md](RNP_PROTOCOL.md)** - Technical protocol specification
 
@@ -90,14 +90,14 @@ docs/
   - Security and encryption
   - Performance targets
 
-- **[V0.0.4_RECOVERY.md](V0.0.4_RECOVERY.md)** (450+ lines)
+- **[V0.0.4_RECOVERY.md](../archive/constellation/V0.0.4_RECOVERY.md)** (450+ lines)
   - Quick context recovery
   - Summary of all features
   - How to resume work
   - Key concepts
 
 ### Session Logs
-- **[SESSION_2026_01_12.md](SESSION_2026_01_12.md)**
+- **[SESSION_2026_01_12.md](../archive/constellation/SESSION_2026_01_12.md)**
   - January 12, 2026 session
   - What was completed
   - Decisions made
@@ -333,10 +333,10 @@ See **[../roadmap/V0.0.4_PLAN.md](../roadmap/V0.0.4_PLAN.md)** → "Implementati
 ## 🎓 Learning Path
 
 ### Beginner (Understanding Constellation)
-1. Read **V0.0.4_RECOVERY.md** (10 minutes)
+1. Read **../archive/constellation/V0.0.4_RECOVERY.md** (10 minutes)
 2. Read **V0.0.4_PLAN.md** → "Executive Summary" (5 minutes)
 3. Review architecture diagram in **V0.0.4_PLAN.md** (5 minutes)
-4. Look at code examples in **V0.0.4_RECOVERY.md** (10 minutes)
+4. Look at code examples in **../archive/constellation/V0.0.4_RECOVERY.md** (10 minutes)
 
 **Total:** 30 minutes to understand the vision
 
@@ -357,7 +357,7 @@ See **[../roadmap/V0.0.4_PLAN.md](../roadmap/V0.0.4_PLAN.md)** → "Implementati
 2. Read **V0.0.4_PLAN.md** → Complete document (60 minutes)
 3. Read **RNP_PROTOCOL.md** → Complete specification (45 minutes)
 4. Review **V0.0.4_PLAN.md** → Implementation Roadmap (20 minutes)
-5. Study **SESSION_2026_01_12.md** → Design decisions (15 minutes)
+5. Study **../archive/constellation/SESSION_2026_01_12.md** → Design decisions (15 minutes)
 
 **Total:** 4 hours 15 minutes to be ready for implementation
 

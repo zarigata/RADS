@@ -82,6 +82,15 @@ static void skip_whitespace(Lexer* lexer) {
                 lexer->column = 0;
                 advance(lexer);
                 break;
+            case '#':
+                // Pythonic line comment ('#' to end of line), mirroring '//'.
+                // '#' only reaches here outside string literals (the string
+                // scanner consumes those), so CSS hex like "#e74c3c" inside
+                // a string is untouched.
+                while (peek(lexer) != '\n' && !is_at_end(lexer)) {
+                    advance(lexer);
+                }
+                break;
             case '/':
                 if (peek_next(lexer) == '/') {
                     // Line comment
@@ -193,6 +202,12 @@ static TokenType identifier_type(Lexer* lexer) {
                     case '6': return check_keyword(lexer, 2, 1, "4", TOKEN_F64);
                     case 'a': return check_keyword(lexer, 2, 3, "lse", TOKEN_FALSE);
                     case 'i': return check_keyword(lexer, 2, 5, "nally", TOKEN_FINALLY);
+                    case 'n':  // pythonic 'fn' alias -> blast (anonymous fn)
+                        if (lexer->current - lexer->start == 2) return TOKEN_BLAST;
+                        break;
+                    case 'o':
+                        // pythonic 'for' alias -> cruise
+                        if (lexer->current - lexer->start == 3) return check_keyword(lexer, 2, 1, "r", TOKEN_CRUISE);
                     case 'r': return check_keyword(lexer, 2, 2, "ee", TOKEN_FREE);
                 }
             }
@@ -208,13 +223,25 @@ static TokenType identifier_type(Lexer* lexer) {
                 }
             }
             break;
-        case 'l': return check_keyword(lexer, 1, 3, "oop", TOKEN_LOOP);
+        case 'l':
+            if (lexer->current - lexer->start > 1) {
+                switch (lexer->start[1]) {
+                    case 'e': return check_keyword(lexer, 2, 1, "t", TOKEN_TURBO);
+                    case 'o': return check_keyword(lexer, 2, 2, "op", TOKEN_LOOP);
+                }
+            }
+            break;
         case 'm': return check_keyword(lexer, 1, 3, "ove", TOKEN_MOVE);
         case 'n': return check_keyword(lexer, 1, 3, "ull", TOKEN_NULL);
         case 'p':
             if (lexer->current - lexer->start > 1) {
                 switch (lexer->start[1]) {
                     case 'l': return check_keyword(lexer, 2, 4, "ugin", TOKEN_PLUGIN);
+                    case 'r':
+                        // pythonic print aliases -> echo
+                        if (lexer->current - lexer->start == 5) return check_keyword(lexer, 2, 3, "int", TOKEN_ECHO);
+                        if (lexer->current - lexer->start == 7) return check_keyword(lexer, 2, 5, "intln", TOKEN_ECHO);
+                        break;
                     case 't': return check_keyword(lexer, 2, 1, "r", TOKEN_PTR);
                 }
             }
@@ -266,20 +293,36 @@ static Token identifier(Lexer* lexer) {
 }
 
 static Token number(Lexer* lexer) {
+    int has_decimal = 0;
     while (isdigit(peek(lexer))) {
         advance(lexer);
     }
     
     // Look for decimal point
     if (peek(lexer) == '.' && isdigit(peek_next(lexer))) {
+        has_decimal = 1;
         advance(lexer); // consume '.'
         while (isdigit(peek(lexer))) {
             advance(lexer);
         }
-        return make_token(lexer, TOKEN_FLOAT);
     }
-    
-    return make_token(lexer, TOKEN_INTEGER);
+
+    // Scientific notation: 1e16, 2.5e-7, 3E+8 (run 22). The parser runs
+    // strtod() over the token text, so it only needs the lexer to CONSUME
+    // the exponent — [eE] [+-]? digits — as part of the float token.
+    if ((peek(lexer) == 'e' || peek(lexer) == 'E')) {
+        char c1 = peek_next(lexer);
+        char c2 = (c1 == '+' || c1 == '-') ? lexer->current[2] : c1;
+        if (isdigit((unsigned char)c2)) {
+            advance(lexer); // consume 'e'/'E'
+            if (peek(lexer) == '+' || peek(lexer) == '-') advance(lexer);
+            while (isdigit(peek(lexer))) advance(lexer);
+            return make_token(lexer, TOKEN_FLOAT);
+        }
+    }
+
+    return has_decimal ? make_token(lexer, TOKEN_FLOAT)
+                       : make_token(lexer, TOKEN_INTEGER);
 }
 
 static Token string(Lexer* lexer) {

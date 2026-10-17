@@ -150,7 +150,7 @@ Phase 9 "Iguana" integrates seamlessly with Phases 1-8:
 
 ## Documentation
 
-- **Full Guide:** `docs/constellation/PHASE9_IGUANA.md`
+- **Full Guide:** `docs/archive/constellation/PHASE9_IGUANA.md`
 - **Release Notes:** `IGUANA_RELEASE.md`
 - **API Reference:** Header files in `src/constellation/`
 - **Tests:** `src/constellation/test_iguana.c`
@@ -171,7 +171,7 @@ Phase 9 "Iguana" integrates seamlessly with Phases 1-8:
 
 3. **Read documentation:**
    - Start with `IGUANA_RELEASE.md`
-   - Deep dive: `docs/constellation/PHASE9_IGUANA.md`
+   - Deep dive: `docs/archive/constellation/PHASE9_IGUANA.md`
 
 4. **Try examples:**
    - Check `examples/` directory (coming soon)

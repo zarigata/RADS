@@ -22,6 +22,7 @@ typedef enum {
     VAL_STRING,
     VAL_FUNCTION,
     VAL_ARRAY,
+    VAL_DICT,           // flat kv payload in array_val: [k0, v0, k1, v1, ...]
     VAL_STRUCT_DEF,
     VAL_STRUCT_INSTANCE
 } ValueType;
@@ -71,8 +72,15 @@ typedef struct Interpreter {
 
 // Interpreter functions
 int interpret(ASTNode* program);
+int interpret_keep(ASTNode* program);  // Run 34: -i mode — no teardown; REPL inherits globals
 int interpret_repl_statement(ASTNode* stmt);  // For REPL - executes single statement
 void value_print(Value* value);
+char* value_to_string(Value* value); // malloc'd; caller frees. echo/str() single source of truth
+// Returns a new owning reference to v (strings copied, refcounted values
+// retained). Natives must return owning values — `return args[i];` steals a
+// reference the caller also frees (heap-use-after-free).
+Value value_clone(Value v);
+
 void value_free(Value* value);
 
 // Native function type
@@ -90,14 +98,19 @@ void register_native_fn(const char* module, const char* name, NativeFn fn);
 uv_loop_t* interpreter_init_event_loop(void);
 void interpreter_cleanup_event_loop(void);
 void interpreter_cleanup_environment(void);
+// Opaque teardown for ASTNode.function_decl.bc_cache (safe for NULL and the
+// (void*)1 bail-out marker); called from ast_free().
+void interpreter_free_bc_cache(void* bc_cache);
 void interpreter_run_event_loop(void);
 Value interpreter_execute_callback(Value callback, int argc, Value* args);
 
 Value make_int(long long val);
 Value make_float(double val);
 Value make_string(const char* val);
+Value make_error(const char* msg); /* prints message, returns null */
 Value make_bool(bool val);
 Value make_null(void);
+Value make_error(const char* msg);
 Array* array_create(size_t capacity);
 void array_push(Array* arr, Value v);
 

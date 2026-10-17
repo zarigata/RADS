@@ -1,0 +1,51 @@
+// Regression (run 20): str() on arrays returned "null" and multi-arg
+// print transpiled to invalid echo(a, b). Covers:
+//   1. str(array) == echo array output ("[1, 2, 3]")
+//   2. str() on scalars/null/bool/float/nested arrays
+//   3. arr.append Python alias (empty + non-empty arrays)
+//   4. transpiled multi-arg print → echo(str(a) + " " + str(b))
+//   5. transpiled for-in over array + range (cruise var in iterable {)
+
+blast check(cond, msg) {
+    assert(cond, msg);
+}
+
+// --- 1. str() on arrays (the headline fix) ---
+turbo p = [1, 2, 3];
+let s = str(p);
+check(s == "[1, 2, 3]", "str([1,2,3]) should be '[1, 2, 3]', got: " + s);
+
+// --- 2. str() scalars + nested (Python-exact reprs, run 22) ---
+check(str(42) == "42", "str(int)");
+check(str(true) == "True", "str(bool)");
+check(str(null) == "None", "str(null)");
+turbo nested = [1, [2, 3], "four"];
+check(str(nested) == "[1, [2, 3], 'four']", "str(nested array)");
+
+// --- 3. append alias (was: Undefined method 'append') ---
+turbo a = [];
+a.append(5);
+a.append(6);
+check(str(a) == "[5, 6]", "append on empty array");
+turbo b = [1];
+b.append(9);
+check(str(b) == "[1, 9]", "append on non-empty array");
+
+// --- 4. concatenation through str() (the transpiler's Rule 10b shape) ---
+check(str(p) + " " + str(a) == "[1, 2, 3] [5, 6]", "str concat");
+
+// --- 5. cruise over bare identifier iterable with empty body ---
+// (was: 'Struct words not defined' — struct-literal/loop-body ambiguity)
+turbo words = [7, 8];
+cruise w in words {
+}
+check(true, "empty cruise body over identifier parses");
+
+// --- 6. cruise loop variable not shadowed (run 20b) ---
+turbo total = 0;
+cruise i in 0..5 {
+    total = total + i;
+}
+check(total == 10, "cruise 0..5 sums to 10, got " + str(total));
+
+print("✓ All str()/append/multi-arg print regression tests passed");

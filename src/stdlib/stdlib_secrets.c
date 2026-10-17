@@ -15,6 +15,7 @@
 extern Value make_int(long long val);
 extern Value make_string(const char* val);
 extern Value make_null(void);
+extern Value value_clone(Value v); // owning-reference helper for natives
 extern Array* array_create(size_t capacity);
 extern void array_push(Array* arr, Value v);
 
@@ -192,7 +193,7 @@ Value native_secrets_choice(struct Interpreter* interp, int argc, Value* args) {
     } while (val >= limit);
 
     size_t idx = (size_t)(val % (unsigned long long)count);
-    return args[0].array_val->items[idx];
+    return value_clone(args[0].array_val->items[idx]); // owning ref (caller frees args)
 }
 
 /* ── secrets.password(length=16, charset="alphanumeric") ── */

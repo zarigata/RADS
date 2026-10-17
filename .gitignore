@@ -20,6 +20,11 @@ rads-convert
 rads-repl
 rads-debug
 
+# Sanitizer builds (ad-hoc `make sanitize`-style artifacts)
+rads-asan
+rads-ubsan
+rads-sanitize
+
 # Compiled object files
 *.o
 *.obj
@@ -341,3 +346,9 @@ cscope.out
 cscope.files
 .gdb_history
 .sisyphus/
+
+# rads-mask / radpkg built binaries (root symlinks)
+/radpkg
+/rads-mask
+/tools/rads-mask/rads-mask
+benchmarks/tmp_io_*.txt

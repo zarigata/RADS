@@ -40,7 +40,6 @@ Rads/
 └── docs/                                ← Main documentation
     ├── WEB_ENGINE_DESIGN.md             ← Architecture & design
     ├── WEB_ENGINE_API.md                ← Detailed API reference
-    └── WEB_ENGINE_COMPLETE.md           ← Implementation summary
 ```
 
 ---
@@ -80,7 +79,6 @@ Rads/
    - Design decisions
    - Implementation plan
 
-7. **[docs/WEB_ENGINE_COMPLETE.md](../docs/WEB_ENGINE_COMPLETE.md)**
    - Implementation summary
    - Statistics and metrics
    - Achievement list
@@ -212,7 +210,6 @@ pkg_install(path)                       // Install plugin
 | `webengine/docs/EXAMPLES.md` | 320 | Example cookbook |
 | `docs/WEB_ENGINE_DESIGN.md` | 600 | Design document |
 | `docs/WEB_ENGINE_API.md` | 800 | Detailed API |
-| `docs/WEB_ENGINE_COMPLETE.md` | 400 | Implementation summary |
 | **Total** | **2,730** | **Comprehensive docs** |
 
 ### Examples

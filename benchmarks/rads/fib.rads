@@ -1,0 +1,12 @@
+// fib.rads — naive recursive fibonacci (CPU / call-frame churn)
+// Expected: fib(28) = 317811
+
+blast fib(i32 n) -> i32 {
+    if (n < 2) { return n; }
+    return fib(n - 1) + fib(n - 2);
+}
+
+blast main() {
+    turbo i32 r = fib(28);
+    echo("fib(28) = " + r);
+}

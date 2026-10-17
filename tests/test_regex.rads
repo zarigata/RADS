@@ -1,0 +1,54 @@
+// Run 26: regex module regression gauntlet.
+// regex.replace got the run-26 sibling sweep (str.replace's bug family):
+//   corpse 1 — result buffer sized by estimate (2*strlen + 2*repl_len),
+//             heap-overflowed on all-match strings with multi-char repls
+//             ([0-9] on "1111111111" with "XYZ": needs 31, allocated 26).
+//             Reproduced under ASAN before the fix (strcpy overflow).
+//   corpse 2 — trailing empty match at EOS dropped: re.sub(r'x*','-','abc')
+//             is '-a-b-c-'; RADS returned '-a-b-c'. Empty-input parity too:
+//             re.sub(r'x*','-','') == '-'.
+//   corpse 3 — regex.search left StructInstance->definition uninitialized;
+//             printing the result dereferenced garbage and crashed (ASAN
+//             SEGV at value_to_string_impl). Now a static borrowed label.
+// Semantics: two-pass exact-size replace, Python re.sub parity on
+// zero-width patterns. findall is single-char-class per-match (Python
+// parity). Array == is reference-ish (not deep), so we compare joined
+// strings and lengths instead.
+
+blast main() {
+    // --- regex.replace: literal patterns, all occurrences ---
+    assert(regex.replace("-", "a-b-c", "+") == "a+b+c", "literal all")
+    assert(regex.replace("[0-9]", "a1b2c3", "#") == "a#b#c#", "class all")
+    assert(regex.replace("X", "abc", "!") == "abc", "no match returns original")
+    assert(regex.replace("(b)", "abc", "B") == "aBc", "group pattern")
+
+    // --- regex.replace: the overflow corpse (ASAN regression probe) ---
+    // old code: result_size = 2*10 + 2*3 = 26 < 31 needed -> strcpy past end
+    assert(regex.replace("[0-9]", "1111111111", "XYZ") == "XYZXYZXYZXYZXYZXYZXYZXYZXYZXYZ", "overflow corpse")
+
+    // --- regex.replace: zero-width / empty-match Python parity ---
+    assert(regex.replace("x*", "abc", "-") == "-a-b-c-", "empty matches each gap + EOS")
+    assert(regex.replace("a*", "aaaa", "-") == "--", "greedy star: full match + EOS empty")
+    assert(regex.replace("b*", "abc", "-") == "-a--c-", "mixed empty/non-empty")
+    assert(regex.replace("x*", "", "-") == "-", "empty input, empty-capable pattern")
+
+    // --- regex.search: the uninit-definition crash corpse ---
+    turbo m = regex.search("b", "abc")
+    assert(m.start == 1, "search start")
+    assert(m.end == 2, "search end")
+    assert(m.match == "b", "search match text")
+    assert(regex.search("z", "abc") == null, "search miss returns null")
+    echo(str(m))   // used to crash here (garbage definition deref)
+
+    // --- regex.findall / split / match: baseline via joins (no deep ==) ---
+    turbo f = regex.findall("[0-9]+", "a1b22c333")
+    assert(len(f) == 3, "findall greedy count")
+    assert(f[0] + "," + f[1] + "," + f[2] == "1,22,333", "findall greedy contents")
+    turbo s = regex.split("-", "a-b-c")
+    assert(len(s) == 3, "split count")
+    assert(s[0] + s[1] + s[2] == "abc", "split contents")
+    assert(regex.match("^a", "abc") == true, "match anchored yes")
+    assert(regex.match("^b", "abc") == false, "match anchored no")
+
+    echo("test_regex complete")
+}

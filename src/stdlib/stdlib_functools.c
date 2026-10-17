@@ -144,7 +144,7 @@ Value stdlib_functools_none(struct Interpreter* interp, int argc, Value* args) {
 Value stdlib_functools_identity(struct Interpreter* interp, int argc, Value* args) {
     (void)interp;
     if (argc < 1) return make_null();
-    return args[0];
+    return value_clone(args[0]); // owning reference (caller frees args)
 }
 
 /* functools.each(callback, array) — iterate with side effects, return null */

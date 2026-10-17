@@ -13,6 +13,17 @@ extern Value make_null(void);
 extern Array* array_create(size_t capacity);
 extern void array_push(Array* arr, Value v);
 
+// ---------------------------------------------------------------------------
+// Binary data representation
+//
+// RADS strings are NUL-terminated char* and cannot carry arbitrary binary
+// data (any 0x00 byte truncates them). Binary blobs are therefore exchanged
+// as arrays of byte ints (0-255), mirroring `list(struct.pack(...))` in
+// Python 3. The unpack family also accepts plain strings for text-ish input;
+// since such strings contain no NUL bytes, strlen() is an honest length and
+// every read below is bounds-checked against it.
+// ---------------------------------------------------------------------------
+
 // Format character sizes
 static int fmt_size(char fmt) {
     switch (fmt) {
@@ -24,7 +35,68 @@ static int fmt_size(char fmt) {
     }
 }
 
-// Parse a single value from bytes according to format
+// Parse byte-order prefix; returns first format-char index and sets *big_endian.
+static int parse_prefix(const char* fmt, int* big_endian) {
+    *big_endian = 1; // default: big-endian (network byte order)
+    switch (fmt[0]) {
+        case '<': *big_endian = 0; return 1;
+        case '>': *big_endian = 1; return 1;
+        case '!': *big_endian = 1; return 1;
+        case '=': *big_endian = 0; return 1; // native = little on most
+        case '@': *big_endian = 0; return 1;
+        default:  return 0;
+    }
+}
+
+// Sum of format sizes starting at index fi. Unknown characters contribute 0.
+static int fmt_total_size(const char* fmt, int fi) {
+    int total = 0;
+    for (int i = fi; fmt[i]; i++) total += fmt_size(fmt[i]);
+    return total;
+}
+
+// Copy a data argument (byte-int array or string) into a fresh byte buffer.
+// Returns NULL on type error. Caller frees.
+static unsigned char* get_bytes(Value v, size_t* out_len) {
+    if (v.type == VAL_ARRAY) {
+        Array* a = v.array_val;
+        unsigned char* buf = malloc(a->count > 0 ? a->count : 1);
+        if (!buf) return NULL;
+        for (size_t i = 0; i < a->count; i++) {
+            Value item = a->items[i];
+            long long b;
+            if (item.type == VAL_INT) b = item.int_val;
+            else if (item.type == VAL_BOOL) b = item.bool_val ? 1 : 0;
+            else if (item.type == VAL_FLOAT) b = (long long)item.float_val;
+            else { free(buf); return NULL; }
+            buf[i] = (unsigned char)(b & 0xFF);
+        }
+        *out_len = a->count;
+        return buf;
+    }
+    if (v.type == VAL_STRING) {
+        size_t len = strlen(v.string_val);
+        unsigned char* buf = malloc(len > 0 ? len : 1);
+        if (!buf) return NULL;
+        memcpy(buf, v.string_val, len);
+        *out_len = len;
+        return buf;
+    }
+    return NULL;
+}
+
+// Wrap a byte buffer as a RADS array of ints (0-255).
+static Value bytes_to_array(const unsigned char* buf, int len) {
+    Array* arr = array_create(len > 0 ? (size_t)len : 1);
+    for (int i = 0; i < len; i++) array_push(arr, make_int((long long)buf[i]));
+    Value result;
+    result.type = VAL_ARRAY;
+    result.array_val = arr;
+    return result;
+}
+
+// Parse a single value from bytes according to format.
+// Caller guarantees [off, off+fmt_size(fmt)) is within the buffer.
 static Value parse_value(const unsigned char* data, char fmt, int big_endian) {
     switch (fmt) {
         case 'b': { // signed byte
@@ -35,7 +107,7 @@ static Value parse_value(const unsigned char* data, char fmt, int big_endian) {
             uint8_t v = data[0];
             return make_int((long long)v);
         }
-        case 'c': { // char
+        case 'c': { // char (a 0x00 byte degrades to "" — C-string limitation)
             char buf[2] = { (char)data[0], '\0' };
             return make_string(buf);
         }
@@ -123,7 +195,8 @@ static Value parse_value(const unsigned char* data, char fmt, int big_endian) {
     }
 }
 
-// Write a single value to bytes according to format
+// Write a single value to bytes according to format.
+// Caller guarantees buf has fmt_size(fmt) writable bytes.
 static int write_value(unsigned char* buf, char fmt, Value val, int big_endian) {
     int sz = fmt_size(fmt);
     if (sz == 0) return 0;
@@ -231,7 +304,7 @@ static int write_value(unsigned char* buf, char fmt, Value val, int big_endian) 
     return sz;
 }
 
-// struct.pack(fmt, v1, v2, ...) -> string of packed bytes
+// struct.pack(fmt, v1, v2, ...) -> array of byte ints (binary data)
 Value stdlib_struct_pack(Interpreter* interp, int argc, Value* args) {
     (void)interp;
     if (argc < 1 || args[0].type != VAL_STRING) {
@@ -240,24 +313,16 @@ Value stdlib_struct_pack(Interpreter* interp, int argc, Value* args) {
     }
 
     const char* fmt = args[0].string_val;
+    int big_endian;
+    int fi = parse_prefix(fmt, &big_endian);
+    int total = fmt_total_size(fmt, fi);
 
-    // Determine endianness
-    int big_endian = 1; // default: big-endian (network byte order)
-    int fi = 0;
-    if (fmt[0] == '<') { big_endian = 0; fi = 1; }
-    else if (fmt[0] == '>') { big_endian = 1; fi = 1; }
-    else if (fmt[0] == '!') { big_endian = 1; fi = 1; }
-    else if (fmt[0] == '=') { big_endian = 0; fi = 1; } // native = little on most
-    else if (fmt[0] == '@') { big_endian = 0; fi = 1; }
+    unsigned char* buf = calloc(total > 0 ? (size_t)total : 1, 1);
+    if (!buf) return make_null();
 
-    // Calculate total size
-    int total = 0;
-    for (int i = fi; fmt[i]; i++) total += fmt_size(fmt[i]);
-
-    unsigned char* buf = malloc(total > 0 ? total : 1);
     int pos = 0, arg_idx = 1;
-
     for (int i = fi; fmt[i]; i++) {
+        if (fmt_size(fmt[i]) == 0) continue; // unknown char: consumes nothing
         if (arg_idx >= argc) {
             fprintf(stderr, "Error: struct.pack() not enough arguments for format '%s'\n", fmt);
             free(buf);
@@ -266,46 +331,53 @@ Value stdlib_struct_pack(Interpreter* interp, int argc, Value* args) {
         pos += write_value(buf + pos, fmt[i], args[arg_idx++], big_endian);
     }
 
-    // Return as string (binary data)
-    Value result = make_string((const char*)buf);
+    Value result = bytes_to_array(buf, total);
     free(buf);
     return result;
 }
 
 // struct.unpack(fmt, data) -> array of values
+// data: byte-int array (canonical) or string. Bounds-checked.
 Value stdlib_struct_unpack(Interpreter* interp, int argc, Value* args) {
     (void)interp;
-    if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_STRING) {
+    if (argc < 2 || args[0].type != VAL_STRING) {
         fprintf(stderr, "Error: struct.unpack() requires format string and data\n");
         return make_null();
     }
 
     const char* fmt = args[0].string_val;
-    const unsigned char* data = (const unsigned char*)args[1].string_val;
-    size_t data_len = strlen((const char*)data); // Note: binary data may have nulls
+    size_t data_len = 0;
+    unsigned char* data = get_bytes(args[1], &data_len);
+    if (!data) {
+        fprintf(stderr, "Error: struct.unpack() data must be a byte array or string\n");
+        return make_null();
+    }
 
-    // Use the actual allocated size hint from the string
-    // For binary safety, we calculate expected size from format
-    int big_endian = 1;
-    int fi = 0;
-    if (fmt[0] == '<') { big_endian = 0; fi = 1; }
-    else if (fmt[0] == '>') { big_endian = 1; fi = 1; }
-    else if (fmt[0] == '!') { big_endian = 1; fi = 1; }
-    else if (fmt[0] == '=') { big_endian = 0; fi = 1; }
-    else if (fmt[0] == '@') { big_endian = 0; fi = 1; }
+    int big_endian;
+    int fi = parse_prefix(fmt, &big_endian);
+    int needed = fmt_total_size(fmt, fi);
+
+    if ((size_t)needed > data_len) {
+        fprintf(stderr, "Error: struct.unpack() format '%s' needs %d bytes, got %zu\n",
+                fmt, needed, data_len);
+        free(data);
+        return make_null();
+    }
 
     int fmt_count = 0;
     for (int i = fi; fmt[i]; i++) fmt_count++;
 
-    Array* arr = array_create(fmt_count > 0 ? fmt_count : 1);
+    Array* arr = array_create(fmt_count > 0 ? (size_t)fmt_count : 1);
     int pos = 0;
-
     for (int i = fi; fmt[i]; i++) {
         int sz = fmt_size(fmt[i]);
         if (sz == 0) continue;
-        array_push(arr, parse_value(data + pos, fmt[i], big_endian));
-        pos += sz;
+        Value pv = parse_value(data + pos, fmt[i], big_endian);
+        array_push(arr, pv);
+        value_free(&pv); // array_push cloned it; release our copy
+        pos += sz; // invariant: pos <= needed <= data_len
     }
+    free(data);
 
     Value result;
     result.type = VAL_ARRAY;
@@ -325,90 +397,110 @@ Value stdlib_struct_calcsize(Interpreter* interp, int argc, Value* args) {
     int fi = 0;
     if (fmt[0] == '<' || fmt[0] == '>' || fmt[0] == '!' || fmt[0] == '=' || fmt[0] == '@') fi = 1;
 
-    int total = 0;
-    for (int i = fi; fmt[i]; i++) total += fmt_size(fmt[i]);
-
-    return make_int(total);
+    return make_int(fmt_total_size(fmt, fi));
 }
 
-// struct.pack_into(fmt, buf, offset, v1, v2, ...) -> string
-// Since RADS strings are immutable, returns a new string
+// struct.pack_into(fmt, buf, offset, v1, v2, ...) -> new byte array
+// buf: byte-int array or string (copied; RADS values are immutable).
+// Grows with zero fill when offset+size exceeds the buffer. Bounds-checked.
 Value stdlib_struct_pack_into(Interpreter* interp, int argc, Value* args) {
     (void)interp;
-    // Simplified: same as pack but with offset support
-    // struct.pack_into(fmt, buf, offset, values...)
-    if (argc < 3 || args[0].type != VAL_STRING || args[1].type != VAL_STRING || args[2].type != VAL_INT) {
+    if (argc < 3 || args[0].type != VAL_STRING || args[2].type != VAL_INT) {
         fprintf(stderr, "Error: struct.pack_into(fmt, buf, offset, values...) required\n");
         return make_null();
     }
 
     const char* fmt = args[0].string_val;
-    const char* buf = args[1].string_val;
-    int offset = (int)args[2].int_val;
-    size_t buf_len = strlen(buf);
-
-    int big_endian = 1;
-    int fi = 0;
-    if (fmt[0] == '<') { big_endian = 0; fi = 1; }
-    else if (fmt[0] == '>') { big_endian = 1; fi = 1; }
-    else if (fmt[0] == '!') { big_endian = 1; fi = 1; }
-    else if (fmt[0] == '=') { big_endian = 0; fi = 1; }
-    else if (fmt[0] == '@') { big_endian = 0; fi = 1; }
-
-    int pack_size = 0;
-    for (int i = fi; fmt[i]; i++) pack_size += fmt_size(fmt[i]);
-
-    size_t new_len = offset + pack_size;
-    if (new_len < buf_len) new_len = buf_len;
-
-    char* new_buf = malloc(new_len + 1);
-    memcpy(new_buf, buf, buf_len);
-    if (new_len > buf_len) memset(new_buf + buf_len, 0, new_len - buf_len);
-    new_buf[new_len] = '\0';
-
-    int pos = offset, arg_idx = 3;
-    for (int i = fi; fmt[i]; i++) {
-        if (arg_idx >= argc) break;
-        pos += write_value((unsigned char*)new_buf + pos, fmt[i], args[arg_idx++], big_endian);
+    size_t buf_len = 0;
+    unsigned char* buf = get_bytes(args[1], &buf_len);
+    if (!buf) {
+        fprintf(stderr, "Error: struct.pack_into() buf must be a byte array or string\n");
+        return make_null();
     }
 
-    Value result = make_string(new_buf);
+    long long offset_ll = args[2].int_val;
+    if (offset_ll < 0) {
+        fprintf(stderr, "Error: struct.pack_into() offset must be >= 0\n");
+        free(buf);
+        return make_null();
+    }
+    size_t offset = (size_t)offset_ll;
+
+    int big_endian;
+    int fi = parse_prefix(fmt, &big_endian);
+    int pack_size = fmt_total_size(fmt, fi);
+
+    size_t new_len = offset + (size_t)pack_size;
+    if (new_len < buf_len) new_len = buf_len;
+
+    unsigned char* new_buf = calloc(new_len > 0 ? new_len : 1, 1);
+    if (!new_buf) { free(buf); return make_null(); }
+    memcpy(new_buf, buf, buf_len);
+    free(buf);
+
+    size_t pos = offset;
+    int arg_idx = 3;
+    for (int i = fi; fmt[i]; i++) {
+        if (fmt_size(fmt[i]) == 0) continue;
+        if (arg_idx >= argc) break;
+        // invariant: pos + fmt_size <= offset + pack_size <= new_len
+        pos += (size_t)write_value(new_buf + pos, fmt[i], args[arg_idx++], big_endian);
+    }
+
+    Value result = bytes_to_array(new_buf, (int)new_len);
     free(new_buf);
     return result;
 }
 
-// struct.unpack_from(fmt, buf, offset) -> array
+// struct.unpack_from(fmt, buf, [offset]) -> array. Bounds-checked.
 Value stdlib_struct_unpack_from(Interpreter* interp, int argc, Value* args) {
     (void)interp;
-    if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_STRING) {
+    if (argc < 2 || args[0].type != VAL_STRING) {
         fprintf(stderr, "Error: struct.unpack_from(fmt, buf, [offset]) required\n");
         return make_null();
     }
 
     const char* fmt = args[0].string_val;
-    const unsigned char* data = (const unsigned char*)args[1].string_val;
-    int offset = (argc >= 3 && args[2].type == VAL_INT) ? (int)args[2].int_val : 0;
+    size_t data_len = 0;
+    unsigned char* data = get_bytes(args[1], &data_len);
+    if (!data) {
+        fprintf(stderr, "Error: struct.unpack_from() buf must be a byte array or string\n");
+        return make_null();
+    }
 
-    int big_endian = 1;
-    int fi = 0;
-    if (fmt[0] == '<') { big_endian = 0; fi = 1; }
-    else if (fmt[0] == '>') { big_endian = 1; fi = 1; }
-    else if (fmt[0] == '!') { big_endian = 1; fi = 1; }
-    else if (fmt[0] == '=') { big_endian = 0; fi = 1; }
-    else if (fmt[0] == '@') { big_endian = 0; fi = 1; }
+    long long offset_ll = (argc >= 3 && args[2].type == VAL_INT) ? args[2].int_val : 0;
+    if (offset_ll < 0) {
+        fprintf(stderr, "Error: struct.unpack_from() offset must be >= 0\n");
+        free(data);
+        return make_null();
+    }
+    size_t offset = (size_t)offset_ll;
+
+    int big_endian;
+    int fi = parse_prefix(fmt, &big_endian);
+    int needed = fmt_total_size(fmt, fi);
+
+    if (offset + (size_t)needed > data_len || (size_t)needed > data_len) {
+        fprintf(stderr, "Error: struct.unpack_from() format '%s' at offset %zu needs %d bytes, got %zu\n",
+                fmt, offset, needed, data_len);
+        free(data);
+        return make_null();
+    }
 
     int fmt_count = 0;
     for (int i = fi; fmt[i]; i++) fmt_count++;
 
-    Array* arr = array_create(fmt_count > 0 ? fmt_count : 1);
-    int pos = offset;
-
+    Array* arr = array_create(fmt_count > 0 ? (size_t)fmt_count : 1);
+    size_t pos = offset;
     for (int i = fi; fmt[i]; i++) {
         int sz = fmt_size(fmt[i]);
         if (sz == 0) continue;
-        array_push(arr, parse_value(data + pos, fmt[i], big_endian));
-        pos += sz;
+        Value pv = parse_value(data + pos, fmt[i], big_endian);
+        array_push(arr, pv);
+        value_free(&pv); // array_push cloned it; release our copy
+        pos += (size_t)sz; // invariant: pos <= offset + needed <= data_len
     }
+    free(data);
 
     Value result;
     result.type = VAL_ARRAY;
@@ -416,25 +508,24 @@ Value stdlib_struct_unpack_from(Interpreter* interp, int argc, Value* args) {
     return result;
 }
 
-// struct.iter_unpack(fmt, data) -> array of arrays (batched)
+// struct.iter_unpack(fmt, data) -> array of arrays (batched). Bounds-checked.
 Value stdlib_struct_iter_unpack(Interpreter* interp, int argc, Value* args) {
     (void)interp;
-    if (argc < 2 || args[0].type != VAL_STRING || args[1].type != VAL_STRING) {
+    if (argc < 2 || args[0].type != VAL_STRING) {
         fprintf(stderr, "Error: struct.iter_unpack(fmt, data) required\n");
         return make_null();
     }
 
     const char* fmt = args[0].string_val;
-    const unsigned char* data = (const unsigned char*)args[1].string_val;
-    size_t data_len = strlen((const char*)data);
+    size_t data_len = 0;
+    unsigned char* data = get_bytes(args[1], &data_len);
+    if (!data) {
+        fprintf(stderr, "Error: struct.iter_unpack() data must be a byte array or string\n");
+        return make_null();
+    }
 
-    int big_endian = 1;
-    int fi = 0;
-    if (fmt[0] == '<') { big_endian = 0; fi = 1; }
-    else if (fmt[0] == '>') { big_endian = 1; fi = 1; }
-    else if (fmt[0] == '!') { big_endian = 1; fi = 1; }
-    else if (fmt[0] == '=') { big_endian = 0; fi = 1; }
-    else if (fmt[0] == '@') { big_endian = 0; fi = 1; }
+    int big_endian;
+    int fi = parse_prefix(fmt, &big_endian);
 
     int record_size = 0;
     int field_count = 0;
@@ -443,25 +534,30 @@ Value stdlib_struct_iter_unpack(Interpreter* interp, int argc, Value* args) {
         field_count++;
     }
 
-    if (record_size == 0) return make_null();
+    if (record_size == 0) { free(data); return make_null(); }
 
-    int num_records = data_len / record_size;
+    size_t num_records = data_len / (size_t)record_size; // floor: trailing partial record ignored
     Array* outer = array_create(num_records > 0 ? num_records : 1);
 
-    for (int r = 0; r < num_records; r++) {
-        Array* inner = array_create(field_count);
-        int pos = r * record_size;
+    for (size_t r = 0; r < num_records; r++) {
+        Array* inner = array_create((size_t)field_count);
+        size_t pos = r * (size_t)record_size;
         for (int i = fi; fmt[i]; i++) {
             int sz = fmt_size(fmt[i]);
             if (sz == 0) continue;
-            array_push(inner, parse_value(data + pos, fmt[i], big_endian));
-            pos += sz;
+            // invariant: pos + sz <= (r+1)*record_size <= data_len
+            Value pv = parse_value(data + pos, fmt[i], big_endian);
+            array_push(inner, pv);
+            value_free(&pv); // array_push cloned it; release our copy
+            pos += (size_t)sz;
         }
         Value inner_val;
         inner_val.type = VAL_ARRAY;
         inner_val.array_val = inner;
         array_push(outer, inner_val);
+        value_free(&inner_val); // array_push cloned (refcount++); release ours
     }
+    free(data);
 
     Value result;
     result.type = VAL_ARRAY;

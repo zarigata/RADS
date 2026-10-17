@@ -176,8 +176,7 @@ static Value jp_parse_object(JsonParser* p) {
 
     if (jp_peek(p) == '}') {
         p->pos++;
-        /* Return as array of pairs */
-        Value v; v.type = VAL_ARRAY; v.array_val = entries;
+        Value v; v.type = VAL_DICT; v.array_val = entries;
         return v;
     }
 
@@ -185,7 +184,32 @@ static Value jp_parse_object(JsonParser* p) {
         jp_skip_ws(p);
         Value key = jp_parse_string(p);
         if (key.type != VAL_STRING) { break; }
+        /* replace-or-append: JSON objects with duplicate keys keep the LAST
+           value (RFC 8259 behavior) — and keeps the payload even-counted. */
+        size_t prev = (size_t)-1;
+        for (size_t i = 0; i + 1 < entries->count; i += 2) {
+            if (entries->items[i].type == VAL_STRING &&
+                strcmp(entries->items[i].string_val, key.string_val) == 0) {
+                prev = i;
+                break;
+            }
+        }
+        if (prev != (size_t)-1) {
+            /* duplicate key: overwrite the existing value, skip the pair append */
+            value_free(&key); // dup — not stored; free the parsed copy
+            jp_skip_ws(p);
+            if (jp_peek(p) != ':') break;
+            p->pos++;
+            Value val = jp_parse_value(p);
+            value_free(&entries->items[prev + 1]);
+            entries->items[prev + 1] = val; /* owns */
+            jp_skip_ws(p);
+            if (jp_peek(p) == ',') { p->pos++; continue; }
+            if (jp_peek(p) == '}') { p->pos++; break; }
+            break;
+        }
         array_push(entries, key);
+        value_free(&key); // array_push cloned it; release our parsed copy
 
         jp_skip_ws(p);
         if (jp_peek(p) != ':') break;
@@ -193,6 +217,7 @@ static Value jp_parse_object(JsonParser* p) {
 
         Value val = jp_parse_value(p);
         array_push(entries, val);
+        value_free(&val); // array_push cloned it; release our parsed copy
 
         jp_skip_ws(p);
         if (jp_peek(p) == ',') { p->pos++; continue; }
@@ -200,7 +225,9 @@ static Value jp_parse_object(JsonParser* p) {
         break;
     }
 
-    Value v; v.type = VAL_ARRAY; v.array_val = entries;
+    /* Objects come back as VAL_DICT: keyed reads d["k"], dict.* methods,
+       Python-style print. (Same flat kv payload as before, new tag.) */
+    Value v; v.type = VAL_DICT; v.array_val = entries;
     return v;
 }
 
@@ -218,6 +245,7 @@ static Value jp_parse_array(JsonParser* p) {
     while (1) {
         Value val = jp_parse_value(p);
         array_push(arr, val);
+        value_free(&val); // array_push cloned it; release our parsed copy
 
         jp_skip_ws(p);
         if (jp_peek(p) == ',') { p->pos++; continue; }
@@ -357,6 +385,30 @@ static void jw_write_value(JsonWriter* w, Value* v, int indent, int pretty) {
         case VAL_STRING:
             jw_write_string(w, v->string_val);
             break;
+        case VAL_DICT: {
+            Array* arr = v->array_val;
+            if (!arr || arr->count == 0) {
+                jw_puts(w, "{}");
+                break;
+            }
+            jw_putc(w, '{');
+            for (size_t i = 0; i + 1 < arr->count; i += 2) {
+                if (i > 0) jw_putc(w, ',');
+                if (pretty) jw_putc(w, '\n');
+                if (pretty) jw_write_indent(w, indent + 2);
+                if (arr->items[i].type == VAL_STRING) {
+                    jw_write_string(w, arr->items[i].string_val);
+                } else {
+                    jw_write_string(w, "");
+                }
+                jw_putc(w, ':');
+                if (pretty) jw_putc(w, ' ');
+                jw_write_value(w, &arr->items[i + 1], indent + 2, pretty);
+            }
+            if (pretty) { jw_putc(w, '\n'); jw_write_indent(w, indent); }
+            jw_putc(w, '}');
+            break;
+        }
         case VAL_ARRAY: {
             Array* arr = v->array_val;
             if (!arr || arr->count == 0) {
@@ -610,7 +662,8 @@ Value native_json_escape(struct Interpreter* interp, int argc, Value* args) {
 /* json.get(path) - get nested value by dot-path from parsed JSON */
 Value native_json_get(struct Interpreter* interp, int argc, Value* args) {
     (void)interp;
-    if (argc < 2 || args[0].type != VAL_ARRAY || args[1].type != VAL_STRING) return make_null();
+    if (argc < 2 || args[1].type != VAL_STRING) return make_null();
+    if (args[0].type != VAL_ARRAY && args[0].type != VAL_DICT) return make_null();
 
     Value current = args[0];
     const char* path = args[1].string_val;
@@ -619,7 +672,20 @@ Value native_json_get(struct Interpreter* interp, int argc, Value* args) {
     char* token = strtok(path_copy, ".");
 
     while (token) {
-        if (current.type == VAL_ARRAY) {
+        if (current.type == VAL_DICT) {
+            /* Dict hop (run 23): direct keyed lookup. */
+            Array* arr = current.array_val;
+            int found = 0;
+            for (size_t i = 0; i + 1 < arr->count; i += 2) {
+                if (arr->items[i].type == VAL_STRING &&
+                    strcmp(arr->items[i].string_val, token) == 0) {
+                    current = arr->items[i + 1];
+                    found = 1;
+                    break;
+                }
+            }
+            if (!found) { free(path_copy); return make_null(); }
+        } else if (current.type == VAL_ARRAY) {
             /* Check if this is an object (even-count, string keys) or array */
             Array* arr = current.array_val;
             int is_obj = (arr->count >= 2 && arr->count % 2 == 0 && arr->items[0].type == VAL_STRING);
@@ -653,13 +719,16 @@ Value native_json_get(struct Interpreter* interp, int argc, Value* args) {
     }
 
     free(path_copy);
-    return current;
+    /* Ownership contract: natives return owning values. `current` borrows
+       from args[0]'s payload — clone it or the caller's arg free leaves a
+       dangling string/array (heap corruption, run 23). */
+    return value_clone(current);
 }
 
 /* json.keys(parsed_object) → array of key strings */
 Value native_json_keys(struct Interpreter* interp, int argc, Value* args) {
     (void)interp;
-    if (argc < 1 || args[0].type != VAL_ARRAY) return make_null();
+    if (argc < 1 || (args[0].type != VAL_ARRAY && args[0].type != VAL_DICT)) return make_null();
     Array* arr = args[0].array_val;
     Array* keys = array_create(arr->count / 2 + 1);
     for (size_t i = 0; i < arr->count; i += 2) {
@@ -674,7 +743,7 @@ Value native_json_keys(struct Interpreter* interp, int argc, Value* args) {
 /* json.values(parsed_object) → array of values */
 Value native_json_values(struct Interpreter* interp, int argc, Value* args) {
     (void)interp;
-    if (argc < 1 || args[0].type != VAL_ARRAY) return make_null();
+    if (argc < 1 || (args[0].type != VAL_ARRAY && args[0].type != VAL_DICT)) return make_null();
     Array* arr = args[0].array_val;
     Array* vals = array_create(arr->count / 2 + 1);
     for (size_t i = 1; i < arr->count; i += 2) {
@@ -687,7 +756,7 @@ Value native_json_values(struct Interpreter* interp, int argc, Value* args) {
 /* json.has_key(parsed_object, key) → bool */
 Value native_json_has_key(struct Interpreter* interp, int argc, Value* args) {
     (void)interp;
-    if (argc < 2 || args[0].type != VAL_ARRAY || args[1].type != VAL_STRING) {
+    if (argc < 2 || (args[0].type != VAL_ARRAY && args[0].type != VAL_DICT) || args[1].type != VAL_STRING) {
         Value v; v.type = VAL_BOOL; v.bool_val = false; return v;
     }
     Array* arr = args[0].array_val;
@@ -705,6 +774,7 @@ Value native_json_type_of(struct Interpreter* interp, int argc, Value* args) {
     (void)interp;
     if (argc < 1) return make_string("null");
     switch (args[0].type) {
+        case VAL_DICT:            return make_string("object");
         case VAL_NULL:            return make_string("null");
         case VAL_BOOL:            return make_string("bool");
         case VAL_INT:             return make_string("int");

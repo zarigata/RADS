@@ -1,0 +1,46 @@
+// ═══════════════════════════════════════════
+// Run 33: enum end-to-end — bare member resolution (the `turbo i32 c =
+// GREEN;` → null bug), explicit `= value` members, member access, auto
+// numbering after explicit values, negative values, cross-path parity
+// (tree-walker, BC-compiled blast bodies, member access Color.RED).
+// ═══════════════════════════════════════════
+
+enum Color { RED, GREEN, BLUE }
+enum Level { LOW = 10, MID, HIGH = LOW + 100, TOP }
+enum Signs { COLD = -5, WARM }
+
+test.describe("enums", fn() {
+    test.it("bare members resolve (was null)", fn() {
+        turbo i32 c = GREEN
+        test.expect(c).toBe(1)
+        test.expect(RED).toBe(0)
+        test.expect(BLUE + 1).toBe(3)
+    })
+
+    test.it("explicit values + auto continuation", fn() {
+        test.expect(Level.LOW).toBe(10)
+        test.expect(Level.MID).toBe(11)
+        test.expect(Level.HIGH).toBe(110)
+        test.expect(Level.TOP).toBe(111)
+        test.expect(MID + TOP).toBe(122)
+    })
+
+    test.it("negative explicit values", fn() {
+        test.expect(Signs.COLD).toBe(-5)
+        test.expect(Signs.WARM).toBe(-4)
+    })
+
+    test.it("member access honors explicit values", fn() {
+        test.expect(Color.RED).toBe(0)
+        test.expect(Color.GREEN).toBe(1)
+        test.expect(Color.BLUE).toBe(2)
+        test.expect(Level.HIGH).toBe(110)
+    })
+
+    test.it("bare members inside blast (BC path)", fn() {
+        blast get_green() {
+            return GREEN
+        }
+        test.expect(get_green()).toBe(1)
+    })
+})

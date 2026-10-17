@@ -1,0 +1,94 @@
+// Run 24: list & dict comprehensions — [x*2 for x in xs if c] and
+// {k: v for x in xs}. Feature-parity tree-walker AND bytecode VM
+// (BC_ALEN/BC_APPEND/BC_DSTORE, inline loop nest with hidden slots).
+// Semantics follow the cruise statement: iterable evaluated once, env_set
+// loop-var binding, non-array iterables yield zero iterations, dict comps
+// upsert (last duplicate key wins).
+blast check(cond, msg) {
+    assert(cond, msg);
+}
+
+// --- 1. list comprehension basics ---
+turbo xs = [1, 2, 3, 4, 5];
+turbo doubled = [x * 2 for x in xs];
+check(str(doubled) == "[2, 4, 6, 8, 10]", "map: got " + str(doubled));
+
+// --- 2. filter ---
+turbo evens = [x for x in xs if x % 2 == 0];
+check(str(evens) == "[2, 4]", "filter: got " + str(evens));
+
+// --- 3. map + filter combined ---
+check(str([x * x for x in xs if x > 2]) == "[9, 16, 25]", "map+filter");
+
+// --- 4. empty source / empty result ---
+check(str([x for x in []]) == "[]", "empty source");
+check(str([x for x in xs if x > 100]) == "[]", "empty result");
+
+// --- 5. string elements ---
+turbo words = ["alpha", "be", "gamma"];
+turbo want5 = ["alpha!", "be!", "gamma!"];  // str(array) renders strings unquoted
+check(str([w + "!" for w in words]) == str(want5), "string map");
+
+// --- 6. RADS-native 'cruise' spelling ---
+check(str([v cruise v in [1, 2, 3]]) == "[1, 2, 3]", "cruise spelling");
+
+// --- 7. dict comprehension ---
+turbo squares = {str(x): x * x for x in xs};
+check(squares["3"] == 9, "dict comp read");
+check(squares["5"] == 25, "dict comp read 2");
+check(squares.get("2") == 4, "dict comp .get");
+
+// --- 8. dict comp duplicate keys: last wins (upsert) ---
+turbo parity = {x % 2: x for x in [1, 2, 3, 4]};
+check(parity[0] == 4 && parity[1] == 3, "last-wins upsert: " + str(parity));
+
+// --- 9. dict comp with computed keys ---
+turbo keyed = {str(x) + "k": x * 10 for x in [1, 2]};
+check(keyed["2k"] == 20, "computed key");
+
+// --- 10. multiple for-clauses = nested loops (flatten) ---
+turbo grid = [[1, 2], [3, 4], [5, 6]];
+check(str([v for row in grid for v in row]) == "[1, 2, 3, 4, 5, 6]", "flatten");
+
+// --- 11. comprehension of comprehension (nested, hidden-slot uniqueness) ---
+turbo rows = [[y * y for y in row] for row in grid];
+check(str(rows) == "[[1, 4], [9, 16], [25, 36]]", "comp of comp");
+
+// --- 12. filter between for-clauses ---
+check(str([v for row in grid for v in row if v % 2 == 1]) == "[1, 3, 5]", "nested filter");
+
+// --- 13. loop var uses env_set (cruise semantics) — leaks to enclosing scope ---
+turbo leaked = 0;
+turbo _ = [leaked for leaked in [7, 8]];
+check(leaked == 8, "env_set binding: leaked=" + str(leaked));
+
+// --- 14. element expr referencing outer variables ---
+turbo base = 10;
+check(str([base + y for y in [1, 2, 3]]) == "[11, 12, 13]", "outer var");
+
+// --- 15. non-array iterables: zero iterations, no error ---
+check(str([q for q in 42]) == "[]", "int iterable");
+check(str([q for q in null]) == "[]", "null iterable");
+
+// --- 16. dict literal still parses after the grammar change ---
+turbo m = {name: "rads", n: 2};
+check(m["name"] == "rads" && m["n"] == 2, "plain dict literal unaffected: " + str(m));
+turbo m2 = {"quoted": 1};
+check(m2["quoted"] == 1, "quoted-key literal unaffected");
+
+// --- 17. functions returning comprehensions (BC path compiles them) ---
+blast evens_upto(n) {
+    return [i for i in [1, 2, 3, 4, 5, 6, 7, 8] if i <= n if i % 2 == 0];
+}
+check(str(evens_upto(6)) == "[2, 4, 6]", "function with two filters");
+
+// --- 18. comprehension over function call result ---
+blast make() { return [10, 20, 30]; }
+check(str([v / 10 for v in make()]) == "[1, 2, 3]", "call-result iterable");
+
+// --- 19. empty dict comp ---
+turbo ed = {str(x): x for x in []};
+check(str(ed) == "{}", "empty dict comp: " + str(ed));
+
+// --- 20. comprehension inside call args ---
+check(str(len([w for w in ["a", "bb", "ccc"]])) == "3", "comp as call arg");

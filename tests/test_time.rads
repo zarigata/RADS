@@ -1,7 +1,6 @@
 # Time Module Test Suite
 # Tests for time.sleep, time.time, time.perf_counter, time.monotonic, etc.
 
-import "stdlib/test.rads"
 
 # Test 1: time.time() returns a number
 let t = time.time()

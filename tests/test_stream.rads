@@ -1,0 +1,27 @@
+// test_stream.rads — stream/iterator shape regression.
+// Restored in run 16 (was missing; the runner skipped it with a warning
+// while still counting it in the total, masking the gap).
+blast main() {
+    turbo nums = [1, 2, 3, 4, 5, 6];
+    turbo evens = [];
+    turbo i = 0;
+    loop (i < 6) {
+        if (nums[i] % 2 == 0) {
+            evens.push(nums[i]);
+        }
+        i = i + 1;
+    }
+    echo("count: " + evens.length);
+
+    turbo total = 0;
+    turbo j = 0;
+    loop (j < 6) {
+        total = total + nums[j];
+        j = j + 1;
+    }
+    echo("total: " + total);
+
+    if (evens.length == 3 && total == 21) {
+        echo("stream OK");
+    }
+}

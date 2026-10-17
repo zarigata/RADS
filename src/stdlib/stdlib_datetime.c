@@ -16,6 +16,9 @@ static Value make_datetime_struct(int year, int month, int day, int hour, int mi
     StructInstance* instance = malloc(sizeof(StructInstance));
     if (!instance) return make_null();
     
+    // Run 28: definition must never be left uninitialized — readers like
+    // value_to_string deref it.
+    instance->definition = NULL;
     instance->fields = NULL;
     
     // Allocate and set year field

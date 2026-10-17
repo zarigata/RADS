@@ -228,7 +228,7 @@ docs/registry-architecture/
 
 ### Technical
 - **System Design:** docs/registry-architecture/SYSTEM_DESIGN.md
-- **Progress Reports:** docs/registry-architecture/PROGRESS_REPORT.md, FINAL_COMPLETION_REPORT.md
+- **Progress Reports:** docs/registry-architecture/PROGRESS_REPORT.md, ../archive/registry-architecture/FINAL_COMPLETION_REPORT.md
 
 ---
 

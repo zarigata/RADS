@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "ast.h"
+#include "interpreter.h" // interpreter_free_bc_cache (opaque bc_cache teardown)
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -142,6 +143,7 @@ ASTNode* ast_create_function_decl(const char* name, ASTList* params, TypeInfo* r
     node->function_decl.return_type = return_type;
     node->function_decl.body = body;
     node->function_decl.is_async = is_async;
+    node->function_decl.bc_cache = NULL; // filled by the bytecode compiler
     return node;
 }
 
@@ -168,13 +170,14 @@ ASTNode* ast_create_struct_decl(const char* name, ASTList* fields, int line, int
     return node;
 }
 
-ASTNode* ast_create_enum_decl(const char* name, ASTList* values, int line, int column) {
+ASTNode* ast_create_enum_decl(const char* name, ASTList* values, long long* int_values, int line, int column) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_ENUM_DECL;
     node->line = line;
     node->column = column;
     node->enum_decl.name = strdup(name);
     node->enum_decl.values = values;
+    node->enum_decl.int_values = int_values;
     return node;
 }
 
@@ -242,6 +245,12 @@ ASTNode* ast_create_call(ASTNode* callee, ASTList* arguments, int line, int colu
     node->column = column;
     node->call_expr.callee = callee;
     node->call_expr.arguments = arguments;
+    node->call_expr.cache_binding = NULL;
+    node->call_expr.cache_native = NULL;
+    node->call_expr.cache_nentry = NULL;
+    node->call_expr.cache_iname = NULL;
+    node->call_expr.cache_gen = 0;
+    node->call_expr.cache_native_gen = 0;
     return node;
 }
 
@@ -292,6 +301,49 @@ ASTNode* ast_create_array_literal(ASTList* elements, int line, int column) {
     node->line = line;
     node->column = column;
     node->array_literal.elements = elements;
+    node->array_literal.is_dict = false;
+    return node;
+}
+
+// Dict literal {"k": v, ...}: stored as the same flat kv element list, but
+// tagged so evaluation produces a VAL_DICT (prints {"k": v}, dict methods,
+// keyed indexing) instead of a plain array.
+ASTNode* ast_create_dict_literal(ASTList* elements, int line, int column) {
+    ASTNode* node = ast_create_array_literal(elements, line, column);
+    node->array_literal.is_dict = true;
+    return node;
+}
+
+// Run 24: comprehension nodes. Ownership of expr/key_expr/clauses moves in;
+// callers must not free them afterwards.
+ASTNode* ast_create_comprehension(ASTNode* expr, ASTNode* key_expr, ASTList* clauses, bool is_dict, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_COMPREHENSION_EXPR;
+    node->line = line;
+    node->column = column;
+    node->comprehension.expr = expr;
+    node->comprehension.key_expr = key_expr;
+    node->comprehension.clauses = clauses;
+    node->comprehension.is_dict = is_dict;
+    return node;
+}
+
+ASTNode* ast_create_comp_for(const char* iterator, ASTNode* iterable, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_COMP_FOR;
+    node->line = line;
+    node->column = column;
+    node->comp_for.iterator = strdup(iterator);
+    node->comp_for.iterable = iterable;
+    return node;
+}
+
+ASTNode* ast_create_comp_if(ASTNode* condition, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_COMP_IF;
+    node->line = line;
+    node->column = column;
+    node->comp_if.condition = condition;
     return node;
 }
 
@@ -452,6 +504,11 @@ void ast_free(ASTNode* node) {
             ast_list_free(node->function_decl.parameters);
             type_info_free(node->function_decl.return_type);
             ast_free(node->function_decl.body);
+            // Bytecode cache (perf round 4): BcFunc is owned by this node —
+            // NULL = never compiled, (void*)1 = bailed to tree-walker, else
+            // a real allocation that must not outlive the AST. Opaque free
+            // in interpreter.c (ast.c cannot see the internal type).
+            interpreter_free_bc_cache(node->function_decl.bc_cache);
             break;
         case AST_VARIABLE_DECL:
             free(node->variable_decl.name);
@@ -497,6 +554,18 @@ void ast_free(ASTNode* node) {
         case AST_ARRAY_LITERAL:
             ast_list_free(node->array_literal.elements);
             break;
+        case AST_COMPREHENSION_EXPR: // run 24
+            ast_free(node->comprehension.expr);
+            ast_free(node->comprehension.key_expr);
+            ast_list_free(node->comprehension.clauses);
+            break;
+        case AST_COMP_FOR:
+            free(node->comp_for.iterator);
+            ast_free(node->comp_for.iterable);
+            break;
+        case AST_COMP_IF:
+            ast_free(node->comp_if.condition);
+            break;
         case AST_INDEX_EXPR:
             ast_free(node->index_expr.array);
             ast_free(node->index_expr.index);
@@ -540,6 +609,7 @@ void ast_free(ASTNode* node) {
         case AST_ENUM_DECL:
             free(node->enum_decl.name);
             ast_list_free(node->enum_decl.values);
+            free(node->enum_decl.int_values); // Run 33: explicit-value array
             break;
         case AST_MEMBER_EXPR:
             ast_free(node->member_expr.object);

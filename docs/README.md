@@ -10,8 +10,7 @@ Welcome to the RADS programming language documentation directory. This comprehen
 |--------------|-------------|------------|
 | [README.md](../README.md) | Main project README with installation and quick start | Everyone |
 | [CHANGELOG.md](../CHANGELOG.md) | Complete version history and release notes | Everyone |
-| [V0.0.6 FIGHTER JET Summary](../V0.0.6_FIGHTER_JET_SUMMARY.md) | Current release documentation | Users & Developers |
-| [V0.0.5 CHAMELEON Summary](../V0.0.5_CHAMELEON_SUMMARY.md) | Previous release (Python transpilation) | Historical |
+| [V0.0.6_QUICK_REFERENCE.md](archive/V0.0.6_QUICK_REFERENCE.md) | Quick reference for the current release | Users & Developers |
 
 ---
 
@@ -131,16 +130,11 @@ Welcome to the RADS programming language documentation directory. This comprehen
 ## 🔧 Development & Architecture
 
 ### Version Documentation
-- **[V0.0.6_FIGHTER_JET_PLAN.md](../V0.0.6_FIGHTER_JET_PLAN.md)** - Development plan (1265 lines)
-- **[V0.0.6_FIGHTER_JET_SUMMARY.md](../V0.0.6_FIGHTER_JET_SUMMARY.md)** - Release summary
-- **[V0.0.5_CHAMELEON_SUMMARY.md](../V0.0.5_CHAMELEON_SUMMARY.md)** - Previous release summary
-- **[V0.0.3_BUTTERFLY_RELEASE.md](V0.0.3_BUTTERFLY_RELEASE.md)** - Butterfly release notes
-- **[V0.0.2_TEST_RESULTS.md](V0.0.2_TEST_RESULTS.md)** - Testing results
-- **[V0.0.2_PROGRESS.md](V0.0.2_PROGRESS.md)** - Development progress
+- **[V0.0.6_QUICK_REFERENCE.md](archive/V0.0.6_QUICK_REFERENCE.md)** - Current release quick reference
+- **[CHANGELOG.md](../CHANGELOG.md)** - Full version history
 
 ### Web Engine
 - **[WEB_ENGINE_DESIGN.md](WEB_ENGINE_DESIGN.md)** - Web framework architecture
-- **[WEB_ENGINE_COMPLETE.md](WEB_ENGINE_COMPLETE.md)** - Implementation report
 - **[WEB_ENGINE_API.md](WEB_ENGINE_API.md)** - Web engine API reference
 
 ### Constellation (Distributed Computing)
@@ -168,7 +162,6 @@ Welcome to the RADS programming language documentation directory. This comprehen
 ### Development Tools
 - **[REPL_FEATURES.md](REPL_FEATURES.md)** - REPL features reference
 - **[REPL_DEMO.md](REPL_DEMO.md)** - REPL demonstration
-- **[REPL_IMPROVEMENTS_SUMMARY.md](REPL_IMPROVEMENTS_SUMMARY.md)** - REPL enhancements history
 
 ### Production Guide
 - **[PRODUCTION_GUIDE.md](PRODUCTION_GUIDE.md)** - Production deployment guide
@@ -176,13 +169,6 @@ Welcome to the RADS programming language documentation directory. This comprehen
   - Performance optimization
   - Security best practices
   - Monitoring and logging
-
----
-
-## 🎯 Session Summaries
-
-- **[SESSION_SUMMARY.md](SESSION_SUMMARY.md)** - Development session summaries
-- **[SESSION_COMPLETE_V0.0.3.md](SESSION_COMPLETE_V0.0.3.md)** - v0.0.3 completion summary
 
 ---
 

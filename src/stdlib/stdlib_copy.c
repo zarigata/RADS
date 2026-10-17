@@ -37,19 +37,18 @@ static Value shallowcopy_value(Value* v) {
             copy.string_val = strdup(v->string_val);
             break;
         case VAL_ARRAY:
+        case VAL_DICT:
             /* Shallow: new array with same item references */
             {
                 Array* src = v->array_val;
                 Array* arr = array_create(src->count);
                 for (size_t i = 0; i < src->count; i++) {
                     /* Copy Value struct but don't recurse — strings still get strdup'd */
-                    Value item;
-                    item.type = src->items[i].type;
+                    Value item = src->items[i];
                     if (item.type == VAL_STRING) {
                         item.string_val = strdup(src->items[i].string_val);
-                    } else {
-                        item = src->items[i];
                     }
+                    /* containers: array_push's clone bumps the refcount */
                     array_push(arr, item);
                 }
                 copy.array_val = arr;
@@ -77,6 +76,7 @@ static Value deepcopy_value(Value* v) {
             copy.string_val = strdup(v->string_val);
             break;
         case VAL_ARRAY:
+        case VAL_DICT:
             {
                 Array* src = v->array_val;
                 Array* arr = array_create(src->count);

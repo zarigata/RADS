@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "stdlib_string.h"
+#include "stdlib_string_advanced.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -172,32 +173,56 @@ Value native_str_replace(struct Interpreter* interp, int argc, Value* args) {
     const char* str = args[0].string_val;
     const char* find = args[1].string_val;
     const char* replace = args[2].string_val;
-    
-    if (strlen(find) == 0) {
-        Value v;
-        v.type = VAL_STRING;
-        v.string_val = strdup(str);
-        return v;
-    }
-    
-    const char* pos = strstr(str, find);
-    if (!pos) {
-        Value v;
-        v.type = VAL_STRING;
-        v.string_val = strdup(str);
-        return v;
-    }
-    
-    size_t prefix_len = pos - str;
+
     size_t find_len = strlen(find);
+
+    if (find_len == 0) {
+        Value v;
+        v.type = VAL_STRING;
+        v.string_val = strdup(str);
+        return v;
+    }
+
+    // Python semantics: replace ALL occurrences.
+    // Pass 1: count matches for an exact single allocation.
+    size_t match_count = 0;
+    const char* scan = str;
+    while ((scan = strstr(scan, find)) != NULL) {
+        match_count++;
+        scan += find_len;
+    }
+
+    if (match_count == 0) {
+        Value v;
+        v.type = VAL_STRING;
+        v.string_val = strdup(str);
+        return v;
+    }
+
     size_t replace_len = strlen(replace);
-    size_t suffix_len = strlen(pos + find_len);
-    
-    char* result = malloc(prefix_len + replace_len + suffix_len + 1);
-    memcpy(result, str, prefix_len);
-    memcpy(result + prefix_len, replace, replace_len);
-    memcpy(result + prefix_len + replace_len, pos + find_len, suffix_len);
-    result[prefix_len + replace_len + suffix_len] = '\0';
+    size_t str_len = strlen(str);
+    size_t cap = str_len + match_count * (replace_len > find_len ? replace_len - find_len : 0) + 1;
+    char* result = malloc(cap);
+    if (!result) {
+        Value v;
+        v.type = VAL_NULL;
+        return v;
+    }
+
+    // Pass 2: copy segments between matches, splicing in replacements.
+    const char* src = str;
+    char* dst = result;
+    while ((scan = strstr(src, find)) != NULL) {
+        size_t prefix = (size_t)(scan - src);
+        memcpy(dst, src, prefix);
+        dst += prefix;
+        memcpy(dst, replace, replace_len);
+        dst += replace_len;
+        src = scan + find_len;
+    }
+    size_t tail = strlen(src);
+    memcpy(dst, src, tail);
+    dst[tail] = '\0';
     
     Value v;
     v.type = VAL_STRING;
@@ -425,7 +450,7 @@ Value native_str_split(struct Interpreter* interp, int argc, Value* args) {
         p++;
     }
     
-    Value v; v.type = VAL_ARRAY; v.array_val = create_array(count);
+    Value v; v.type = VAL_ARRAY; v.array_val = array_create((size_t)count);
     p = str;
     char buffer[1024]; int buf_idx = 0;
     
@@ -583,7 +608,8 @@ Value native_str_center(struct Interpreter* interp, int argc, Value* args) {
 extern Value make_null(void);
 extern Value make_int(long long val);
 extern Value make_float(double val);
-
+extern Array* array_create(size_t capacity); /* used by str.split to build results */
+extern void array_push(Array* arr, Value v);
 
 /* str.format(template, args...) - Simple template with {} placeholders */
 Value native_str_format(struct Interpreter* interp, int argc, Value* args) {
@@ -717,6 +743,10 @@ void stdlib_string_register(void) {
     register_native("str.join", native_str_join);
     register_native("str.find", native_str_find);
     register_native("str.rfind", native_str_rfind);
+    register_native("str.length", native_str_length);
+    // pythonic 'string.' module aliases -> same natives as 'str.'
+    register_native("string.contains", native_str_contains);
+    register_native("string.length", native_str_length);
     register_native("str.isdigit", native_str_isdigit);
     register_native("str.isalpha", native_str_isalpha);
     register_native("str.isalnum", native_str_isalnum);
@@ -725,4 +755,10 @@ void stdlib_string_register(void) {
     register_native("str.center", native_str_center);
     register_native("str.format", native_str_format);
     register_native("str.interpolate", native_str_interpolate);
+    // Python method-name aliases (receiver dispatch "x".m() -> str.m)
+    register_native("str.upper", stdlib_string_upper);
+    register_native("str.lower", stdlib_string_lower);
+    register_native("str.strip", native_str_trim);
+    register_native("str.starts_with", native_str_starts_with);
+    register_native("str.ends_with", native_str_ends_with);
 }

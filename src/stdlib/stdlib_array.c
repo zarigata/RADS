@@ -8,6 +8,7 @@ extern Value make_float(double val);
 extern Value make_string(const char* val);
 extern Value make_bool(bool val);
 extern Value make_null(void);
+extern Value value_clone(Value v); // owning-reference helper for natives
 extern Array* array_create(size_t capacity);
 extern void array_push(Array* arr, Value v);
 extern void value_free(Value* value);
@@ -459,7 +460,9 @@ Value stdlib_array_push_val(struct Interpreter* interp, int argc, Value* args) {
     (void)interp;
     if (argc < 2 || args[0].type != VAL_ARRAY) return make_null();
     array_push(args[0].array_val, args[1]);
-    return args[0];
+    // Owning reference: the caller frees the returned value; returning
+    // args[0] directly would steal the caller's reference (use-after-free).
+    return value_clone(args[0]);
 }
 
 /* array.pop(arr) → removed value (mutating) */

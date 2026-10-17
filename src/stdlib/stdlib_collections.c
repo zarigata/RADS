@@ -10,6 +10,7 @@ extern Value make_int(long long val);
 extern Value make_float(double val);
 extern Value make_bool(bool val);
 extern Value make_null(void);
+extern Value value_clone(Value v); // owning-reference helper for natives
 extern Array* array_create(size_t capacity);
 extern void array_push(Array* arr, Value v);
 
@@ -37,7 +38,7 @@ Value native_collections_pop(struct Interpreter* interp, int argc, Value* args) 
 Value native_collections_peek(struct Interpreter* interp, int argc, Value* args) {
     (void)interp;
     if (argc < 1 || args[0].type != VAL_ARRAY || args[0].array_val->count == 0) return make_null();
-    return args[0].array_val->items[args[0].array_val->count - 1];
+    return value_clone(args[0].array_val->items[args[0].array_val->count - 1]); // owning ref
 }
 
 /* === Queue operations (FIFO) === */

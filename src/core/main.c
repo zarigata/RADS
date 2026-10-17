@@ -37,6 +37,7 @@
 #include "stdlib_uuid.h"
 #include "stdlib_collections.h"
 #include "stdlib_hash.h"
+#include "stdlib_dict.h"
 #include "stdlib_sort.h"
 #include "stdlib_itertools.h"
 #include "stdlib_http.h"
@@ -93,7 +94,10 @@
 #define CURSOR_BAR_BLINK        "\033[5 q"  // Blinking bar (I-beam)
 #define CURSOR_BAR_STEADY       "\033[6 q"  // Steady bar
 
+static bool stdlib_registered = false;
 static void stdlib_register_all(void) {
+    if (stdlib_registered) return; // Run 34: -i path re-enters via run_repl
+    stdlib_registered = true;
     stdlib_io_register();
     stdlib_media_register();
     stdlib_net_register();
@@ -118,6 +122,7 @@ static void stdlib_register_all(void) {
     stdlib_time_register();
     stdlib_path_register();
     stdlib_hash_register();
+    stdlib_dict_register();
     stdlib_sort_register();
     stdlib_http_register();
     stdlib_async_utils_register();
@@ -158,7 +163,7 @@ void print_usage() {
     printf("  -h, --help     Show this help message\n");
     printf("  -v, --version  Show version information\n");
     printf("  -t, --tokens   Print tokens (lexer test mode)\n");
-    printf("  -i, --interactive  Enter interactive REPL mode\n");
+    printf("  -i, --interactive  Run FILE (if given), then enter the REPL with its globals\n");
     printf("\nIf no file is provided, RADS will start in interactive REPL mode.\n");
     printf("\n");
 }
@@ -341,12 +346,46 @@ void print_repl_help() {
     printf("\n");
 }
 
-int run_repl() {
+int run_repl(ASTNode* preload_ast) {
     print_repl_welcome();
 
     // Initialize standard library
     stdlib_register_all();
     int line_num = 1;
+
+    // Run 27: per-line AST arena. The persistent environment borrows AST
+    // nodes across lines: VAL_FUNCTION stores func_node, and the struct /
+    // enum registries store the decl node (env_free_structs/enums never
+    // free them — "owned by the main AST", true in script mode, a lie in
+    // REPL mode where ast_free(stmt) ran per line and dangled every
+    // registration). The REPL is the "main AST" now: every parsed root is
+    // retained here and freed only at shutdown, AFTER the environment and
+    // registries are torn down (all pure borrowers — value_release has no
+    // VAL_FUNCTION case, registries free only their binding structs).
+    ASTNode** repl_ast_arena = NULL;
+    size_t repl_ast_count = 0;
+    size_t repl_ast_capacity = 0;
+
+    // Run 34: -i file.rads handoff. interpret_keep() ran the file without
+    // tearing down the env, so this REPL shares its globals. The program
+    // AST joins the retention arena: Pass-1 registrations in the live env
+    // borrow func_node from it (the run 27 UAF class) — it must outlive
+    // every borrower, i.e. be freed with the arena at shutdown, last.
+    if (preload_ast) {
+        repl_ast_arena = malloc(sizeof(ASTNode*));
+        if (!repl_ast_arena) {
+            fprintf(stderr, "rads: out of memory entering interactive mode\n");
+            interpreter_cleanup_environment();
+            interpreter_cleanup_event_loop();
+            ast_free(preload_ast);
+            return 1;
+        }
+        repl_ast_arena[0] = preload_ast;
+        repl_ast_count = 1;
+        repl_ast_capacity = 1;
+        printf("%s📚 Interactive session — globals from the executed file are live.%s\n\n",
+               COLOR_BRIGHT_GREEN, COLOR_RESET);
+    }
 
     // RGB Chroma color cycle for prompt (like RGB keyboard)
     const char* chroma_colors[] = {
@@ -451,10 +490,17 @@ int run_repl() {
         // Parse
         Parser parser;
         parser_init(&parser, &lexer);
-        ASTNode* stmt = parse_statement(&parser);
+        ASTNode* stmt = parse_repl_line(&parser);
 
         if (stmt == NULL || parser.had_error) {
-            // Error already printed by parser
+            // Error already printed by parser. A failed parse can still
+            // return a NON-NULL partial tree: parse_factor builds
+            // binary_op(NULL, rhs) after parse_primary errored (e.g. input
+            // "/exit;"), and other panic-mode paths return half-built
+            // nodes. Nothing borrowed it yet (interpret_repl_statement
+            // never ran), so free the whole tree — this was the 133 B/3
+            // per-line REPL leak (run 30).
+            if (stmt) ast_free(stmt);
             free(source);
             line_num++;
             continue;
@@ -463,8 +509,20 @@ int run_repl() {
         // Execute statement in REPL context (preserves environment)
         interpret_repl_statement(stmt);
 
-        // Cleanup AST and source (environment persists)
-        ast_free(stmt);
+        // Run 27: retain the root — the environment may borrow nodes from
+        // it (func_node / struct / enum decls). Freed in bulk at shutdown.
+        if (repl_ast_count == repl_ast_capacity) {
+            repl_ast_capacity = repl_ast_capacity ? repl_ast_capacity * 2 : 16;
+            repl_ast_arena = realloc(repl_ast_arena, repl_ast_capacity * sizeof(ASTNode*));
+            if (!repl_ast_arena) {
+                fprintf(stderr, "rads: out of memory retaining REPL AST\n");
+                ast_free(stmt);
+                free(source);
+                return 1;
+            }
+        }
+        repl_ast_arena[repl_ast_count++] = stmt;
+
         free(source);
 
         line_num++;
@@ -478,16 +536,24 @@ int run_repl() {
     // Clean up environment and event loop on exit
     interpreter_cleanup_environment();
     interpreter_cleanup_event_loop();
+
+    // Run 27: now that every borrower (env values, struct/enum registries)
+    // is gone, release the retained AST roots.
+    for (size_t i = 0; i < repl_ast_count; i++) {
+        ast_free(repl_ast_arena[i]);
+    }
+    free(repl_ast_arena);
     return 0;
 }
 
 int main(int argc, char* argv[]) {
     // If no arguments, start REPL
     if (argc < 2) {
-        return run_repl();
+        return run_repl(NULL);
     }
     
     bool token_mode = false;
+    bool interactive = false;
     const char* filename = NULL;
     
     // Parse arguments
@@ -500,12 +566,25 @@ int main(int argc, char* argv[]) {
             return 0;
         } else if (strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--tokens") == 0) {
             token_mode = true;
+        } else if (strcmp(argv[i], "-i") == 0 || strcmp(argv[i], "--interactive") == 0) {
+            interactive = true;
         } else {
             filename = argv[i];
         }
     }
     
     if (filename == NULL) {
+        if (interactive) {
+            // -i with no file: plain REPL (same as no arguments)
+            return run_repl(NULL);
+        }
+        if (token_mode) {
+            // Run 34: -t used to fall into the generic "No input file"
+            // error, hiding what was actually wrong.
+            fprintf(stderr, "Error: -t/--tokens requires an input file\n");
+            print_usage();
+            return 1;
+        }
         fprintf(stderr, "Error: No input file specified\n");
         print_usage();
         return 1;
@@ -547,7 +626,30 @@ int main(int argc, char* argv[]) {
     }
     
     // Interpret
+    // Run 34: -i/--interactive — python-style: run the file, then drop
+    // into a REPL that shares the program's globals. interpret_keep()
+    // skips the env/registry teardown (run 28's script-mode teardown
+    // would destroy the handoff), and run_repl adopts the program AST
+    // into its retention arena (Pass-1 registrations borrow func_node
+    // from it — run 27 UAF class).
+    if (interactive) {
+        int result = interpret_keep(program);
+        if (stdlib_test_failed()) result = 1;
+        free(source);
+        if (result != 0) {
+            // Mirror the REPL exit order: borrowers down first, AST last.
+            interpreter_cleanup_environment();
+            interpreter_cleanup_event_loop();
+            ast_free(program);
+            return 1;
+        }
+        return run_repl(program);
+    }
+
     int result = interpret(program);
+    // Test-failure latch (run 23): describe/it/run harness failures now
+    // propagate to the process exit code.
+    if (stdlib_test_failed()) result = 1;
     
     // Cleanup
     ast_free(program);

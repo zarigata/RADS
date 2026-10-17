@@ -214,6 +214,7 @@ Value stdlib_cli_parse(Interpreter* interp, int argc, Value* args) {
     // Create result struct
     StructInstance* result = malloc(sizeof(StructInstance));
     if (!result) return make_null();
+    result->definition = NULL; // run 28: never leave uninit — readers deref it
     result->fields = NULL;
     FieldValue* last_result_field = NULL;
     

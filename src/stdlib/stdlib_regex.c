@@ -174,6 +174,13 @@ Value stdlib_regex_findall(Interpreter* interp, int argc, Value* args) {
 
 // regex.search(pattern, string) - Find first match with position info
 // Returns struct { match: string, start: int, end: int } or null if not found
+// Run 26: the result instance's `definition` was left uninitialized —
+// echo()-ing a search result dereferenced garbage (0xbebebebe...) and
+// crashed in value_to_string_impl under ASAN. The free path treats
+// `definition` as borrowed (value_release never frees it), so a static
+// singleton label is the safe fix.
+static StructDef regex_search_result_def = { "match", NULL };
+
 Value stdlib_regex_search(Interpreter* interp, int argc, Value* args) {
     (void)interp;
     
@@ -221,6 +228,7 @@ Value stdlib_regex_search(Interpreter* interp, int argc, Value* args) {
         return make_null();
     }
     
+    instance->definition = &regex_search_result_def;
     instance->fields = NULL;
     
     // Add match field
@@ -277,56 +285,88 @@ Value stdlib_regex_replace(Interpreter* interp, int argc, Value* args) {
     
     const char* str = args[1].string_val;
     const char* replacement = args[2].string_val;
-    
+    size_t repl_len = strlen(replacement);
+
     size_t n_groups = regex->re_nsub + 1;
     regmatch_t* matches = malloc(n_groups * sizeof(regmatch_t));
-    
-    // Calculate result size
-    size_t result_size = strlen(str) * 2 + strlen(replacement) * 2;
-    char* result = malloc(result_size);
-    result[0] = '\0';
-    
+
+    // Two-pass replace (run 26; sibling of the run-25 str.replace fix).
+    // Pass 1 sizes the result EXACTLY using the same regexec walk the
+    // write pass uses. The old estimate (2*strlen + 2*repl_len) heap-
+    // overflowed on all-match strings with multi-char replacements
+    // (e.g. [0-9] on "1111111111" with "XYZ": needs 31, allocated 26).
+    // Empty matches keep the current char literally and advance one
+    // byte; a trailing empty match at EOS still fires one replacement
+    // (Python parity: re.sub(r'x*','-','abc') == '-a-b-c-').
+    size_t copy_len = 0;   // literal bytes kept
+    size_t n_matches = 0;
     const char* cursor = str;
-    char* result_ptr = result;
-    bool replaced = false;
-    
     while (*cursor != '\0') {
-        int reg_result = regexec(regex, cursor, n_groups, matches, 0);
-        
-        if (reg_result != 0) {
-            // No more matches, copy rest of string
-            strcpy(result_ptr, cursor);
-            break;
-        }
-        
+        if (regexec(regex, cursor, n_groups, matches, 0) != 0) break;
         int start = matches[0].rm_so;
         int end = matches[0].rm_eo;
-        
-        if (start == -1 || end == -1) {
-            strcpy(result_ptr, cursor);
-            break;
+        if (start == -1 || end == -1) break;
+        copy_len += (size_t)start;
+        n_matches++;
+        if (end == start) {          // empty match: keep this char
+            copy_len++;
+            cursor++;
+        } else {
+            cursor += end;
         }
-        
-        // Copy text before match
-        strncpy(result_ptr, cursor, start);
+    }
+    size_t tail_len = strlen(cursor);
+    // Trailing empty match at EOS: if the pattern can match empty it
+    // matches once more at end-of-string (Python parity:
+    // re.sub(r'a*','-','aaaa') == '--'). The loop above consumes every
+    // byte via empty-match advances, so reaching tail_len==0 means the
+    // whole string was walked and the EOS probe is the only remaining
+    // match. Probe the compiled regex against "" — cheap and exact for
+    // POSIX ERE (no lookarounds to lie about adjacency).
+    bool eos_match = false;
+    {
+        regmatch_t probe;
+        if (tail_len == 0 &&
+            regexec(regex, "", 1, &probe, 0) == 0 &&
+            probe.rm_so == 0 && probe.rm_eo == 0) {
+            eos_match = true;
+            n_matches++;
+        }
+    }
+
+    char* result = malloc(copy_len + tail_len + n_matches * repl_len + 1);
+
+    // Pass 2: write (mirror of pass 1 — any divergence is a bug)
+    char* result_ptr = result;
+    cursor = str;
+    bool replaced = false;
+    while (*cursor != '\0') {
+        if (regexec(regex, cursor, n_groups, matches, 0) != 0) break;
+        int start = matches[0].rm_so;
+        int end = matches[0].rm_eo;
+        if (start == -1 || end == -1) break;
+        memcpy(result_ptr, cursor, (size_t)start);
         result_ptr += start;
-        
-        // Copy replacement
-        strcpy(result_ptr, replacement);
-        result_ptr += strlen(replacement);
-        
+        memcpy(result_ptr, replacement, repl_len);
+        result_ptr += repl_len;
         replaced = true;
-        
         // Move cursor past match
-        if (end == 0) {
+        if (end == start) {          // empty match: copy the char
             *result_ptr++ = *cursor++;
         } else {
             cursor += end;
         }
     }
-    
+    // Trailing empty match at EOS (sized in pass 1, written here)
+    if (eos_match) {
+        memcpy(result_ptr, replacement, repl_len);
+        result_ptr += repl_len;
+        replaced = true;
+    }
+    strcpy(result_ptr, cursor);      // tail; buffer sized exactly for it
+
     free(matches);
-    
+
     // If no replacement happened, return original string
     if (!replaced) {
         free(result);

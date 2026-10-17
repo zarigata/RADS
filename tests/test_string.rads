@@ -17,8 +17,8 @@ assert(str.lower("HELLO") == "hello", "str.lower")
 # trim
 assert(str.trim("  hello  ") == "hello", "str.trim spaces")
 
-# substring
-assert(str.substring("hello", 1, 3) == "ell", "str.substring middle")
+# substring (end-exclusive, Python slice semantics)
+assert(str.substring("hello", 1, 3) == "el", "str.substring middle")
 assert(str.substring("hello", 0, 2) == "he", "str.substring start")
 
 # replace
@@ -56,19 +56,19 @@ assert(str.center("hi", 5) == " hi  ", "str.center")
 # Inspection tests
 echo "--- Inspection Tests ---"
 
-# contains
-assert(str.contains("hello", "ell") == 1, "str.contains true")
-assert(str.contains("hello", "xyz") == 0, "str.contains false")
+# contains (returns bool)
+assert(str.contains("hello", "ell") == true, "str.contains true")
+assert(str.contains("hello", "xyz") == false, "str.contains false")
 
-# starts_with/ends_with
-assert(str.starts_with("hello", "he") == 1, "str.starts_with true")
-assert(str.starts_with("hello", "lo") == 0, "str.starts_with false")
-assert(str.ends_with("hello", "lo") == 1, "str.ends_with true")
-assert(str.ends_with("hello", "he") == 0, "str.ends_with false")
+# starts_with/ends_with (return bool)
+assert(str.starts_with("hello", "he") == true, "str.starts_with true")
+assert(str.starts_with("hello", "lo") == false, "str.starts_with false")
+assert(str.ends_with("hello", "lo") == true, "str.ends_with true")
+assert(str.ends_with("hello", "he") == false, "str.ends_with false")
 
-# is_empty
-assert(str.is_empty("") == 1, "str.is_empty true")
-assert(str.is_empty("hello") == 0, "str.is_empty false")
+# is_empty (returns bool)
+assert(str.is_empty("") == true, "str.is_empty true")
+assert(str.is_empty("hello") == false, "str.is_empty false")
 
 # isdigit/isalpha/isalnum
 assert(str.isdigit("12345") == 1, "str.isdigit true")

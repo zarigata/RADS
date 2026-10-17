@@ -1,0 +1,32 @@
+// Regression: natives returning borrowed args (heap-use-after-free).
+// array.push used to `return args[0];` — eval_call frees args after the
+// native returns, dropping the array's refcount to 0 while the `arr` binding
+// still pointed at the freed Array*. Next touch of `arr` = use-after-free
+// (segfault). Caught by the array_churn benchmark, diagnosed with ASAN.
+
+blast main() {
+    // push onto empty literal then keep using the binding
+    turbo a = [];
+    array.push(a, 1);
+    array.push(a, 2);
+    turbo i32 x = array.pop(a) + array.pop(a);
+    echo("push/pop sum = " + x + " (expect 3)");
+
+    // push onto non-empty literal (same steal path)
+    turbo b = [1];
+    array.push(b, 2);
+    echo("b last = " + array.pop(b) + " (expect 2)");
+
+    // chained in expression context: returned value freed immediately
+    turbo c = [];
+    cruise (i in 0..100) { array.push(c, i); }
+    turbo i32 acc = 0;
+    cruise (i in 0..100) { acc = acc + array.pop(c); }
+    echo("loop acc = " + acc + " (expect 4950)");
+
+    if (x == 3 && acc == 4950) {
+        echo("PASS: no use-after-free in array.push/pop path");
+    } else {
+        echo("FAIL: array push/pop corrupted");
+    }
+}

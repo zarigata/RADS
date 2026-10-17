@@ -16,6 +16,7 @@ extern Value make_float(double val);
 extern Value make_string(const char* val);
 extern Value make_bool(bool val);
 extern Value make_null(void);
+extern Value value_clone(Value v); // owning-reference helper for natives
 extern Array* array_create(size_t capacity);
 extern void array_push(Array* arr, Value v);
 
@@ -109,7 +110,7 @@ Value native_random_choice(struct Interpreter* interp, int argc, Value* args) {
     if (argc < 1 || args[0].type != VAL_ARRAY || !args[0].array_val || args[0].array_val->count == 0)
         return make_null();
     size_t idx = (size_t)(rads_xorshift64() % (unsigned long long)args[0].array_val->count);
-    return args[0].array_val->items[idx];
+    return value_clone(args[0].array_val->items[idx]); // owning ref (caller frees args)
 }
 
 /* ── random.shuffle(array) → shuffled copy ── */

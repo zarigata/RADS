@@ -205,27 +205,73 @@ Value native_math_min(struct Interpreter* interp, int argc, Value* args) {
 
 Value native_math_max(struct Interpreter* interp, int argc, Value* args) {
     (void)interp;
-    
+
     if (!check_argc(argc, 2)) {
         Value v;
         v.type = VAL_NULL;
         return v;
     }
-    
+
     if (args[0].type == VAL_INT && args[1].type == VAL_INT) {
         Value v;
         v.type = VAL_INT;
         v.int_val = (args[0].int_val > args[1].int_val) ? args[0].int_val : args[1].int_val;
         return v;
     }
-    
+
     double a = value_to_double(&args[0]);
     double b = value_to_double(&args[1]);
-    
+
     Value v;
     v.type = VAL_FLOAT;
     v.float_val = (a > b) ? a : b;
     return v;
+}
+
+// Bare Python-style max()/min(): variadic over args, or over the single
+// array arg. max(3, 7) -> 7; max([1, 5, 3]) -> 5; max(x) -> x. Returns the
+// winning element as-is (Python returns the original object, so mixed
+// int/float keeps the winner's type: max(2.5, 7) -> 7, not 7.0).
+static Value bare_minmax_impl(int argc, Value* args, bool is_max) {
+    Value* elems = NULL;
+    int n = 0;
+
+    if (argc == 1 && args[0].type == VAL_ARRAY) {
+        elems = args[0].array_val->items;
+        n = (int)args[0].array_val->count;
+    } else {
+        elems = args;
+        n = argc;
+    }
+    if (n == 0) {
+        fprintf(stderr, "Error: max/min of empty sequence\n");
+        return make_null();
+    }
+
+    Value* best = &elems[0];
+    for (int i = 1; i < n; i++) {
+        bool take;
+        if (best->type == VAL_INT && elems[i].type == VAL_INT) {
+            take = is_max ? (elems[i].int_val > best->int_val)
+                          : (elems[i].int_val < best->int_val);
+        } else {
+            double b = value_to_double(best);
+            double e = value_to_double(&elems[i]);
+            take = is_max ? (e > b) : (e < b);
+        }
+        if (take) best = &elems[i];
+    }
+    return *best;
+}
+
+static Value native_bare_max(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    return bare_minmax_impl(argc, args, true);
+}
+
+static Value native_bare_min(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    return bare_minmax_impl(argc, args, false);
 }
 
 static bool random_initialized = false;
@@ -588,6 +634,10 @@ Value native_math_inf(struct Interpreter* interp, int argc, Value* args) {
 }
 
 void stdlib_math_register(void) {
+    // Bare Python-style aliases (variadic): max(3, 7), max(arr). The dotted
+    // math.max/math.min stay strict 2-arg for backwards compatibility.
+    register_native("max", native_bare_max);
+    register_native("min", native_bare_min);
     register_native("math.abs", native_math_abs);
     register_native("math.sqrt", native_math_sqrt);
     register_native("math.pow", native_math_pow);

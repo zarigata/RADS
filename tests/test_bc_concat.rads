@@ -1,0 +1,110 @@
+// ═══════════════════════════════════════════
+// Run 40: BC_CONCAT regression guard — the 8 chain shapes probed in run 39
+// (BC vs tree-walker byte-identical) promoted into the gauntlet. Every
+// helper is a blast function so the body is BC-compiled and the fused
+// BC_CONCAT path actually executes: fast path (str/int pieces) and slow
+// path (float/bool/null force the binop_apply fold).
+// ═══════════════════════════════════════════
+
+blast bench_shape(i) {
+    // Shape 1: the string_build benchmark shape — head and tail literals.
+    turbo s = "";
+    s = s + "rads" + i + ";";
+    return s;
+}
+
+blast float_piece(s) {
+    // Shape 2: float piece forces the slow path (binop_apply fold).
+    turbo out = s;
+    out = out + "aaaa" + 1.5 + "bbbb" + 2 + "cccc";
+    return out;
+}
+
+blast tag(x) { return x; }
+
+blast call_piece(s) {
+    // Shape 3: call result as piece.
+    turbo out = s;
+    out = out + tag("call") + 7;
+    return out;
+}
+
+blast over_cap_chain(s) {
+    // Shape 4: 40 pieces > BC_CONCAT_MAX (32) → compile site bails to the
+    // generic unfused path. Output must still be exact.
+    turbo out = s;
+    out = out + "01" + "02" + "03" + "04" + "05" + "06" + "07" + "08"
+              + "09" + "10" + "11" + "12" + "13" + "14" + "15" + "16"
+              + "17" + "18" + "19" + "20" + "21" + "22" + "23" + "24"
+              + "25" + "26" + "27" + "28" + "29" + "30" + "31" + "32"
+              + "33" + "34" + "35" + "36" + "37" + "38" + "39" + "40";
+    return out;
+}
+
+blast negative_int(s) {
+    // Shape 5: negative int piece (fast path, snprintf "%lld" lane).
+    turbo out = s;
+    out = out + -5 + "end";
+    return out;
+}
+
+blast slot_read_piece(s) {
+    // Shape 6: piece read from another local slot (GETL as piece source).
+    turbo t = "slot";
+    turbo out = s;
+    out = out + t + "!";
+    return out;
+}
+
+blast bool_and_null_pieces(s) {
+    // Shapes 7+8: bool piece, then bool+null chain — both fold through the
+    // slow path ("true"/"false"/"null" conversion lanes of binop_apply).
+    turbo out = s;
+    out = out + true + "|" + false;
+    turbo more = out;
+    more = more + "|" + null + "#";
+    return more;
+}
+
+blast empty_accumulator() {
+    // Shape 9: empty accumulator — strlen("") == 0 measure-pass edge.
+    turbo s = "";
+    s = s + "a" + "b" + "c";
+    return s;
+}
+
+test.describe("BC_CONCAT fused chains (run 39 shapes)", fn() {
+    test.it("benchmark shape head/tail literals", fn() {
+        test.expect(bench_shape(41)).toBe("rads41;")
+    })
+
+    test.it("float piece takes the slow path", fn() {
+        test.expect(float_piece("seed")).toBe("seedaaaa1.5bbbb2cccc")
+    })
+
+    test.it("call result as piece", fn() {
+        test.expect(call_piece("s")).toBe("scall7")
+    })
+
+    test.it("40-piece chain over cap stays exact", fn() {
+        test.expect(over_cap_chain("+")).toBe("+01020304050607080910111213141516171819202122232425262728293031323334353637383940")
+    })
+
+    test.it("negative int piece", fn() {
+        test.expect(negative_int("n")).toBe("n-5end")
+    })
+
+    test.it("slot-read piece", fn() {
+        test.expect(slot_read_piece("go ")).toBe("go slot!")
+    })
+
+    test.it("bool and null pieces fold through binop_apply", fn() {
+        test.expect(bool_and_null_pieces("b")).toBe("btrue|false|null#")
+    })
+
+    test.it("empty accumulator edge", fn() {
+        test.expect(empty_accumulator()).toBe("abc")
+    })
+})
+
+test.run()

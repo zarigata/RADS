@@ -194,6 +194,7 @@ Value stdlib_csv_parse(Interpreter* interp, int argc, Value* args) {
         
         // Create struct instance for this row
         StructInstance* instance = malloc(sizeof(StructInstance));
+        instance->definition = NULL; // run 28: never leave uninit — readers deref it
         instance->fields = NULL;
         FieldValue* last_field = NULL;
         
