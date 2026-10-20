@@ -62,6 +62,7 @@
 #include "stdlib_tempfile.h"
 #include "stdlib_calendar.h"
 #include "stdlib_traceback.h"
+#include "stdlib_nostalgia.h"
 
 // ANSI Color Codes for Chroma Effects
 #define COLOR_RESET     "\033[0m"
@@ -149,6 +150,7 @@ static void stdlib_register_all(void) {
     stdlib_tempfile_register();
     stdlib_calendar_register();
     stdlib_traceback_register();
+    stdlib_nostalgia_register();
 }
 
 void print_usage() {

@@ -1,0 +1,79 @@
+# NIGHTSHIFT PLAN — RADS autonomous parity program
+
+Mission: make RADS genuinely match Python and TypeScript (STDLIB PARITY + SYNTAX/ERGONOMICS PARITY tracks).
+House laws: comments on every function (why/extend), VW Fusca (C11 + existing libs only, zero new deps),
+every feature ships tests in tests/*.rads, conversational errors, functions <50 lines, conventional commits.
+Git law: branches `nightshift/<yyyymmdd>-<slug>` only, never push main, never force-push, green build+tests
+(`make -j4 && ./run_tests.sh`) before every commit, push branch + `gh pr create --repo zarigata/RADS`.
+
+## ⚠️ CRITICAL DISCOVERY (2026-10-13)
+`main` (f9d2c82) **does not build from a clean tree**: `make clean && make` fails —
+`stdlib_heapq/logging/statistics(.c/.h)` on main use an imagined API (`Value.as.*` union members,
+`../core/value.h` header that never existed, `VAL_ERROR` not in enum, `register_native("heapq_x")`
+underscore names). It only ever "built" because stale Oct-12 `build/*.o` objects satisfied make.
+Branch `nightshift/20261013-stdlib-float-parity` carries the completed port to the real API
+(`int_val/float_val/array_val`, `interpreter.h`, dotted `heapq.` names) and is verified
+**clean-build green** (trio 11+8+17 PASS, runner 9/9, exit 0). Merge that branch to unblock main.
+
+## Night Log
+- **2026-10-20**: (1) sync: fetch origin+fork green, PRs #19/#20/#21 still open, none merged; found last nights run DEAD MID-FLIGHT (HTTP 429) with uncommitted strptime work on branch nightshift/20261019-datetime-strptime — recovered it, deleted junk placeholder file, finished the unit; (2) 4d7ed09 feat(stdlib): **datetime.strptime/strftime Python-parity engine** — full rewrite (+1000/-431): format->POSIX ERE lowered at cache time, CPython _strptime semantics (case-insensitive names, non-padded numbers, %I/%p 12h, %j julian, %U/%W weeks, %G-%V-%u ISO week dates, %z-aware epochs, 1900 default year, strict rejections: trailing garbage/Feb 30/hour 24/%G-without-%V -> null), strftime side exact Howard Hinnant civil math (no mktime/locale), composites %c/%x/%X/%F/%D/%T/%R/%r, glibc unknown-directive passthrough ("100%% %q" -> "100% %q"), legacy YYYY-MM-DD dialect kept; (3) bugs fixed en route: dt_unpack int-smash (month=0 -> MONTH_FULL[-1] segfault), format %% literal wrong output — the FAIL line was buried by the exit-code-only runner AGAIN (house grep law 3-for-3); (4) tests/test_datetime.rads 38 assertions wired into run_tests.sh (12 suites). Verified: clean build exit 0 (0 warnings from stdlib_datetime.c), 12/12 suites 0 FAIL lines, ASan build 38/38 with 0 findings. PR #22 opened: https://github.com/zarigata/RADS/pull/22
+
+- **2026-10-18**: (1) sync: fetch origin+fork green, PRs #19/#20 still open, none merged — cut
+  `nightshift/20261018-re-named-groups` from `nightshift/20261017-forge-sync` head (freshest green);
+  (2) `6ff4beb` feat(stdlib): **regex named groups** — `(?P<name>...)` + `(?<name>...)` lowered to POSIX ERE
+  at cache time (regcomp has no named groups; name->capture-index map kept per cached pattern),
+  `regex.named_groups()` groupdict-style struct (null on no match, "" for non-participating optional),
+  `regex.group_names()` declaration order, `\g<name>`/`\g<1>`/`\1` backrefs in replace, duplicate names
+  rejected, lookarounds rejected with clear errors; (3) **fix: regex.replace heap overflow** — old
+  `2*len(str)+2*len(repl)` sizing smashed the heap on many-match expansion (ASan-confirmed WRITE past
+  300-byte region, repro preserved); grow-on-demand GrowBuf replaces it; (4) tests/test_regex.rads 20
+  assertions wired into run_tests.sh (11 suites). Verified: clean build exit 0, 11 suites 0 FAIL lines,
+  regex suite 20/20, ASan build 20/20 with 0 findings. PR #21 opened:
+  https://github.com/zarigata/RADS/pull/21
+- **2026-10-17**: (1) merged `nightshift/20261013-stdlib-float-parity` into new branch
+  `nightshift/20261017-forge-sync` — **CRITICAL DISCOVERY closed**: `make clean && make -j4` exit 0 from
+  a clean tree, main-line stdlib unblocked; (2) `79e122e` feat(stdlib): **nostalgia module** — the
+  Museum of the 2000s Internet, 19 natives (leek_spin, rickroll, all_your_base, over9000, leeroy,
+  badger_badger, pbj_time, hamster_dance, o_rly/ya_rly, the_game, barrel_roll, charlie_bit_me,
+  keyboard_cat, dramatic_chipmunk, msn_nudge, asl, away_message, leetspeak) + test_nostalgia.rads
+  (26 assertions, wired into run_tests.sh → 10/10) + examples/nostalgia_museum.rads;
+  (3) .gitignore: benchmarks/, root symlinks, rads-mask binary (backlog #4 done). gh auth NOW
+  AVAILABLE (Dagoth-Ur-69, repo scope) — old blocker dead; branch pushed, PR opened.
+- **2026-10-17 (verification fire)**: first fully autonomous pipeline run end-to-end. (1) Sync: fetch origin+fork green, PR #20 (nostalgia+clean-build-fix) verified OPEN and left unmerged; (2) bb7db17 feat(stdlib): **nostalgia.pool_closed()** — Habbo Hotel July 2006 exhibit (canonical cry + backstory plaque), 4 new assertions, museum example Habbo wing rewired; nostalgia suite 30 PASS/0 FAIL, runner 10/10 from clean tree, make clean && make -j4 exit 0; (3) pushed to fork, PR #20 updated with comment (no dup PR): https://github.com/zarigata/RADS/pull/20#issuecomment-6239520889. Runner gap confirmed again: per-suite FAIL lines are swallowed by exit-code-only gate — v2_0_0 tests must always be grepped by hand.
+- **2026-10-13**: (1) `27b8b67` on `nightshift/20261013-stdlib-float-parity` — mixed int/float
+  arithmetic (`-`,`*`,`/`,`%` w/ zero guards), `make_error()` helper, heapq/logging/statistics real-API
+  port + 3 test suites; (2) `5a02649` — runner learns the 3 suites (9/9), exec bit restored;
+  (3) `f92114e` on `nightshift/20261013-cleanup` — 33 files / −11,648 lines: .windsurf, .local,
+  SESSION_SUMMARY.md, V0.0.7–V0.0.11 plans, dead docs/, docs/README.md dead links fixed; pre-deletion
+  grep of CI/scripts/Makefile/run_tests.sh found zero references. `make clean && make -j4` = exit 0,
+  `run_tests.sh` 9/9 on stdlib branch. Push attempted, failed (no creds) — commits local per protocol.
+
+## Standing gotchas
+- RADS string literals are RAW (parser does no escape unescaping): `.rads` source writes ONE backslash
+  per escape (`"\("`, `"\g<1>"`), not Python's two. Tests that assume Python escaping will fail.
+- Strings have no `.length` (arrays only) — use `str.count()` or comparisons.
+- ASan full-tree build: src/debug has duplicate symbols between debug_protocol.c and
+  conditional_breakpoints.c (debug_step_out, debug_get_stack_trace et al.) — build with only
+  conditional_breakpoints.c until deduped (bughunt backlog candidate).
+
+## Blockers
+- ~~gh auth unavailable~~ **RESOLVED 2026-10-17** — gh logged in as Dagoth-Ur-69 (repo scope);
+  stdlib-fix branch merged on `nightshift/20261017-forge-sync`; clean build green.
+- MAIN SYNC: origin/main (f9d2c82) still cannot clean-build until the merge lands on main via PR.
+
+## Open PR Review
+| PR | Title | Status | Verdict |
+|----|-------|--------|---------|
+| 20 | nostalgia module + clean-build fix for main | OPEN — head Dagoth-Ur-69:nightshift/20261017-forge-sync, +1 comment (pool_closed, bb7db17) | awaiting master review; carries the main clean-build fix |
+| 21 | regex named groups + replace heap-overflow fix | OPEN — head Dagoth-Ur-69:nightshift/20261018-re-named-groups | awaiting master review |
+| 22 | datetime strptime/strftime Python-parity engine | OPEN — head Dagoth-Ur-69:nightshift/20261019-datetime-strptime | awaiting master review; strptime done, decimal/fractions next |
+
+## Ranked Backlog (next shifts)
+1. **Merge stdlib branch** (unlocks clean builds of main) once auth exists; then CI should run
+   `make clean && make` — never trust cached objects.
+2. Stdlib parity: `decimal`, `fractions`, `itertools` lazy generators; TS parity: optional chaining `?.`, nullish `??`, template literals, `Promise.allSettled`. ~~datetime.strptime~~ SHIPPED 2026-10-20 (PR #22).
+3. Sweep `-Wunused`/`-Wformat` warnings (rads-mask sprintf overflow is a real stack-smash risk).
+4. `.gitignore`: add `benchmarks/`, root symlinks (`rads`, `rads-mask`, `radpkg`),
+   `tools/rads-mask/rads-mask` build binary.
+5. v0_0_7_comprehensive.rads still absent from run_tests.sh array (exists in tests/, 155-line diff
+   landed in 27b8b67) — wire it in or fold into trio suites.
