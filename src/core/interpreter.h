@@ -96,6 +96,7 @@ Value interpreter_execute_callback(Value callback, int argc, Value* args);
 Value make_int(long long val);
 Value make_float(double val);
 Value make_string(const char* val);
+Value make_error(const char* msg); /* prints message, returns null */
 Value make_bool(bool val);
 Value make_null(void);
 Array* array_create(size_t capacity);

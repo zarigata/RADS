@@ -1,0 +1,174 @@
+// Test: datetime module — Python-parity strptime/format engine
+// (nightshift 20261019, forged for Master Zarigata)
+// All expectations pinned against python3.13 strptime/strftime on this box.
+
+blast main() {
+    echo("--- strptime core directives ---");
+
+    turbo d = datetime.strptime("2026-10-19 03:14:15", "%Y-%m-%d %H:%M:%S");
+    if (d.year == 2026 && d.month == 10 && d.day == 19 && d.hour == 3 && d.minute == 14 && d.second == 15) { echo("PASS: %Y-%m-%d %H:%M:%S"); }
+    else { echo("FAIL: basic parse got " + d.year + "-" + d.month + "-" + d.day); }
+
+    // non-padded numbers accepted (CPython does)
+    turbo np = datetime.strptime("2026-9-5", "%Y-%m-%d");
+    if (np.month == 9 && np.day == 5) { echo("PASS: non-padded values"); }
+    else { echo("FAIL: non-padded got " + np.month + "-" + np.day); }
+
+    // day/month names, case-insensitive
+    turbo nm = datetime.strptime("oct 19 2026", "%b %d %Y");
+    if (nm.month == 10 && nm.day == 19 && nm.year == 2026) { echo("PASS: %b case-insensitive"); }
+    else { echo("FAIL: %b lowercase got " + nm.month + "-" + nm.day); }
+    turbo full = datetime.strptime("October 19, 2026", "%B %d, %Y");
+    if (full.month == 10) { echo("PASS: %B full month name"); }
+    else { echo("FAIL: %B got month " + full.month); }
+
+    // 12-hour clock + AM/PM (CPython: 10:56 PM -> 22:56; 12 AM -> 0)
+    turbo pm = datetime.strptime("10:56 PM", "%I:%M %p");
+    if (pm.hour == 22 && pm.minute == 56) { echo("PASS: %I %p PM conversion"); }
+    else { echo("FAIL: PM got " + pm.hour + ":" + pm.minute); }
+    turbo midnight = datetime.strptime("12:00 AM", "%I:%M %p");
+    if (midnight.hour == 0) { echo("PASS: 12 AM == hour 0"); }
+    else { echo("FAIL: 12 AM got hour " + midnight.hour); }
+    turbo noon = datetime.strptime("12:30 PM", "%I:%M %p");
+    if (noon.hour == 12 && noon.minute == 30) { echo("PASS: 12 PM == hour 12"); }
+    else { echo("FAIL: 12 PM got hour " + noon.hour); }
+
+    // time-only defaults to 1900-01-01 (CPython default year)
+    if (pm.year == 1900 && pm.month == 1 && pm.day == 1) { echo("PASS: 1900 default year"); }
+    else { echo("FAIL: default year got " + pm.year + "-" + pm.month + "-" + pm.day); }
+
+    // %j julian day overrides month/day (CPython: "2026 292" -> Oct 19)
+    turbo j = datetime.strptime("2026 292", "%Y %j");
+    if (j.month == 10 && j.day == 19) { echo("PASS: %j julian day"); }
+    else { echo("FAIL: %j got " + j.month + "-" + j.day); }
+
+    // %U/%W week-of-year + weekday (CPython: "2026 42 3" %U -> Oct 21)
+    turbo wu = datetime.strptime("2026 42 3", "%Y %U %w");
+    if (wu.month == 10 && wu.day == 21) { echo("PASS: %U week arithmetic"); }
+    else { echo("FAIL: %U got " + wu.month + "-" + wu.day); }
+    turbo ww = datetime.strptime("2026 42 3", "%Y %W %w");
+    if (ww.month == 10 && ww.day == 21) { echo("PASS: %W week arithmetic"); }
+    else { echo("FAIL: %W got " + ww.month + "-" + ww.day); }
+
+    // ISO week-date (CPython: 2026-W42-1 = Oct 12)
+    turbo iso = datetime.strptime("2026-42-1", "%G-%V-%u");
+    if (iso.month == 10 && iso.day == 12) { echo("PASS: %G-%V-%u ISO week"); }
+    else { echo("FAIL: ISO got " + iso.month + "-" + iso.day); }
+
+    // %z offsets: aware unix timestamp (CPython: Z == +0000 -> UTC epoch)
+    turbo z = datetime.strptime("2026-10-19T03:14:15Z", "%Y-%m-%dT%H:%M:%S%z");
+    if (z.unix == 1792379655) { echo("PASS: %z Z aware epoch"); }
+    else { echo("FAIL: %z got unix " + z.unix); }
+    turbo z2 = datetime.strptime("2026-10-19T03:14:15+05:30", "%Y-%m-%dT%H:%M:%S%z");
+    if (z2.unix == 1792359855) { echo("PASS: %z +05:30 aware epoch"); }
+    else { echo("FAIL: %z offset got unix " + z2.unix); }
+
+    // %c composite (CPython parses "Mon Oct 19 03:14:15 2026")
+    turbo cc = datetime.strptime("Mon Oct 19 03:14:15 2026", "%c");
+    if (cc.year == 2026 && cc.month == 10 && cc.day == 19 && cc.hour == 3) { echo("PASS: %c composite parse"); }
+    else { echo("FAIL: %c got " + cc.year + "-" + cc.month + "-" + cc.day); }
+
+    // legacy RADS dialect still parses
+    turbo lg = datetime.parse("2026-10-19 03:14:15", "YYYY-MM-DD HH:mm:ss");
+    if (lg.year == 2026 && lg.hour == 3 && lg.minute == 14) { echo("PASS: legacy YYYY-MM-DD HH:mm:ss"); }
+    else { echo("FAIL: legacy got " + lg.year + " " + lg.hour + ":" + lg.minute); }
+
+    echo("--- strptime rejection paths ---");
+
+    // no match -> null
+    turbo bad1 = datetime.strptime("junkjunk", "%Y-%m-%d");
+    if (bad1 == null) { echo("PASS: no-match returns null"); }
+    else { echo("FAIL: expected null"); }
+
+    // trailing garbage -> null (CPython: unconverted data remains)
+    turbo bad2 = datetime.strptime("2026-10-19junk", "%Y-%m-%d");
+    if (bad2 == null) { echo("PASS: trailing garbage rejected"); }
+    else { echo("FAIL: trailing garbage accepted"); }
+
+    // month 99 -> null (regex range)
+    turbo bad3 = datetime.strptime("99/2026", "%m/%Y");
+    if (bad3 == null) { echo("PASS: month 99 rejected"); }
+    else { echo("FAIL: month 99 accepted"); }
+
+    // hour 24 -> null
+    turbo bad4 = datetime.strptime("24:00", "%H:%M");
+    if (bad4 == null) { echo("PASS: hour 24 rejected"); }
+    else { echo("FAIL: hour 24 accepted"); }
+
+    // Feb 30 -> null (day out of range for month)
+    turbo bad5 = datetime.strptime("2026-02-30", "%Y-%m-%d");
+    if (bad5 == null) { echo("PASS: Feb 30 rejected"); }
+    else { echo("FAIL: Feb 30 accepted"); }
+
+    // %G without %V -> null (CPython raises)
+    turbo bad6 = datetime.strptime("2026 42", "%G %V");
+    if (bad6 == null) { echo("PASS: %G without weekday rejected"); }
+    else { echo("FAIL: incomplete ISO accepted"); }
+
+    echo("--- format directives ---");
+
+    turbo f = datetime.strptime("2026-10-19 03:14:15", "%Y-%m-%d %H:%M:%S");
+    if (datetime.format(f, "%Y-%m-%d %H:%M:%S") == "2026-10-19 03:14:15") { echo("PASS: format basic"); }
+    else { echo("FAIL: format basic got " + datetime.format(f, "%Y-%m-%d %H:%M:%S")); }
+
+    // names, weekday, julian, 12-hour (pinned: Monday October, day 292, 03 AM)
+    if (datetime.format(f, "%A %B %d %j %u") == "Monday October 19 292 1") { echo("PASS: %A %B %j %u"); }
+    else { echo("FAIL: names got " + datetime.format(f, "%A %B %d %j %u")); }
+    if (datetime.format(f, "%I %p") == "03 AM") { echo("PASS: %I %p"); }
+    else { echo("FAIL: 12h got " + datetime.format(f, "%I %p")); }
+
+    // composites + extras (pinned against python3.13 strftime)
+    if (datetime.format(f, "%c") == "Mon Oct 19 03:14:15 2026") { echo("PASS: %c"); }
+    else { echo("FAIL: %c got " + datetime.format(f, "%c")); }
+    if (datetime.format(f, "%x|%X|%F|%D|%T|%R|%r") == "10/19/26|03:14:15|2026-10-19|10/19/26|03:14:15|03:14|03:14:15 AM") { echo("PASS: %x %X %F %D %T %R %r"); }
+    else { echo("FAIL: composites got " + datetime.format(f, "%x|%X|%F|%D|%T|%R|%r")); }
+
+    // ISO + week + century + short year (pinned: 2026-W43-1, 42/42, 26, 20)
+    if (datetime.format(f, "%G-W%V-%u") == "2026-W43-1") { echo("PASS: %G-%V ISO format"); }
+    else { echo("FAIL: ISO fmt got " + datetime.format(f, "%G-W%V-%u")); }
+    if (datetime.format(f, "%U %W %y %C") == "42 42 26 20") { echo("PASS: %U %W %y %C"); }
+    else { echo("FAIL: week fmt got " + datetime.format(f, "%U %W %y %C")); }
+
+    // %% literal and unknown directive passthrough (CPython: "%q" stays)
+    if (datetime.format(f, "100%% %q") == "100% %q") { echo("PASS: %% literal + unknown passthrough"); }
+    else { echo("FAIL: literal got " + datetime.format(f, "100%% %q")); }
+
+    // legacy dialect still formats
+    if (datetime.format(f, "YYYY/MM/DD HH:mm:ss") == "2026/10/19 03:14:15") { echo("PASS: legacy format dialect"); }
+    else { echo("FAIL: legacy fmt got " + datetime.format(f, "YYYY/MM/DD HH:mm:ss")); }
+
+    // space-padded day (CPython %e)
+    turbo fifth = datetime.strptime("2026-10-05", "%Y-%m-%d");
+    if (datetime.format(fifth, "%e") == " 5") { echo("PASS: %e space-padded day"); }
+    else { echo("FAIL: %e got " + datetime.format(fifth, "%e")); }
+
+    echo("--- helpers ---");
+
+    // add: +1d 2h 3m 4s = 93784 seconds (pinned)
+    turbo t2 = datetime.add(f, 1, 2, 3, 4);
+    if (t2.day == 20 && t2.hour == 5 && t2.minute == 17 && t2.second == 19) { echo("PASS: add 1d2h3m4s"); }
+    else { echo("FAIL: add got " + t2.day + " " + t2.hour + ":" + t2.minute + ":" + t2.second); }
+    if (datetime.diff(t2, f) == 93784) { echo("PASS: diff 93784"); }
+    else { echo("FAIL: diff got " + datetime.diff(t2, f)); }
+
+    // weekday: 0=Sunday (2026-10-19 is Monday = 1)
+    if (datetime.weekday(f) == 1) { echo("PASS: weekday Monday=1"); }
+    else { echo("FAIL: weekday got " + datetime.weekday(f)); }
+
+    // month-end rollover via exact civil math
+    turbo roll = datetime.add(f, 13);   // Oct 19 + 13 = Nov 1
+    if (roll.month == 11 && roll.day == 1) { echo("PASS: month rollover"); }
+    else { echo("FAIL: rollover got " + roll.month + "-" + roll.day); }
+
+    // leap-year day: 2024-02-28 + 1 = 02-29
+    turbo leap = datetime.strptime("2024-02-28", "%Y-%m-%d");
+    turbo leap2 = datetime.add(leap, 1);
+    if (leap2.month == 2 && leap2.day == 29) { echo("PASS: leap day"); }
+    else { echo("FAIL: leap got " + leap2.month + "-" + leap2.day); }
+
+    // struct field access + unix roundtrip
+    if (f.year == 2026 && datetime.unix(datetime.from_unix(f.unix)) == f.unix) { echo("PASS: unix roundtrip"); }
+    else { echo("FAIL: roundtrip"); }
+
+    echo("--- datetime suite done ---");
+}

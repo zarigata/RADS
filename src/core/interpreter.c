@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h> /* fmod for float modulo in binary ops */
 #include <signal.h>
 
 static Value eval_expression(ASTNode* node);
@@ -65,6 +66,14 @@ Value make_bool(bool val) { Value v = { .type = VAL_BOOL, .bool_val = val }; ret
 Value make_int(long long val) { Value v = { .type = VAL_INT, .int_val = val }; return v; }
 Value make_float(double val) { Value v = { .type = VAL_FLOAT, .float_val = val }; return v; }
 Value make_string(const char* val) { Value v = { .type = VAL_STRING, .string_val = strdup(val) }; return v; }
+
+/* Canonical error return for native modules: say what's wrong in a human
+ * voice, then hand back null so the script continues or the caller checks.
+ * Extending: add a VAL_ERROR tag someday if scripts need to test for it. */
+Value make_error(const char* msg) {
+    fprintf(stderr, "Error: %s\n", msg);
+    return make_null();
+}
 
 Array* array_create(size_t capacity) {
     Array* arr = malloc(sizeof(Array));
@@ -703,11 +712,23 @@ static Value eval_binary_op(ASTNode* node) {
         case OP_SUB:
             if (left.type == VAL_INT && right.type == VAL_INT) {
                 result = make_int(left.int_val - right.int_val);
+            } else if (left.type == VAL_FLOAT && right.type == VAL_FLOAT) {
+                result = make_float(left.float_val - right.float_val);
+            } else if (left.type == VAL_INT && right.type == VAL_FLOAT) {
+                result = make_float((double)left.int_val - right.float_val);
+            } else if (left.type == VAL_FLOAT && right.type == VAL_INT) {
+                result = make_float(left.float_val - (double)right.int_val);
             }
             break;
         case OP_MUL:
             if (left.type == VAL_INT && right.type == VAL_INT) {
                 result = make_int(left.int_val * right.int_val);
+            } else if (left.type == VAL_FLOAT && right.type == VAL_FLOAT) {
+                result = make_float(left.float_val * right.float_val);
+            } else if (left.type == VAL_INT && right.type == VAL_FLOAT) {
+                result = make_float((double)left.int_val * right.float_val);
+            } else if (left.type == VAL_FLOAT && right.type == VAL_INT) {
+                result = make_float(left.float_val * (double)right.int_val);
             }
             break;
         case OP_DIV:
@@ -715,12 +736,36 @@ static Value eval_binary_op(ASTNode* node) {
                 if (right.int_val != 0) {
                     result = make_int(left.int_val / right.int_val);
                 }
+            } else if (left.type == VAL_FLOAT && right.type == VAL_FLOAT) {
+                if (right.float_val != 0.0) {
+                    result = make_float(left.float_val / right.float_val);
+                }
+            } else if (left.type == VAL_INT && right.type == VAL_FLOAT) {
+                if (right.float_val != 0.0) {
+                    result = make_float((double)left.int_val / right.float_val);
+                }
+            } else if (left.type == VAL_FLOAT && right.type == VAL_INT) {
+                if (right.int_val != 0) {
+                    result = make_float(left.float_val / (double)right.int_val);
+                }
             }
             break;
         case OP_MOD:
             if (left.type == VAL_INT && right.type == VAL_INT) {
                 if (right.int_val != 0) {
                     result = make_int(left.int_val % right.int_val);
+                }
+            } else if (left.type == VAL_FLOAT && right.type == VAL_FLOAT) {
+                if (right.float_val != 0.0) {
+                    result = make_float(fmod(left.float_val, right.float_val));
+                }
+            } else if (left.type == VAL_INT && right.type == VAL_FLOAT) {
+                if (right.float_val != 0.0) {
+                    result = make_float(fmod((double)left.int_val, right.float_val));
+                }
+            } else if (left.type == VAL_FLOAT && right.type == VAL_INT) {
+                if (right.int_val != 0) {
+                    result = make_float(fmod(left.float_val, (double)right.int_val));
                 }
             }
             break;
