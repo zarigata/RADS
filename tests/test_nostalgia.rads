@@ -1,0 +1,98 @@
+// Test: nostalgia module — the Museum of the 2000s Internet
+// (nightshift 2026-10-17, forged for Master Zarigata)
+// nostalgia natives are auto-registered; no import needed.
+
+blast main() {
+    // leek_spin cycles frames deterministically; step 0 vs 1 must differ
+    turbo f0 = nostalgia.leek_spin(0);
+    turbo f1 = nostalgia.leek_spin(1);
+    if (f0 != f1) { echo("PASS: leek_spin steps 0/1 differ"); }
+    else { echo("FAIL: leek_spin frames identical"); }
+
+    // leek_spin wraps around: step 4 == step 0
+    if (nostalgia.leek_spin(4) == f0) { echo("PASS: leek_spin wraps mod 4"); }
+    else { echo("FAIL: leek_spin wrap"); }
+
+    // negative step folds to positive — no time travel before 2010
+    if (nostalgia.leek_spin(-1) == f1) { echo("PASS: leek_spin negative folds"); }
+    else { echo("FAIL: leek_spin negative fold"); }
+
+    // away_message cycles the AIM classics; deterministic for tests
+    turbo a0 = nostalgia.away_message(0);
+    turbo a3 = nostalgia.away_message(3);
+    if (a0 != a3) { echo("PASS: away_message(0) != away_message(3)"); }
+    else { echo("FAIL: away_message collapsed"); }
+    if (nostalgia.away_message(7) == a0) { echo("PASS: away_message wraps mod 7"); }
+    else { echo("FAIL: away_message wrap"); }
+
+    // the classics say their canonical lines (str.contains is the API)
+    if (str.contains(nostalgia.rickroll(), "Never gonna give you up")) { echo("PASS: rickroll has lyrics"); }
+    else { echo("FAIL: rickroll empty"); }
+    if (str.contains(nostalgia.all_your_base(), "ALL YOUR BASE ARE BELONG TO US")) { echo("PASS: all_your_base intact"); }
+    else { echo("FAIL: all_your_base empty"); }
+    if (str.contains(nostalgia.over9000(), "9000")) { echo("PASS: over9000 charged"); }
+    else { echo("FAIL: over9000 drained"); }
+    if (str.contains(nostalgia.leeroy(), "LEEROY JENKINS")) { echo("PASS: leeroy charged"); }
+    else { echo("FAIL: leeroy empty"); }
+
+    // badger variant switch: mushrooms vs snake
+    if (nostalgia.badger_badger(0) != nostalgia.badger_badger(1)) { echo("PASS: badger variants differ"); }
+    else { echo("FAIL: badger variants identical"); }
+    if (str.contains(nostalgia.badger_badger(1), "SNAKE")) { echo("PASS: badger variant 1 is the snake"); }
+    else { echo("FAIL: snake escaped"); }
+
+    // early youtube wing
+    if (str.contains(nostalgia.keyboard_cat(), "Keyboard Cat")) { echo("PASS: keyboard_cat plays"); }
+    else { echo("FAIL: keyboard_cat silent"); }
+    if (str.contains(nostalgia.charlie_bit_me(), "Charlie bit me")) { echo("PASS: charlie bit"); }
+    else { echo("FAIL: charlie didn't bite"); }
+    if (str.contains(nostalgia.dramatic_chipmunk(), "dramatic")) { echo("PASS: chipmunk dramatic"); }
+    else { echo("FAIL: chipmunk unmoved"); }
+
+    // o rly / ya rly pair
+    if (nostalgia.o_rly() != nostalgia.ya_rly()) { echo("PASS: o_rly != ya_rly"); }
+    else { echo("FAIL: owl pair identical"); }
+    if (str.contains(nostalgia.o_rly(), "O RLY")) { echo("PASS: o_rly asks"); }
+    else { echo("FAIL: owl speechless"); }
+
+    // messenger era
+    if (str.contains(nostalgia.msn_nudge(), "nudged")) { echo("PASS: msn_nudge shook the window"); }
+    else { echo("FAIL: nudge lost"); }
+    if (str.contains(nostalgia.asl(), "a/s/l")) { echo("PASS: asl asks the scary question"); }
+    else { echo("FAIL: asl silent"); }
+    if (str.contains(nostalgia.away_message(0), "brb")) { echo("PASS: away_message(0) is brb dinner"); }
+    else { echo("FAIL: away_message(0) corrupted"); }
+
+    // leetspeak: the one real utility wearing the costume
+    if (nostalgia.leetspeak("leet speak") == "l337 5p34k") { echo("PASS: leetspeak translates"); }
+    else { echo("FAIL: leetspeak got " + nostalgia.leetspeak("leet speak")); }
+    if (nostalgia.leetspeak("RADS ROOLS") == "R4D5 R00L5") { echo("PASS: leetspeak uppercase"); }
+    else { echo("FAIL: leetspeak uppercase got " + nostalgia.leetspeak("RADS ROOLS")); }
+    if (nostalgia.leetspeak("xyz") == "xyz") { echo("PASS: leetspeak leaves others alone"); }
+    else { echo("FAIL: leetspeak touched xyz"); }
+
+    // Habbo Hotel, July 2006 -- the raid that closed every pool
+    if (str.contains(nostalgia.pool_closed(), "POOL")) { echo("PASS: pool_closed announces the closure"); }
+    else { echo("FAIL: pool is mysteriously open"); }
+    if (str.contains(nostalgia.pool_closed(), "CLOSED")) { echo("PASS: pool_closed has the canonical cry"); }
+    else { echo("FAIL: pool lost the canonical cry"); }
+
+    if (str.contains(nostalgia.pool_closed(), "2006")) { echo("PASS: pool_closed plaque has the 2006 backstory"); }
+    else { echo("FAIL: plaque lost the backstory"); }
+    if (nostalgia.pool_closed() != nostalgia.the_game()) { echo("PASS: pool_closed distinct from the_game"); }
+    else { echo("FAIL: exhibits collided"); }
+
+    // the game — you know what you did
+    if (str.contains(nostalgia.the_game(), "lost The Game")) { echo("PASS: you lost The Game (test edition)"); }
+    else { echo("FAIL: The Game lost you"); }
+
+    // barrel roll + hamster dance + pbj
+    if (str.contains(nostalgia.barrel_roll(), "barrel roll")) { echo("PASS: barrel roll executed"); }
+    else { echo("FAIL: barrel roll crashed"); }
+    if (str.contains(nostalgia.hamster_dance(), "HAMSTER DANCE")) { echo("PASS: hamsters still dancing"); }
+    else { echo("FAIL: hamsters retired"); }
+    if (str.contains(nostalgia.pbj_time(), "PEANUT BUTTER JELLY")) { echo("PASS: it's peanut butter jelly time"); }
+    else { echo("FAIL: banana stopped dancing"); }
+
+    echo("Nostalgia Museum: all exhibits open.");
+}

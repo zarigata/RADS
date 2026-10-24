@@ -192,7 +192,7 @@ Value native_secrets_choice(struct Interpreter* interp, int argc, Value* args) {
     } while (val >= limit);
 
     size_t idx = (size_t)(val % (unsigned long long)count);
-    return args[0].array_val->items[idx];
+    return value_retain(args[0].array_val->items[idx]);
 }
 
 /* ── secrets.password(length=16, charset="alphanumeric") ── */
