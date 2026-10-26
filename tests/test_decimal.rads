@@ -1,0 +1,50 @@
+// Test: decimal module — Python-parity engine (nightshift 20261021).
+// All expectations pinned against python3.13 decimal on this box.
+blast main() {
+    if (decimal.to_str(decimal.parse("2.50")) == "2.50") { echo("PASS parse/str round-trip 2.50"); } else { echo("FAIL 2.50"); }
+    turbo a = decimal.parse("1.15"); turbo b = decimal.parse("2.25");
+    if (decimal.to_str(decimal.add(a, b)) == "3.40") { echo("PASS 1.15+2.25=3.40"); } else { echo("FAIL add"); }
+    if (decimal.to_str(decimal.sub(a, b)) == "-1.10") { echo("PASS 1.15-2.25=-1.10"); } else { echo("FAIL sub"); }
+    turbo x = decimal.parse("0.1"); turbo y = decimal.parse("0.2");
+    if (decimal.to_str(decimal.add(x, y)) == "0.3") { echo("PASS 0.1+0.2=0.3"); } else { echo("FAIL add0.3"); }
+    if (decimal.eq(decimal.add(x, y), decimal.parse("0.3"))) { echo("PASS 0.1+0.2==0.3 exact"); } else { echo("FAIL eq"); }
+    turbo big = decimal.parse("10000000000000000000000000001");
+    if (decimal.to_str(decimal.div(big, decimal.parse("2"))) == "5000000000000000000000000000") { echo("PASS big29/2 rounded"); } else { echo("FAIL big/2"); }
+    if (decimal.to_str(decimal.div(decimal.parse("1"), decimal.parse("3"))) == "0.3333333333333333333333333333") { echo("PASS 1/3"); } else { echo("FAIL 1/3"); }
+    if (decimal.to_str(decimal.div(decimal.parse("2"), decimal.parse("7"))) == "0.2857142857142857142857142857") { echo("PASS 2/7 half-even"); } else { echo("FAIL 2/7"); }
+    if (decimal.to_str(decimal.div(decimal.parse("2.50"), decimal.parse("1"))) == "2.50") { echo("PASS 2.50/1 scale keep"); } else { echo("FAIL 2.50/1"); }
+    if (decimal.to_str(decimal.div(decimal.parse("0.00"), decimal.parse("8"))) == "0.00") { echo("PASS 0.00/8=0.00"); } else { echo("FAIL 0/8"); }
+    if (decimal.to_str(decimal.mul(decimal.parse("1.50"), decimal.parse("2.0"))) == "3.000") { echo("PASS 1.50*2.0=3.000"); } else { echo("FAIL mul"); }
+    if (decimal.to_str(decimal.add(decimal.parse("1E30"), decimal.parse("1E-30"))) == "1.000000000000000000000000000E+30") { echo("PASS context round add"); } else { echo("FAIL ctx add"); }
+    if (decimal.to_str(decimal.pow(decimal.parse("2"), 100)) == "1.267650600228229401496703205E+30") { echo("PASS 2**100 exact"); } else { echo("FAIL pow"); }
+    if (decimal.to_str(decimal.pow(decimal.parse("2"), -2)) == "0.25") { echo("PASS 2**-2"); } else { echo("FAIL pow neg"); }
+    if (decimal.to_str(decimal.sqrt(decimal.parse("2"))) == "1.414213562373095048801688724") { echo("PASS sqrt(2)"); } else { echo("FAIL sqrt2"); }
+    if (decimal.to_str(decimal.sqrt(decimal.parse("0.25"))) == "0.5") { echo("PASS sqrt(0.25)"); } else { echo("FAIL sqrt.25"); }
+    if (decimal.to_str(decimal.floordiv(decimal.parse("7.5"), decimal.parse("2"))) == "3") { echo("PASS 7.5//2"); } else { echo("FAIL fd1"); }
+    if (decimal.to_str(decimal.floordiv(decimal.parse("-7"), decimal.parse("2"))) == "-3") { echo("PASS -7//2"); } else { echo("FAIL fd2"); }
+    if (decimal.to_str(decimal.mod(decimal.parse("-7"), decimal.parse("2"))) == "-1") { echo("PASS -7%2"); } else { echo("FAIL mod1"); }
+    if (decimal.to_str(decimal.mod(decimal.parse("7"), decimal.parse("-2"))) == "1") { echo("PASS 7%-2"); } else { echo("FAIL mod2"); }
+    if (decimal.to_int(decimal.parse("1.9")) == 1) { echo("PASS to_int 1.9"); } else { echo("FAIL ti1"); }
+    if (decimal.to_int(decimal.parse("-1.9")) == -1) { echo("PASS to_int -1.9"); } else { echo("FAIL ti2"); }
+    if (decimal.to_str(decimal.round(decimal.parse("1.25"), 1)) == "1.2") { echo("PASS round half-even 1.25"); } else { echo("FAIL r1"); }
+    if (decimal.to_str(decimal.round(decimal.parse("2.5"), 0)) == "2") { echo("PASS round 2.5->2"); } else { echo("FAIL r2"); }
+    if (decimal.to_str(decimal.round(decimal.parse("-2.5"), 0)) == "-2") { echo("PASS round -2.5->-2"); } else { echo("FAIL r3"); }
+    if (decimal.to_str(decimal.normalize(decimal.parse("2.500"))) == "2.5") { echo("PASS norm 2.500"); } else { echo("FAIL n1"); }
+    if (decimal.to_str(decimal.normalize(decimal.parse("1000"))) == "1E+3") { echo("PASS norm 1000->1E+3"); } else { echo("FAIL n2"); }
+    if (decimal.to_str(decimal.parse("1E+25")) == "1E+25") { echo("PASS 1E+25"); } else { echo("FAIL e1"); }
+    if (decimal.to_str(decimal.parse("1E-7")) == "1E-7") { echo("PASS 1E-7"); } else { echo("FAIL e2"); }
+    if (decimal.to_str(decimal.parse("-0")) == "-0") { echo("PASS -0"); } else { echo("FAIL e3"); }
+    if (decimal.to_str(decimal.parse("0E+2")) == "0E+2") { echo("PASS 0E+2"); } else { echo("FAIL e4"); }
+    if (decimal.to_str(decimal.parse("Infinity")) == "Infinity") { echo("PASS Infinity"); } else { echo("FAIL inf"); }
+    if (decimal.is_nan(decimal.parse("NaN"))) { echo("PASS is_nan"); } else { echo("FAIL nan"); }
+    if (decimal.is_infinite(decimal.parse("-Infinity"))) { echo("PASS is_infinite"); } else { echo("FAIL inf2"); }
+    if (!decimal.eq(decimal.parse("NaN"), decimal.parse("NaN"))) { echo("PASS NaN != NaN"); } else { echo("FAIL nanne"); }
+    if (decimal.lt(decimal.parse("0.1"), decimal.parse("0.2"))) { echo("PASS lt"); } else { echo("FAIL lt"); }
+    if (decimal.eq(decimal.parse("1.50"), decimal.parse("1.5"))) { echo("PASS 1.50==1.5"); } else { echo("FAIL eq2"); }
+    if (decimal.precision() == 28) { echo("PASS default precision 28"); } else { echo("FAIL prec"); }
+    turbo z = decimal.parse("123.456");
+    if (z.text == "123.456") { echo("PASS struct .text field"); } else { echo("FAIL text field"); }
+    if (z.sign == 1 && z.digits == 6 && z.exponent == -3) { echo("PASS struct sign/digits/exponent"); } else { echo("FAIL tuple fields"); }
+    echo("done");
+}
+// ⚕ Forged for Master Zarigata 🜂

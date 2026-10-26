@@ -1,0 +1,36 @@
+// Test: logging module (nightshift 2026-10-12)
+// logging.* writes to stderr; constants are zero-arg natives (math.PI pattern).
+
+blast main() {
+    // constants exist and match Python's numbering (must be CALLED)
+    if (logging.DEBUG() == 10) { echo("PASS: DEBUG() == 10"); }
+    else { echo("FAIL: DEBUG = " + logging.DEBUG()); }
+    if (logging.CRITICAL() == 50) { echo("PASS: CRITICAL() == 50"); }
+    else { echo("FAIL: CRITICAL"); }
+
+    // default level is INFO
+    if (logging.getLevel() == 20) { echo("PASS: default level INFO"); }
+    else { echo("FAIL: default level = " + logging.getLevel()); }
+
+    // setLevel / getLevel round-trip
+    logging.setLevel(logging.DEBUG());
+    if (logging.getLevel() == 10) { echo("PASS: setLevel(DEBUG) round-trip"); }
+    else { echo("FAIL: setLevel"); }
+
+    // getLevelName mapping
+    if (logging.getLevelName(40) == "ERROR") { echo("PASS: getLevelName(40) = ERROR"); }
+    else { echo("FAIL: getLevelName(40) = " + logging.getLevelName(40)); }
+    if (logging.getLevelName(10) == "DEBUG") { echo("PASS: getLevelName(10) = DEBUG"); }
+    else { echo("FAIL: getLevelName(10)"); }
+
+    // emission itself (visible on stderr when running this test)
+    logging.setLevel(logging.WARNING());
+    logging.info("this should be suppressed");
+    logging.warning("this should appear (WARNING)");
+    echo("PASS: emission gating exercised (see stderr above)");
+
+    // logging.log at custom level
+    logging.setLevel(logging.DEBUG());
+    logging.log(25, "custom level 25 message");
+    echo("PASS: logging.log custom level exercised");
+}

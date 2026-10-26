@@ -1,0 +1,42 @@
+// ⚕ Forged for Master Zarigata 🜂
+// Smoke demo: the RADS Museum of the 2000s Internet
+
+blast main() {
+    echo("=== WELCOME TO THE MUSEUM OF THE 2000s INTERNET ===");
+    echo("");
+    echo("[Habbo Hotel, July 2006]");
+    echo("  " + nostalgia.pool_closed());
+    echo("");
+    echo("[leekspin.net, 2006]");
+    echo("  " + nostalgia.leek_spin(0));
+    echo("  " + nostalgia.leek_spin(1));
+    echo("  " + nostalgia.leek_spin(2));
+    echo("  " + nostalgia.leek_spin(3));
+    echo("");
+    echo("[The Classics]");
+    echo("  " + nostalgia.rickroll());
+    echo("  " + nostalgia.all_your_base());
+    echo("  " + nostalgia.over9000());
+    echo("  " + nostalgia.leeroy());
+    echo("  " + nostalgia.badger_badger(0));
+    echo("  " + nostalgia.pbj_time());
+    echo("  " + nostalgia.hamster_dance());
+    echo("  " + nostalgia.keyboard_cat());
+    echo("");
+    echo("[Early YouTube]");
+    echo("  " + nostalgia.charlie_bit_me());
+    echo("  " + nostalgia.dramatic_chipmunk());
+    echo("");
+    echo("[Messenger era]");
+    echo("  " + nostalgia.msn_nudge());
+    echo("  " + nostalgia.asl());
+    echo("  " + nostalgia.away_message(0));
+    echo("");
+    echo("[Owls & misc]");
+    echo("  " + nostalgia.o_rly());
+    echo("  " + nostalgia.ya_rly());
+    echo("  " + nostalgia.the_game());
+    echo("  " + nostalgia.barrel_roll());
+    echo("");
+    echo("=== the dial-up drops. the memories remain. ===");
+}

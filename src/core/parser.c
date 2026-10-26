@@ -189,6 +189,63 @@ static ASTNode* parse_declaration(Parser* parser);
 static ASTNode* parse_comparison(Parser* parser);
 static ASTNode* parse_block(Parser* parser);
 
+/* str_dup_range — malloc'd NUL-terminated copy of [from, from+len).
+ * Why: template chunks arrive as raw spans; the AST owns its strings, so
+ *      every chunk needs its own heap copy before entering a string node.
+ * Extend: if chunks ever need unescaping, do it here — one home for it. */
+static char* str_dup_range(const char* from, size_t len) {
+    char* out = malloc(len + 1);
+    if (!out) return NULL;
+    memcpy(out, from, len);
+    out[len] = '\0';
+    return out;
+}
+
+/* parse_template_literal — backtick template with ${...} interpolation.
+ * Lowering: LEFT-FOLD of OP_ADD over pieces —
+ *   `a${x}b${y}c`  ==  ((("a" + x) + "b") + y) + "c"
+ * seeded with a string literal even when the head is empty, so `${7}`
+ * evaluates to "7" (the "" + x conversion applies to every piece).
+ * Grammar: START (CHUNK | EXPR_BEGIN expr EXPR_END)* END.
+ * Nested templates recurse through parse_expression -> parse_primary.
+ * Raw law: chunks are raw source spans (no unescaping — house gotcha). */
+static ASTNode* parse_template_literal(Parser* parser) {
+    int line = parser->previous.line;
+    int column = parser->previous.column;
+    ASTNode* acc = NULL;
+
+    while (true) {
+        if (match(parser, TOKEN_TEMPLATE_CHUNK)) {
+            char* text = str_dup_range(parser->previous.start, parser->previous.length);
+            ASTNode* piece = ast_create_string(text, line, column);
+            free(text);
+            acc = acc ? ast_create_binary_op(OP_ADD, acc, piece, line, column) : piece;
+        } else if (match(parser, TOKEN_TEMPLATE_EXPR_BEGIN)) {
+            ASTNode* expr = parse_expression(parser);
+            consume(parser, TOKEN_TEMPLATE_EXPR_END, "Expected '}' to close ${...} interpolation");
+            if (!acc) {
+                ASTNode* seed = ast_create_string("", line, column);
+                acc = ast_create_binary_op(OP_ADD, seed, expr, line, column);
+            } else {
+                acc = ast_create_binary_op(OP_ADD, acc, expr, line, column);
+            }
+        } else if (match(parser, TOKEN_TEMPLATE_END)) {
+            break;
+        } else if (check(parser, TOKEN_EOF)) {
+            error(parser, "Unterminated template literal");
+            return acc;
+        } else {
+            error(parser, "Malformed template literal");
+            return acc;
+        }
+    }
+
+    if (!acc) {
+        acc = ast_create_string("", line, column);
+    }
+    return acc;
+}
+
 // Parse primary expressions
 static ASTNode* parse_primary(Parser* parser) {
     if (match(parser, TOKEN_INTEGER)) {
@@ -203,6 +260,10 @@ static ASTNode* parse_primary(Parser* parser) {
         return ast_create_float(value, parser->previous.line, parser->previous.column);
     }
     
+    if (match(parser, TOKEN_TEMPLATE_START)) {
+        return parse_template_literal(parser);
+    }
+
     if (match(parser, TOKEN_STRING)) {
         // Remove quotes
         size_t len = parser->previous.length - 2;
