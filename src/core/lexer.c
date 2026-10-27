@@ -11,6 +11,8 @@ void lexer_init(Lexer* lexer, const char* source) {
     lexer->current = source;
     lexer->line = 1;
     lexer->column = 1;
+    lexer->tpl_depth = 0;   /* template literal state starts clean */
+    lexer->in_hole = false;
 }
 
 // Helper functions
@@ -324,8 +326,84 @@ static Token char_literal(Lexer* lexer) {
     return make_token(lexer, TOKEN_CHAR);
 }
 
+/* ===== Template literals (nightshift 20261026) =====
+ * Why: TS/JS-style backtick templates with ${...} are the last big syntax-
+ *      parity gap. The lexer feeds the parser CHUNK / EXPR_BEGIN / EXPR_END /
+ *      START / END tokens so the parser can lower a whole template to a
+ *      chain of + over string pieces.
+ * Model: tpl_depth counts OPEN TEMPLATES (not holes). in_hole says the
+ *      innermost template currently sits inside a ${...} expression hole.
+ *      One TemplateFrame per open template tracks raw { } nesting inside its
+ *      current hole (reset at each EXPR_BEGIN) so struct literals and nested
+ *      templates inside ${} do not close the hole early; saved_in_hole
+ *      records the context the template was opened in, so END restores it.
+ * Raw law: RADS strings are raw, so backslashes in chunks pass through
+ *      verbatim — a backslash only stops ` or ${ from TERMINATING text; it
+ *      never transforms (no unescaping, ever — house gotcha kept).
+ * ⚕ Forged for Master Zarigata 🜂 */
+
+/* tpl_hole_close — emit EXPR_END for the } that closes the innermost hole and
+ * return that template to its text phase. Why a helper: keeps the brace
+ * intercept in lexer_next_token readable and gives the pop one home. */
+static Token tpl_hole_close(Lexer* lexer) {
+    lexer->in_hole = false; /* text phase resumes for the innermost template */
+    return make_token(lexer, TOKEN_TEMPLATE_EXPR_END);
+}
+
+/* template_scan_text — scan literal template text (text phase).
+ * Precondition: tpl_depth > 0 && !in_hole. Sets its own token span (it runs
+ * BEFORE skip_whitespace, so lexer->start is stale from the previous token).
+ * Emits CHUNK up to the next unescaped ` or ${; emits END (popping depth and
+ * restoring the enclosing context) at the closing backtick. */
+static Token template_scan_text(Lexer* lexer) {
+    lexer->start = lexer->current; /* fresh span: significant whitespace ahead */
+    while (!is_at_end(lexer)) {
+        char c = peek(lexer);
+        if (c == '`') { /* closing backtick */
+            if (lexer->start == lexer->current) {
+                /* no text before the closer: emit END now */
+                advance(lexer);
+                bool restore = lexer->tpl_stack[lexer->tpl_depth - 1].saved_in_hole;
+                lexer->tpl_depth--;
+                lexer->in_hole = (lexer->tpl_depth > 0) ? restore : false;
+                return make_token(lexer, TOKEN_TEMPLATE_END);
+            }
+            return make_token(lexer, TOKEN_TEMPLATE_CHUNK);
+        }
+        if (c == '$' && peek_next(lexer) == '{') { /* interpolation opener */
+            if (lexer->start == lexer->current) {
+                /* no text before the hole: emit EXPR_BEGIN now */
+                advance(lexer);
+                advance(lexer);
+                lexer->in_hole = true;
+                lexer->tpl_stack[lexer->tpl_depth - 1].brace_depth = 0;
+                return make_token(lexer, TOKEN_TEMPLATE_EXPR_BEGIN);
+            }
+            return make_token(lexer, TOKEN_TEMPLATE_CHUNK);
+        }
+        if (c == '\\') {
+            /* raw passthrough: backslash + next char stay verbatim in the
+             * chunk; this only prevents ` or ${ right after \ from ending it */
+            advance(lexer);
+            if (!is_at_end(lexer)) {
+                if (peek(lexer) == '\n') lexer->line++;
+                advance(lexer);
+            }
+            continue;
+        }
+        if (c == '\n') lexer->line++; /* multi-line templates keep line info */
+        advance(lexer);
+    }
+    return error_token(lexer, "Unterminated template literal");
+}
+
 // Main tokenization function
 Token lexer_next_token(Lexer* lexer) {
+    /* Template text phase runs BEFORE skip_whitespace: inside `...` text,
+     * whitespace is significant and must land in the CHUNK, not be skipped. */
+    if (lexer->tpl_depth > 0 && !lexer->in_hole) {
+        return template_scan_text(lexer);
+    }
     skip_whitespace(lexer);
     
     lexer->start = lexer->current;
@@ -334,6 +412,26 @@ Token lexer_next_token(Lexer* lexer) {
         return make_token(lexer, TOKEN_EOF);
     }
     
+    /* Template hole phase: inside ${...} the expression lexes normally, but
+     * raw { } must feed the innermost frame counter; the } that returns
+     * brace_depth to 0 closes the hole (EXPR_END) and resumes text phase. */
+    if (lexer->tpl_depth > 0 && lexer->in_hole) {
+        char hc = peek(lexer);
+        if (hc == '{') {
+            advance(lexer);
+            lexer->tpl_stack[lexer->tpl_depth - 1].brace_depth++;
+            return make_token(lexer, TOKEN_LEFT_BRACE);
+        }
+        if (hc == '}') {
+            advance(lexer);
+            if (lexer->tpl_stack[lexer->tpl_depth - 1].brace_depth == 0) {
+                return tpl_hole_close(lexer); /* sets in_hole = false */
+            }
+            lexer->tpl_stack[lexer->tpl_depth - 1].brace_depth--;
+            return make_token(lexer, TOKEN_RIGHT_BRACE);
+        }
+    }
+
     char c = advance(lexer);
     
     // Identifiers and keywords
@@ -394,6 +492,18 @@ Token lexer_next_token(Lexer* lexer) {
         case '/':
             return make_token(lexer, TOKEN_SLASH);
         
+        case '`': { /* backtick: open a template literal (top level or nested in ${}) */
+            if (lexer->tpl_depth >= 32) {
+                return error_token(lexer, "Template literal nested too deep (max 32)");
+            }
+            /* remember the context this template is born in so END restores it */
+            lexer->tpl_stack[lexer->tpl_depth].saved_in_hole = lexer->in_hole;
+            lexer->tpl_stack[lexer->tpl_depth].brace_depth = 0;
+            lexer->tpl_depth++;
+            lexer->in_hole = false; /* begin in the text phase */
+            return make_token(lexer, TOKEN_TEMPLATE_START);
+        }
+
         // Literals
         case '"': return string(lexer);
         case '\'': return char_literal(lexer);
@@ -414,6 +524,11 @@ const char* token_type_to_string(TokenType type) {
         case TOKEN_INTEGER: return "INTEGER";
         case TOKEN_FLOAT: return "FLOAT";
         case TOKEN_STRING: return "STRING";
+        case TOKEN_TEMPLATE_CHUNK: return "TEMPLATE_CHUNK";
+        case TOKEN_TEMPLATE_END: return "TEMPLATE_END";
+        case TOKEN_TEMPLATE_START: return "TEMPLATE_START";
+        case TOKEN_TEMPLATE_EXPR_BEGIN: return "TEMPLATE_EXPR_BEGIN";
+        case TOKEN_TEMPLATE_EXPR_END: return "TEMPLATE_EXPR_END";
         case TOKEN_CHAR: return "CHAR";
         case TOKEN_TRUE: return "TRUE";
         case TOKEN_FALSE: return "FALSE";

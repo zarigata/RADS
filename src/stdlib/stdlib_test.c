@@ -145,7 +145,7 @@ Value stdlib_test_expect(Interpreter* interp, int argc, Value* args) {
     }
     
     // Return the value so we can chain .toBe(), etc.
-    return args[0];
+    return value_retain(args[0]);
 }
 
 // Helper: Compare values for equality
