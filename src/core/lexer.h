@@ -10,6 +10,11 @@ typedef enum {
     TOKEN_INTEGER,
     TOKEN_FLOAT,
     TOKEN_STRING,
+    TOKEN_TEMPLATE_CHUNK,  /* literal text run inside a `...` template */
+    TOKEN_TEMPLATE_END,    /* closing backtick of a template */
+    TOKEN_TEMPLATE_START,   /* opening backtick (also nested inside ${}) */
+    TOKEN_TEMPLATE_EXPR_BEGIN, /* the ${ that opens an interpolation hole */
+    TOKEN_TEMPLATE_EXPR_END,   /* the } that closes an interpolation hole */
     TOKEN_CHAR,
     TOKEN_TRUE,
     TOKEN_FALSE,
@@ -120,6 +125,13 @@ typedef struct {
     int column;
 } Token;
 
+// One open ${ ... } interpolation inside a template. brace_depth counts raw
+// { } pairs so struct literals and nested templates inside ${} close it right.
+typedef struct {
+    int brace_depth; /* entered at 0; the '}' taking it back to 0 ends the hole */
+    bool saved_in_hole;       /* enclosing context was inside a ${...} hole */
+} TemplateFrame;
+
 // Lexer structure
 typedef struct {
     const char* source;
@@ -127,6 +139,9 @@ typedef struct {
     const char* current;
     int line;
     int column;
+    TemplateFrame tpl_stack[32]; /* nesting cap; over-deep = clear parse error */
+    int tpl_depth;               /* 0 = not inside any template */
+    bool in_hole;               /* innermost template is inside ${...} */
 } Lexer;
 
 // Lexer functions
