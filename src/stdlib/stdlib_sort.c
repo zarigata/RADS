@@ -47,7 +47,7 @@ Value native_sort_asc(struct Interpreter* interp, int argc, Value* args) {
     (void)interp;
     if (argc < 1 || args[0].type != VAL_ARRAY) return make_null();
     Array* arr = args[0].array_val;
-    if (arr->count == 0) return args[0];
+    if (arr->count == 0) return value_retain(args[0]);
 
     ValueType t = arr->items[0].type;
     if (t != VAL_INT && t != VAL_FLOAT && t != VAL_STRING) return make_null();
@@ -61,7 +61,7 @@ Value native_sort_asc(struct Interpreter* interp, int argc, Value* args) {
     else if (t == VAL_FLOAT) qsort(arr->items, arr->count, sizeof(Value), cmp_float_asc);
     else                     qsort(arr->items, arr->count, sizeof(Value), cmp_string_asc);
 
-    return args[0];
+    return value_retain(args[0]);
 }
 
 /* sort.desc(arr) - Sort descending */
@@ -69,7 +69,7 @@ Value native_sort_desc(struct Interpreter* interp, int argc, Value* args) {
     (void)interp;
     if (argc < 1 || args[0].type != VAL_ARRAY) return make_null();
     Array* arr = args[0].array_val;
-    if (arr->count == 0) return args[0];
+    if (arr->count == 0) return value_retain(args[0]);
 
     ValueType t = arr->items[0].type;
     if (t != VAL_INT && t != VAL_FLOAT && t != VAL_STRING) return make_null();
@@ -82,7 +82,7 @@ Value native_sort_desc(struct Interpreter* interp, int argc, Value* args) {
     else if (t == VAL_FLOAT) qsort(arr->items, arr->count, sizeof(Value), cmp_float_desc);
     else                     qsort(arr->items, arr->count, sizeof(Value), cmp_string_desc);
 
-    return args[0];
+    return value_retain(args[0]);
 }
 
 /* sort.reverse(arr) - Reverse array in-place */
@@ -97,7 +97,7 @@ Value native_sort_reverse(struct Interpreter* interp, int argc, Value* args) {
         arr->items[hi] = tmp;
         lo++; hi--;
     }
-    return args[0];
+    return value_retain(args[0]);
 }
 
 /* sort.copy(arr) - Shallow copy of array */
@@ -141,7 +141,7 @@ Value native_sort_min(struct Interpreter* interp, int argc, Value* args) {
             if (strcmp(arr->items[i].string_val, min.string_val) < 0) min = arr->items[i];
         }
     }
-    return min;
+    return value_retain(min); /* item of an array freed with the args */
 }
 
 /* sort.max(arr) - Return maximum element */
@@ -159,7 +159,7 @@ Value native_sort_max(struct Interpreter* interp, int argc, Value* args) {
             if (strcmp(arr->items[i].string_val, max.string_val) > 0) max = arr->items[i];
         }
     }
-    return max;
+    return value_retain(max); /* item of an array freed with the args */
 }
 
 /* sort.sum(arr) - Sum numeric array */
@@ -189,7 +189,7 @@ Value native_sort_shuffle(struct Interpreter* interp, int argc, Value* args) {
         arr->items[i] = arr->items[j];
         arr->items[j] = tmp;
     }
-    return args[0];
+    return value_retain(args[0]);
 }
 
 /* Registration */
