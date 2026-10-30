@@ -109,7 +109,7 @@ Value native_random_choice(struct Interpreter* interp, int argc, Value* args) {
     if (argc < 1 || args[0].type != VAL_ARRAY || !args[0].array_val || args[0].array_val->count == 0)
         return make_null();
     size_t idx = (size_t)(rads_xorshift64() % (unsigned long long)args[0].array_val->count);
-    return args[0].array_val->items[idx];
+    return value_retain(args[0].array_val->items[idx]);
 }
 
 /* ── random.shuffle(array) → shuffled copy ── */

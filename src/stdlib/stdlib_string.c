@@ -425,7 +425,7 @@ Value native_str_split(struct Interpreter* interp, int argc, Value* args) {
         p++;
     }
     
-    Value v; v.type = VAL_ARRAY; v.array_val = create_array(count);
+    Value v; v.type = VAL_ARRAY; v.array_val = array_create((size_t)count);
     p = str;
     char buffer[1024]; int buf_idx = 0;
     
@@ -433,7 +433,7 @@ Value native_str_split(struct Interpreter* interp, int argc, Value* args) {
         if (strncmp(p, delim, strlen(delim)) == 0) {
             if (buf_idx > 0) {
                 buffer[buf_idx] = '\0';
-                Value elem; elem.type = VAL_STRING; elem.string_val = strdup(buffer);
+                Value elem; elem.type = VAL_STRING; elem.string_val = buffer; /* push clones */
                 array_push(v.array_val, elem);
                 buf_idx = 0;
             }
@@ -445,7 +445,7 @@ Value native_str_split(struct Interpreter* interp, int argc, Value* args) {
     
     if (buf_idx > 0) {
         buffer[buf_idx] = '\0';
-        Value elem; elem.type = VAL_STRING; elem.string_val = strdup(buffer);
+        Value elem; elem.type = VAL_STRING; elem.string_val = buffer; /* push clones */
         array_push(v.array_val, elem);
     }
     return v;
@@ -583,7 +583,8 @@ Value native_str_center(struct Interpreter* interp, int argc, Value* args) {
 extern Value make_null(void);
 extern Value make_int(long long val);
 extern Value make_float(double val);
-
+extern Array* array_create(size_t capacity); /* used by str.split to build results */
+extern void array_push(Array* arr, Value v);
 
 /* str.format(template, args...) - Simple template with {} placeholders */
 Value native_str_format(struct Interpreter* interp, int argc, Value* args) {
@@ -696,6 +697,8 @@ Value native_str_interpolate(struct Interpreter* interp, int argc, Value* args) 
 }
 
 void stdlib_string_register(void) {
+    register_native("str.len", native_str_length);
+    register_native("string.length", native_str_length);
     register_native("str.trim", native_str_trim);
     register_native("str.substring", native_str_substring);
     register_native("str.contains", native_str_contains);

@@ -1,0 +1,40 @@
+// Test: aliasing use-after-free regression suite (nightshift 20261024).
+// The interpreter frees the args array right after every native call, so any
+// native that returned args[i] / array items raw handed back freed memory.
+// Each assertion below crashed (double-free/segfault) or read garbage before
+// the value_retain sweep; string payloads + nested calls are the repro shape.
+blast main() {
+    // decimal.min/max: the original segfault (aliased struct Value)
+    if (decimal.to_str(decimal.min("1", "2")) == "1") { echo("PASS decmin nested"); } else { echo("FAIL decmin"); }
+    if (decimal.to_str(decimal.max("1", "2")) == "2") { echo("PASS decmax nested"); } else { echo("FAIL decmax"); }
+    // functools.identity: args[0] passthrough with a string payload
+    if (functools.identity("hello uaf") == "hello uaf") { echo("PASS identity str"); } else { echo("FAIL identity"); }
+    // random.choice / secrets.choice: items[idx] of a temp array
+    turbo c = random.choice(["aa", "bb", "cc"]);
+    if (c == "aa" || c == "bb" || c == "cc") { echo("PASS random.choice str"); } else { echo("FAIL random.choice"); }
+    turbo s = secrets.choice(["xx", "yy"]);
+    if (s == "xx" || s == "yy") { echo("PASS secrets.choice str"); } else { echo("FAIL secrets.choice"); }
+    // collections stack/queue: peek/pop/dequeue hand back array items
+    if (collections.peek(["aa", "bb"]) == "bb") { echo("PASS collections.peek"); } else { echo("FAIL peek"); }
+    if (collections.pop(["aa", "bb"]) == "bb") { echo("PASS collections.pop"); } else { echo("FAIL cpop"); }
+    if (collections.dequeue(["aa", "bb"]) == "aa") { echo("PASS collections.dequeue"); } else { echo("FAIL deque"); }
+    // heapq: numeric-only comparator (strings all compare as 0) — use ints
+    if (heapq.heappushpop([99], 5) == 5) { echo("PASS pushpop cant-beat"); } else { echo("FAIL pp99"); }
+    turbo h = [];
+    heapq.heappush(h, 30); heapq.heappush(h, 10);
+    if (heapq.heappushpop(h, 99) == 10) { echo("PASS pushpop slow"); } else { echo("FAIL ppslow"); }
+    if (heapq.heappop(h) == 30) { echo("PASS heap keeps arg"); } else { echo("FAIL heapkeep"); }
+    if (heapq.heappop(h) == 99) { echo("PASS pushpop stored arg"); } else { echo("FAIL ppstore"); }
+    heapq.heappush(h, 50);
+    if (heapq.heapreplace(h, 20) == 50) { echo("PASS heapreplace"); } else { echo("FAIL hrep"); }
+    if (heapq.heappop(h) == 20) { echo("PASS replace stored arg"); } else { echo("FAIL hstore"); }
+    // sort.* family: passthrough array + item-returning min/max
+    if (array.pop(sort.asc(["bb", "aa"])) == "bb") { echo("PASS sort.asc chain"); } else { echo("FAIL sasc"); }
+    if (array.shift(sort.desc(["bb", "aa"])) == "bb") { echo("PASS sort.desc chain"); } else { echo("FAIL sdesc"); }
+    if (sort.min(["bb", "aa"]) == "aa") { echo("PASS sort.min str"); } else { echo("FAIL smin"); }
+    if (sort.max(["bb", "aa"]) == "bb") { echo("PASS sort.max str"); } else { echo("FAIL smax"); }
+    // array mutators: push returns the array, pop/shift return items
+    if (array.pop(array.push(["aa"], "bb")) == "bb") { echo("PASS array.push/pop"); } else { echo("FAIL appp"); }
+    if (array.shift(["aa", "bb"]) == "aa") { echo("PASS array.shift"); } else { echo("FAIL ashift"); }
+    echo("uaf regression suite complete: 20 assertions");
+}

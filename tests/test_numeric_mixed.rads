@@ -1,0 +1,54 @@
+// tests/test_numeric_mixed.rads — mixed int/float arithmetic + comparison,
+// nested blast registration, str.len / string.length (nightshift 20261028)
+// Pins verified against CPython 3.13: 1+1.5=2.5, 10-0.5=9.5, 4*1.25=5.0,
+// 10/4.0=2.5, 1==1.0 True, len("Hello, RADS!")=12, len("Hello, A!")=9.
+// Context: OP_ADD/compare handled same-type pairs only — 1+1.5 was null and
+// 50.0 == 50 was false on main. Nested blast decls were silently dropped.
+
+blast main() {
+    turbo sum = 1 + 1.5;
+    if (sum == 2.5) { echo("PASS add int+float"); } else { echo("FAIL add int+float"); }
+
+    turbo sum2 = 1.5 + 1;
+    if (sum2 == 2.5) { echo("PASS add float+int"); } else { echo("FAIL add float+int"); }
+
+    turbo diff = 10 - 0.5;
+    if (diff == 9.5) { echo("PASS sub mixed"); } else { echo("FAIL sub mixed"); }
+
+    turbo prod = 4 * 1.25;
+    if (prod == 5) { echo("PASS mul mixed"); } else { echo("FAIL mul mixed"); }
+
+    turbo q = 10 / 4;
+    if (q == 2) { echo("PASS div int-int"); } else { echo("FAIL div int-int"); }
+
+    turbo qf = 10 / 4.0;
+    if (qf == 2.5) { echo("PASS div int-float"); } else { echo("FAIL div int-float"); }
+
+    if (1 == 1.0) { echo("PASS eq cross"); } else { echo("FAIL eq cross"); }
+    if (2 < 2.5) { echo("PASS lt cross"); } else { echo("FAIL lt cross"); }
+    if (3 >= 3.0) { echo("PASS gte cross"); } else { echo("FAIL gte cross"); }
+    if (2.5 != 3) { echo("PASS neq cross"); } else { echo("FAIL neq cross"); }
+    if (0 == 0.0) { echo("PASS zero cross"); } else { echo("FAIL zero cross"); }
+    if (2.5 <= 2.5) { echo("PASS lte float"); } else { echo("FAIL lte float"); }
+
+    turbo l = str.len("Hello, RADS!");
+    if (l == 12) { echo("PASS str.len"); } else { echo("FAIL str.len"); }
+
+    turbo l2 = string.length("Hello, A!");
+    if (l2 == 9) { echo("PASS string.length alias"); } else { echo("FAIL string.length alias"); }
+
+    // nested blast: declared inside main, must be callable after decl
+    blast add3(x, y, z) { return x + y + z; }
+    turbo s3 = add3(1, 2, 3);
+    if (s3 == 6) { echo("PASS nested decl"); } else { echo("FAIL nested decl"); }
+
+    // nested recursion
+    blast fact(n) { if (n <= 1) { return 1; } return n * fact(n - 1); }
+    if (fact(5) == 120) { echo("PASS nested recursion"); } else { echo("FAIL nested recursion"); }
+
+    // decl inside a block
+    if (1 == 1) {
+        blast blocky() { return 7; }
+        if (blocky() == 7) { echo("PASS block decl"); } else { echo("FAIL block decl"); }
+    }
+}

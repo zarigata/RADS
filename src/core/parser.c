@@ -188,6 +188,64 @@ ASTNode* parse_statement(Parser* parser);  // Public for REPL
 static ASTNode* parse_declaration(Parser* parser);
 static ASTNode* parse_comparison(Parser* parser);
 static ASTNode* parse_block(Parser* parser);
+static void synchronize(Parser* parser);
+
+/* str_dup_range — malloc'd NUL-terminated copy of [from, from+len).
+ * Why: template chunks arrive as raw spans; the AST owns its strings, so
+ *      every chunk needs its own heap copy before entering a string node.
+ * Extend: if chunks ever need unescaping, do it here — one home for it. */
+static char* str_dup_range(const char* from, size_t len) {
+    char* out = malloc(len + 1);
+    if (!out) return NULL;
+    memcpy(out, from, len);
+    out[len] = '\0';
+    return out;
+}
+
+/* parse_template_literal — backtick template with ${...} interpolation.
+ * Lowering: LEFT-FOLD of OP_ADD over pieces —
+ *   `a${x}b${y}c`  ==  ((("a" + x) + "b") + y) + "c"
+ * seeded with a string literal even when the head is empty, so `${7}`
+ * evaluates to "7" (the "" + x conversion applies to every piece).
+ * Grammar: START (CHUNK | EXPR_BEGIN expr EXPR_END)* END.
+ * Nested templates recurse through parse_expression -> parse_primary.
+ * Raw law: chunks are raw source spans (no unescaping — house gotcha). */
+static ASTNode* parse_template_literal(Parser* parser) {
+    int line = parser->previous.line;
+    int column = parser->previous.column;
+    ASTNode* acc = NULL;
+
+    while (true) {
+        if (match(parser, TOKEN_TEMPLATE_CHUNK)) {
+            char* text = str_dup_range(parser->previous.start, parser->previous.length);
+            ASTNode* piece = ast_create_string(text, line, column);
+            free(text);
+            acc = acc ? ast_create_binary_op(OP_ADD, acc, piece, line, column) : piece;
+        } else if (match(parser, TOKEN_TEMPLATE_EXPR_BEGIN)) {
+            ASTNode* expr = parse_expression(parser);
+            consume(parser, TOKEN_TEMPLATE_EXPR_END, "Expected '}' to close ${...} interpolation");
+            if (!acc) {
+                ASTNode* seed = ast_create_string("", line, column);
+                acc = ast_create_binary_op(OP_ADD, seed, expr, line, column);
+            } else {
+                acc = ast_create_binary_op(OP_ADD, acc, expr, line, column);
+            }
+        } else if (match(parser, TOKEN_TEMPLATE_END)) {
+            break;
+        } else if (check(parser, TOKEN_EOF)) {
+            error(parser, "Unterminated template literal");
+            return acc;
+        } else {
+            error(parser, "Malformed template literal");
+            return acc;
+        }
+    }
+
+    if (!acc) {
+        acc = ast_create_string("", line, column);
+    }
+    return acc;
+}
 
 // Parse primary expressions
 static ASTNode* parse_primary(Parser* parser) {
@@ -203,6 +261,10 @@ static ASTNode* parse_primary(Parser* parser) {
         return ast_create_float(value, parser->previous.line, parser->previous.column);
     }
     
+    if (match(parser, TOKEN_TEMPLATE_START)) {
+        return parse_template_literal(parser);
+    }
+
     if (match(parser, TOKEN_STRING)) {
         // Remove quotes
         size_t len = parser->previous.length - 2;
@@ -302,6 +364,11 @@ static ASTNode* parse_primary(Parser* parser) {
     }
     
     error(parser, "Expected expression");
+    /* Panic-mode progress law: the offending token must be consumed or every
+     * enclosing loop re-reports the identical error forever. */
+    if (!check(parser, TOKEN_EOF)) {
+        advance(parser);
+    }
     return NULL;
 }
 
@@ -309,13 +376,23 @@ static ASTNode* parse_primary(Parser* parser) {
 static ASTNode* parse_call(Parser* parser) {
     ASTNode* expr = parse_primary(parser);
     
+    /* parse_primary returns NULL after an error (and has consumed the bad
+     * token); cascading callers must stop instead of dereferencing NULL. */
+    if (!expr) return NULL;
+    
     while (true) {
         if (match(parser, TOKEN_LEFT_BRACE)) { // Struct literal
             if (expr->type != AST_IDENTIFIER) {
                 error(parser, "Expected struct name before '{'");
+                /* Panic path must release the partial AST we own, or every
+                 * malformed call leaks callee+args (LSan-confirmed). */
+                ast_free(expr);
                 return NULL;
             }
             char* struct_name = expr->identifier.name;
+            /* The identifier node is consumed by this literal: steal its name
+             * and free the node shell, otherwise both leak (backlog 3b). */
+            free(expr);
             int line = parser->previous.line;
             int column = parser->previous.column;
 
@@ -339,6 +416,7 @@ static ASTNode* parse_call(Parser* parser) {
             consume(parser, TOKEN_RIGHT_BRACE, "Expected '}' after struct literal");
 
             expr = ast_create_struct_literal(struct_name, fields, line, column);
+            free(struct_name); /* ast_create_struct_literal strdups; release the stolen original */
 
         } else if (match(parser, TOKEN_LEFT_PAREN)) {
             ASTList* args = ast_list_create();
@@ -679,7 +757,15 @@ static ASTNode* parse_block(Parser* parser) {
     
     while (!check(parser, TOKEN_RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
         ASTNode* stmt = parse_statement(parser);
-        if (stmt) ast_list_append(statements, stmt);
+        if (stmt) {
+            ast_list_append(statements, stmt);
+        } else if (parser->panic_mode) {
+            /* Statement failed without producing a node. Without this guard
+             * the loop re-parsed the SAME unconsumed token forever (an
+             * 'else' at statement position produced 158MB of errors).
+             * synchronize() skips to the next statement boundary. */
+            synchronize(parser);
+        }
     }
     
     consume(parser, TOKEN_RIGHT_BRACE, "Expected '}' after block");
@@ -695,7 +781,9 @@ static ASTNode* parse_destructure_element(Parser* parser) {
         char* name = malloc(parser->previous.length + 1);
         memcpy(name, parser->previous.start, parser->previous.length);
         name[parser->previous.length] = '\0';
-        return ast_create_destructure_rest(name, line, column);
+        ASTNode* rest = ast_create_destructure_rest(name, line, column);
+        free(name); /* creator strdups; this temp used to leak (LSan-found) */
+        return rest;
     }
     
     if (match(parser, TOKEN_COMMA)) {
@@ -1181,7 +1269,11 @@ ASTNode* parse_statement(Parser* parser) {
             finally_block = parse_block(parser);
         }
         
-        return ast_create_try(try_block, catch_var, catch_block, finally_block, line, column);
+        /* ast_create_try strdups catch_var — free the parser-local copy
+         * (nightshift 20261027 leak fix; LSan caught it via test_promise). */
+        ASTNode* try_node = ast_create_try(try_block, catch_var, catch_block, finally_block, line, column);
+        free(catch_var);
+        return try_node;
     }
     
     if (match(parser, TOKEN_THROW)) {
@@ -1219,7 +1311,15 @@ static void synchronize(Parser* parser) {
     parser->panic_mode = false;
 
     while (parser->current.type != TOKEN_EOF) {
-        // Semicolon marks end of statement
+        /* Semicolon marks end of statement. It must be CONSUMED to guarantee
+         * forward progress: an unconsumed ';' as current (e.g. after
+         * "Expected ';' after expression" on the same token) used to loop
+         * the same error forever. */
+        if (parser->current.type == TOKEN_SEMICOLON) {
+            advance(parser);
+            return;
+        }
+
         if (parser->previous.type == TOKEN_SEMICOLON) return;
 
         // Right brace at top level (end of block/struct) - advance past it

@@ -18,6 +18,7 @@
 #include "stdlib_bisect.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h> /* strcmp/strdup/memmove: bisect compares and inserts items */
 
 extern Value make_int(long long val);
 extern Value make_null(void);
@@ -32,13 +33,9 @@ static double val_to_double(Value* v) {
     return 0.0;
 }
 
-/* Get string from Value for comparison (or NULL) */
-static const char* val_to_string(Value* v) {
-    if (v->type == VAL_STRING) return v->string_val;
-    return NULL;
-}
-
-/* Compare two Values: returns -1, 0, or 1 */
+/* Compare two Values: returns -1, 0, or 1.
+ * Numeric or string comparison — bisect must order mixed lists the same way
+ * the interpreter's comparison operators do, so both branches live here. */
 static int val_compare(Value* a, Value* b) {
     /* String comparison */
     if (a->type == VAL_STRING && b->type == VAL_STRING) {

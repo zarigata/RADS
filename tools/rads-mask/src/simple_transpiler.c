@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdarg.h>
 
 #define MAX_LINE_LENGTH 4096
 #define MAX_INDENT 100
@@ -43,15 +44,20 @@ static int starts_with(const char* str, const char* prefix) {
 }
 
 static void replace_in_line(char* line, const char* from, const char* to) {
+    /* Bounded: replacements can grow the text (range( -> array.range( adds
+     * 6 bytes per hit), so every copy step respects the buffer end and
+     * truncates instead of smashing the stack. */
     char buffer[MAX_LINE_LENGTH];
     char* pos = line;
     char* temp = buffer;
     size_t from_len = strlen(from);
     size_t to_len = strlen(to);
 
-    while (*pos) {
+    char* buf_end = buffer + sizeof(buffer) - 1;
+    while (*pos && temp < buf_end) {
         if (strncmp(pos, from, from_len) == 0) {
-            strcpy(temp, to);
+            if (temp + to_len > buf_end) break;
+            memcpy(temp, to, to_len);
             temp += to_len;
             pos += from_len;
         } else {
@@ -62,6 +68,28 @@ static void replace_in_line(char* line, const char* from, const char* to) {
     strcpy(line, buffer);
 }
 
+
+// ============================================================================
+// Bounded output append (nightshift 20261028)
+// ============================================================================
+
+/* append_formatted: vsnprintf-based append that never writes past cap.
+ * Why: the old append_formatted(output, MAX_LINE_LENGTH, ...) appends could overflow
+ * the fixed MAX_LINE_LENGTH buffers on long lines + keyword expansion.
+ * How to extend: raise MAX_LINE_LENGTH or switch to heap GrowBuf if inputs
+ * grow; returns bytes written, silently truncates at the cap (transpiler
+ * output stays valid C-like text either way). */
+static int append_formatted(char* output, size_t cap, const char* fmt, ...) {
+    size_t used = strlen(output);
+    if (used >= cap - 1) return 0;
+    va_list ap;
+    va_start(ap, fmt);
+    int n = vsnprintf(output + used, cap - used, fmt, ap);
+    va_end(ap);
+    if (n < 0) return 0;
+    return n;
+}
+
 // ============================================================================
 // Transpilation Rules
 // ============================================================================
@@ -70,6 +98,13 @@ static void transpile_line(const char* input, char* output, int* indent_level) {
     char line[MAX_LINE_LENGTH];
     strncpy(line, input, MAX_LINE_LENGTH - 1);
     line[MAX_LINE_LENGTH - 1] = '\0';
+    /* fgets keeps the trailing newline; rules that append ';' would place it
+     * after the newline ("x = 42\n;"). Strip EOL here so every rule sees a
+     * clean single-line string. */
+    size_t line_len = strlen(line);
+    while (line_len > 0 && (line[line_len - 1] == '\n' || line[line_len - 1] == '\r')) {
+        line[--line_len] = '\0';
+    }
 
     // Calculate indentation
     int leading_spaces = count_leading_spaces(line);
@@ -98,7 +133,7 @@ static void transpile_line(const char* input, char* output, int* indent_level) {
         char* colon = strrchr(converted, ':');
         if (colon) {
             *colon = '\0';
-            sprintf(output + strlen(output), "blast %s {", converted + 4);
+            append_formatted(output, MAX_LINE_LENGTH, "blast %s {", converted + 4);
             *indent_level = new_indent + 1;
             return;
         }
@@ -106,8 +141,8 @@ static void transpile_line(const char* input, char* output, int* indent_level) {
 
     // Rule 2: Variable assignment with type inference
     // Python: x = 42  → RADS: turbo x = 42;
-    char* equals = strchr(converted, '=');
-    if (equals) {
+    char* equals = strchr(converted, '=') ;
+    if (equals && equals > converted) {
         // Check if it's not a comparison and no parens before equals
         if (*(equals - 1) != '=' && *(equals - 1) != '!' &&
             *(equals - 1) != '<' && *(equals - 1) != '>') {
@@ -122,12 +157,14 @@ static void transpile_line(const char* input, char* output, int* indent_level) {
             }
 
             if (!has_paren_before) {
-                char var_name[256];
+                char var_name[MAX_LINE_LENGTH];
                 char* start = converted;
                 while (isspace(*start)) start++;
                 char* end = equals - 1;
                 while (end > start && isspace(*end)) end--;
                 int len = end - start + 1;
+                if (len >= (int)sizeof(var_name)) len = sizeof(var_name) - 1;
+                if (len < 0) len = 0;
                 strncpy(var_name, start, len);
                 var_name[len] = '\0';
 
@@ -135,7 +172,7 @@ static void transpile_line(const char* input, char* output, int* indent_level) {
                 while (isspace(*value)) value++;
 
                 // Always use turbo for variable declarations
-                sprintf(output + strlen(output), "turbo %s = %s;", var_name, value);
+                append_formatted(output, MAX_LINE_LENGTH, "turbo %s = %s;", var_name, value);
                 trim(output);
                 return;
             }
@@ -159,7 +196,7 @@ static void transpile_line(const char* input, char* output, int* indent_level) {
             replace_in_line(condition, " or ", " || ");
             replace_in_line(condition, " not ", " ! ");
 
-            sprintf(output + strlen(output), "if (%s) {", condition);
+            append_formatted(output, MAX_LINE_LENGTH, "if (%s) {", condition);
             *indent_level = new_indent + 1;
             return;
         }
@@ -183,7 +220,7 @@ static void transpile_line(const char* input, char* output, int* indent_level) {
             for (int i = 0; i < new_indent - 1; i++) {
                 strcat(output, "    ");
             }
-            sprintf(output + strlen(output), "} elif (%s) {", condition);
+            append_formatted(output, MAX_LINE_LENGTH, "} elif (%s) {", condition);
             *indent_level = new_indent;
             return;
         }
@@ -212,7 +249,7 @@ static void transpile_line(const char* input, char* output, int* indent_level) {
             replace_in_line(condition, "True", "true");
             replace_in_line(condition, "False", "false");
 
-            sprintf(output + strlen(output), "loop (%s) {", condition);
+            append_formatted(output, MAX_LINE_LENGTH, "loop (%s) {", condition);
             *indent_level = new_indent + 1;
             return;
         }
@@ -227,8 +264,8 @@ static void transpile_line(const char* input, char* output, int* indent_level) {
                 *colon = '\0';
                 *in_pos = '\0';
 
-                char var[256];
-                strcpy(var, converted + 4);
+                char var[MAX_LINE_LENGTH];
+                snprintf(var, sizeof(var), "%s", converted + 4);
                 trim(var);
 
                 char collection[MAX_LINE_LENGTH];
@@ -237,7 +274,7 @@ static void transpile_line(const char* input, char* output, int* indent_level) {
 
                 replace_in_line(collection, "range(", "array.range(");
 
-                sprintf(output + strlen(output), "cruise (%s) { turbo %s;", collection, var);
+                append_formatted(output, MAX_LINE_LENGTH, "cruise (%s) { turbo %s;", collection, var);
                 *indent_level = new_indent + 1;
                 return;
             }
@@ -246,14 +283,14 @@ static void transpile_line(const char* input, char* output, int* indent_level) {
 
     // Rule 8: return value → return value;
     if (starts_with(converted, "return")) {
-        sprintf(output + strlen(output), "%s;", converted);
+        append_formatted(output, MAX_LINE_LENGTH, "%s;", converted);
         trim(output);
         return;
     }
 
     // Rule 9: break / continue
     if (strcmp(converted, "break") == 0 || strcmp(converted, "continue") == 0) {
-        sprintf(output + strlen(output), "%s;", converted);
+        append_formatted(output, MAX_LINE_LENGTH, "%s;", converted);
         return;
     }
 
@@ -263,29 +300,29 @@ static void transpile_line(const char* input, char* output, int* indent_level) {
         replace_in_line(rest, "True", "true");
         replace_in_line(rest, "False", "false");
         replace_in_line(rest, "None", "null");
-        sprintf(output + strlen(output), "echo%s;", rest);
+        append_formatted(output, MAX_LINE_LENGTH, "echo%s;", rest);
         trim(output);
         return;
     }
 
     // Rule 11: Function calls and expressions
     if (strchr(converted, '(') && !strchr(converted, '=')) {
-        sprintf(output + strlen(output), "%s;", converted);
+        append_formatted(output, MAX_LINE_LENGTH, "%s;", converted);
         trim(output);
         return;
     }
 
     // Rule 12: import module → import "module.rads";
     if (starts_with(converted, "import ")) {
-        char module[256];
-        strcpy(module, converted + 7);
+        char module[MAX_LINE_LENGTH];
+        snprintf(module, sizeof(module), "%s", converted + 7);
         trim(module);
-        sprintf(output + strlen(output), "import \"%s.rads\";", module);
+        append_formatted(output, MAX_LINE_LENGTH, "import \"%s.rads\";", module);
         return;
     }
 
     // Default: output as-is with semicolon (if not already there)
-    sprintf(output + strlen(output), "%s", converted);
+    append_formatted(output, MAX_LINE_LENGTH, "%s", converted);
     trim(output);
     if (output[strlen(output) - 1] != ';' && output[strlen(output) - 1] != '{') {
         strcat(output, ";");

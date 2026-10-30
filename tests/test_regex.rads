@@ -1,0 +1,108 @@
+// Test: regex module — named groups, backrefs, replace overflow fix
+// (nightshift 20261018, forged for Master Zarigata)
+// regex natives are auto-registered; no import needed.
+
+blast main() {
+    echo("--- regex named groups ---");
+
+    // (?P<name>...) Python syntax: groupdict-style struct
+    turbo d = regex.named_groups("(?P<year>[0-9]{4})-(?P<mon>[0-9]{2})-(?P<day>[0-9]{2})", "2026-10-18");
+    if (d.year == "2026" && d.mon == "10" && d.day == "18") { echo("PASS: named_groups (?P<...>) fields"); }
+    else { echo("FAIL: named_groups fields wrong: " + d.year + "-" + d.mon + "-" + d.day); }
+
+    // (?<name>...) .NET syntax parses to the same thing
+    turbo dn = regex.named_groups("(?<user>[a-z]+)@(?<host>[a-z]+)", "dagoth@morrowind");
+    if (dn.user == "dagoth" && dn.host == "morrowind") { echo("PASS: named_groups (?<...>) syntax"); }
+    else { echo("FAIL: .NET-style named groups wrong"); }
+
+    // mixed named + unnamed: named extract works, positional groups() unaffected
+    turbo mix = regex.named_groups("(?P<user>[a-z]+)@([0-9]+)", "urist@42");
+    turbo pos = regex.groups("(?P<user>[a-z]+)@([0-9]+)", "urist@42");
+    if (mix.user == "urist" && pos[0] == "urist" && pos[1] == "42") { echo("PASS: mixed named/unnamed groups"); }
+    else { echo("FAIL: mixed group extraction wrong"); }
+
+    // no match -> null (compare before member access)
+    turbo nm = regex.named_groups("(?P<year>[0-9]{4})", "no digits here");
+    if (nm == null) { echo("PASS: named_groups returns null on no match"); }
+    else { echo("FAIL: expected null on no match"); }
+
+    // optional group that doesn't participate -> empty string, not a crash
+    turbo opt = regex.named_groups("(?P<q>[0-9]+)?x", "x");
+    if (opt.q == "") { echo("PASS: unmatched optional group is empty"); }
+    else { echo("FAIL: unmatched optional group should be empty"); }
+
+    // group_names: declaration order, empty for plain patterns
+    turbo names = regex.group_names("(?P<year>[0-9]{4})-(?P<mon>[0-9]{2})");
+    if (names.length == 2 && names[0] == "year" && names[1] == "mon") { echo("PASS: group_names order"); }
+    else { echo("FAIL: group_names wrong"); }
+    if (regex.group_names("[a-z]+").length == 0) { echo("PASS: group_names empty w/o names"); }
+    else { echo("FAIL: group_names should be empty"); }
+
+    echo("--- regex backreferences in replace ---");
+
+    // \g<name> named backref
+    turbo r1 = regex.replace("(?P<user>[a-z]+)@(?<host>[a-z]+)", "dagoth@morrowind", "\g<host>:\g<user>");
+    if (r1 == "morrowind:dagoth") { echo("PASS: replace \\g<name> backref"); }
+    else { echo("FAIL: named backref replace got: " + r1); }
+
+    // \g<1> and bare \1 numeric backrefs
+    turbo r2 = regex.replace("([a-z]+)@([0-9]+)", "urist@42", "\g<1>=\2");
+    if (r2 == "urist=42") { echo("PASS: replace \\g<n> and \\n backrefs"); }
+    else { echo("FAIL: numeric backref got: " + r2); }
+
+    // \\ literal backslash survives
+    turbo r3 = regex.replace("x", "x", "a\\\\b");
+    if (r3 == "a\\b") { echo("PASS: escaped backslash in replacement"); }
+    else { echo("FAIL: escaped backslash got: " + r3); }
+
+    echo("--- regex.replace heap overflow fix ---");
+
+    // 100 matches x 50-char replacement = 5000 bytes into what the old code
+    // sized as a 300-byte buffer (ASan-confirmed smash before the fix)
+    turbo subject = str.repeat("a", 100);
+    turbo filler = str.repeat("b", 50);
+    turbo big = regex.replace("a", subject, filler);
+    if (str.count(big, "b") == 5000 && str.count(big, "a") == 0) { echo("PASS: replace survives 100x50 expansion"); }
+    else { echo("FAIL: expansion replace wrong (b count=" + str.count(big, "b") + ")"); }
+
+    // replacement shorter than match, many matches: content preserved
+    turbo r4 = regex.replace("[0-9]+", "1 22 333 4444", "N");
+    if (r4 == "N N N N") { echo("PASS: replace shrink case"); }
+    else { echo("FAIL: shrink replace got: " + r4); }
+
+    echo("--- regex translation edge cases ---");
+
+    // character class with ] as a member: []x] must survive translation
+    if (regex.match("[]x]b", "]b") && regex.match("[]x]b", "xb") && !regex.match("[]x]b", "yb")) {
+        echo("PASS: []x] class passes through");
+    } else { echo("FAIL: []x] class broken"); }
+
+    // negated class with ] as a member
+    if (regex.match("[^]x]b", "zb") && !regex.match("[^]x]b", "]b")) { echo("PASS: [^]x] class passes through"); }
+    else { echo("FAIL: [^]x] class broken"); }
+
+    // escaped paren is not a group; plain groups still counted
+    // (RADS strings are raw -- ONE backslash per escape, not Python's two)
+    turbo gp = regex.groups("\(([0-9]+)\)", "(77)");
+    if (gp[0] == "77") { echo("PASS: escaped parens not groups"); }
+    else { echo("FAIL: escaped paren handling wrong"); }
+
+    // duplicate names rejected (like Python)
+    if (!regex.match("(?P<a>x)(?P<a>y)", "xy")) { echo("PASS: duplicate group name rejected"); }
+    else { echo("FAIL: duplicate name should be rejected"); }
+
+    // bad group name rejected
+    if (!regex.match("(?P<1a>x)", "x")) { echo("PASS: invalid group name rejected"); }
+    else { echo("FAIL: 1a should not be a valid name"); }
+
+    // classic search/groups regressions still hold
+    turbo s = regex.search("([a-z]+)-([0-9]+)", "item-42");
+    if (s.match == "item-42" && s.start == 0 && s.end == 7) { echo("PASS: search struct intact"); }
+    else { echo("FAIL: search struct broken"); }
+    turbo f = regex.findall("[0-9]+", "a1 bb22 ccc333");
+    if (f.length == 3 && f[2] == "333") { echo("PASS: findall intact"); }
+    else { echo("FAIL: findall broken"); }
+    turbo sp = regex.split(",", "a,b,c");
+    if (sp.length == 3 && sp[1] == "b") { echo("PASS: split intact"); }
+    else { echo("FAIL: split broken"); }
+}

@@ -171,7 +171,7 @@ Value stdlib_env_paths(Interpreter* interp, int argc, Value* args) {
     while (token != NULL) {
         Value item;
         item.type = VAL_STRING;
-        item.string_val = strdup(token);
+        item.string_val = token; /* array_push clones it — the pre-strdup leaked */
         array_push(arr, item);
         token = strtok(NULL, ":");
     }
