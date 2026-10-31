@@ -115,6 +115,7 @@ static Array* parse_line(const char** cursor, char delimiter, char quote, char e
             v.type = VAL_STRING;
             v.string_val = field;
             array_push(fields, v);
+            free(field); /* array_push clones; the original leaked */
         }
     }
     
@@ -300,7 +301,7 @@ Value stdlib_csv_stringify(Interpreter* interp, int argc, Value* args) {
         while (field) {
             Value name;
             name.type = VAL_STRING;
-            name.string_val = strdup(field->name);
+            name.string_val = field->name; /* array_push clones it — the pre-strdup leaked */
             array_push(field_names, name);
             field = field->next;
         }

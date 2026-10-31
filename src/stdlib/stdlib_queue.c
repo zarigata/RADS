@@ -60,11 +60,11 @@ Value stdlib_queue_push(struct Interpreter* interp, int argc, Value* args) {
         fprintf(stderr, "Error: queue.push(q, value) requires a queue and a value\n");
         return make_null();
     }
-    /* Clone string values */
+    /* array_push deep-copies; no pre-clone needed (pre-strdup leaked it) */
     Value item;
     if (args[1].type == VAL_STRING) {
         item.type = VAL_STRING;
-        item.string_val = strdup(args[1].string_val);
+        item.string_val = args[1].string_val; /* array_push clones it — the pre-strdup leaked */
     } else {
         item = args[1];
     }
@@ -184,7 +184,7 @@ Value stdlib_queue_push_priority(struct Interpreter* interp, int argc, Value* ar
     Value item;
     if (args[1].type == VAL_STRING) {
         item.type = VAL_STRING;
-        item.string_val = strdup(args[1].string_val);
+        item.string_val = args[1].string_val; /* array_push clones it — the pre-strdup leaked */
     } else {
         item = args[1];
     }
@@ -259,7 +259,7 @@ Value stdlib_queue_to_array(struct Interpreter* interp, int argc, Value* args) {
         Value item;
         if (src->items[i].type == VAL_STRING) {
             item.type = VAL_STRING;
-            item.string_val = strdup(src->items[i].string_val);
+            item.string_val = src->items[i].string_val; /* array_push clones it — the pre-strdup leaked */
         } else {
             item = src->items[i];
         }
@@ -283,7 +283,7 @@ Value stdlib_queue_from_array(struct Interpreter* interp, int argc, Value* args)
         Value item;
         if (src->items[i].type == VAL_STRING) {
             item.type = VAL_STRING;
-            item.string_val = strdup(src->items[i].string_val);
+            item.string_val = src->items[i].string_val; /* array_push clones it — the pre-strdup leaked */
         } else {
             item = src->items[i];
         }

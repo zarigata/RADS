@@ -184,15 +184,20 @@ static Value jp_parse_object(JsonParser* p) {
     while (1) {
         jp_skip_ws(p);
         Value key = jp_parse_string(p);
-        if (key.type != VAL_STRING) { break; }
+        if (key.type != VAL_STRING) { value_free(&key); break; }
+        /* array_push deep-copies: release the original after the push or
+         * every key string leaks (LSan-confirmed, nightshift 20261031). */
         array_push(entries, key);
+        value_free(&key);
 
         jp_skip_ws(p);
         if (jp_peek(p) != ':') break;
         p->pos++; /* skip : */
 
         Value val = jp_parse_value(p);
+        /* Same push-clone law as keys: array_push owns its copy. */
         array_push(entries, val);
+        value_free(&val);
 
         jp_skip_ws(p);
         if (jp_peek(p) == ',') { p->pos++; continue; }

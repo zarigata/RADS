@@ -43,7 +43,9 @@ Value native_fs_readdir(struct Interpreter* interp, int argc, Value* args) {
     struct dirent* entry;
     while ((entry = readdir(d)) != NULL) {
         if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) continue;
-        array_push(arr, make_string(entry->d_name));
+        Value entry_name = make_string(entry->d_name);
+        array_push(arr, entry_name); /* push clones */
+        free(entry_name.string_val);
     }
     closedir(d);
     Value v; v.type = VAL_ARRAY; v.array_val = arr; return v;

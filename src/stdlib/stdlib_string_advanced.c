@@ -37,6 +37,7 @@ Value stdlib_string_split(struct Interpreter* interp, int argc, Value* args) {
         item.type = VAL_STRING;
         item.string_val = strdup(token);
         array_push(result_arr, item);
+        free(item.string_val); /* array_push clones; release the fresh original */
         token = strtok(NULL, sep);
     }
     

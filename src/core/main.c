@@ -21,9 +21,12 @@
 #include "stdlib_db.h"
 #include "stdlib_webengine.h"
 #include "stdlib_async_utils.h"
+#include "stdlib_promise.h"
 #include "stdlib_websocket.h"
 #include "stdlib_graphql.h"
 #include "stdlib_datetime.h"
+#include "stdlib_decimal.h"
+#include "stdlib_fractions.h"
 #include "stdlib_regex.h"
 #include "stdlib_test.h"
 #include "stdlib_env.h"
@@ -62,6 +65,7 @@
 #include "stdlib_tempfile.h"
 #include "stdlib_calendar.h"
 #include "stdlib_traceback.h"
+#include "stdlib_nostalgia.h"
 
 // ANSI Color Codes for Chroma Effects
 #define COLOR_RESET     "\033[0m"
@@ -108,6 +112,8 @@ static void stdlib_register_all(void) {
     stdlib_db_register();
     stdlib_webengine_register();
     stdlib_datetime_register();
+    stdlib_decimal_register();
+    stdlib_fractions_register();
     stdlib_regex_register();
     stdlib_test_register();
     stdlib_env_register();
@@ -121,6 +127,7 @@ static void stdlib_register_all(void) {
     stdlib_sort_register();
     stdlib_http_register();
     stdlib_async_utils_register();
+    stdlib_promise_register();
     stdlib_websocket_register();
     stdlib_graphql_register();
     stdlib_os_register();
@@ -149,6 +156,7 @@ static void stdlib_register_all(void) {
     stdlib_tempfile_register();
     stdlib_calendar_register();
     stdlib_traceback_register();
+    stdlib_nostalgia_register();
 }
 
 void print_usage() {
@@ -477,6 +485,7 @@ int run_repl() {
 
     // Clean up environment and event loop on exit
     interpreter_cleanup_environment();
+    stdlib_regex_cache_flush(); /* pattern cache owns heap nothing else frees */
     interpreter_cleanup_event_loop();
     return 0;
 }

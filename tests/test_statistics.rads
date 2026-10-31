@@ -1,0 +1,68 @@
+// Test: statistics module (nightshift 2026-10-12)
+// Note: RADS == does not coerce int/float, so float-returning functions
+// are compared with float literals or range checks.
+
+blast main() {
+    turbo samples = [2, 4, 4, 4, 5, 5, 7, 9];
+
+    turbo mean = statistics.mean(samples);
+    if (mean > 4.99 && mean < 5.01) { echo("PASS: mean ~ 5"); }
+    else { echo("FAIL: mean = " + mean); }
+
+    if (statistics.median(samples) == 4.5) { echo("PASS: median = 4.5"); }
+    else { echo("FAIL: median = " + statistics.median(samples)); }
+
+    if (statistics.median_low(samples) == 4.0) { echo("PASS: median_low = 4"); }
+    else { echo("FAIL: median_low"); }
+    if (statistics.median_high(samples) == 5.0) { echo("PASS: median_high = 5"); }
+    else { echo("FAIL: median_high"); }
+
+    if (statistics.mode(samples) == 4.0) { echo("PASS: mode = 4"); }
+    else { echo("FAIL: mode = " + statistics.mode(samples)); }
+
+    // variance of samples (sample): 4.571428...
+    turbo var = statistics.variance(samples);
+    if (var > 4.57 && var < 4.58) { echo("PASS: variance ~ 4.5714"); }
+    else { echo("FAIL: variance = " + var); }
+
+    // pvariance divides by n: 4.0 exactly
+    if (statistics.pvariance(samples) == 4.0) { echo("PASS: pvariance = 4"); }
+    else { echo("FAIL: pvariance = " + statistics.pvariance(samples)); }
+
+    // stdev = sqrt(variance) ~ 2.138
+    turbo sd = statistics.stdev(samples);
+    if (sd > 2.138 && sd < 2.139) { echo("PASS: stdev ~ 2.138"); }
+    else { echo("FAIL: stdev = " + sd); }
+
+    if (statistics.min(samples) == 2.0) { echo("PASS: min = 2"); }
+    else { echo("FAIL: min"); }
+    if (statistics.max(samples) == 9.0) { echo("PASS: max = 9"); }
+    else { echo("FAIL: max"); }
+    if (statistics.sum(samples) == 40.0) { echo("PASS: sum = 40"); }
+    else { echo("FAIL: sum = " + statistics.sum(samples)); }
+    if (statistics.count(samples) == 8) { echo("PASS: count = 8"); }
+    else { echo("FAIL: count"); }
+
+    // geometric mean of [1, 3, 9] = 3
+    turbo gm = statistics.geometric_mean([1, 3, 9]);
+    if (gm > 2.99 && gm < 3.01) { echo("PASS: geometric_mean ~ 3"); }
+    else { echo("FAIL: geometric_mean = " + gm); }
+
+    // harmonic mean of [1, 2, 4] = 12/7 ~ 1.714
+    turbo hm = statistics.harmonic_mean([1, 2, 4]);
+    if (hm > 1.71 && hm < 1.72) { echo("PASS: harmonic_mean ~ 1.714"); }
+    else { echo("FAIL: harmonic_mean = " + hm); }
+
+    // quantiles returns an array of n-1 cut points
+    turbo q = statistics.quantiles(samples, 4);
+    if (q.length == 3) { echo("PASS: quantiles len = 3"); }
+    else { echo("FAIL: quantiles len = " + q.length); }
+
+    // edge: empty array errors out and returns null
+    if (statistics.mean([]) == null) { echo("PASS: mean([]) -> null"); }
+    else { echo("FAIL: mean([]) should be null"); }
+
+    // edge: variance needs at least 2 values
+    if (statistics.variance([5]) == null) { echo("PASS: variance([5]) -> null"); }
+    else { echo("FAIL: variance single value should be null"); }
+}

@@ -322,7 +322,7 @@ RSTAR_INTERNAL int fetch_registry_packages(const char *query, const char *catego
     snprintf(cmd, sizeof(cmd),
         "curl -s -X POST %s "
         "-H 'Content-Type: application/json' "
-        "-d '{\"event_type\":\"api-search\",\"client_payload\":{",
+        "-d '{\"event_type\":\"api-search\",\"client_payload\":{"
         "\"query\":\"%s\",\"category\":\"%s\",\"license\":\"%s\"}}'",
         url, query ? query : "", category ? category : "", license ? license : "");
 
