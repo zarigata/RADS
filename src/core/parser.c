@@ -484,6 +484,66 @@ static ASTNode* parse_primary(Parser* parser) {
         return expr;
     }
 
+    /* Anonymous object literal (JS parity, nightshift 20261101): a bare '{'
+     * at EXPRESSION position builds an anonymous struct instance —
+     * json.stringify({"test": "rads"}) and friends. Statement position is
+     * untouched: parse_statement routes a leading '{' to parse_block, so
+     * blocks and object literals never collide (the same disambiguation
+     * rule JavaScript uses). Keys: identifier ({name: expr}), string
+     * ({"name": expr}), or shorthand ({name} == {name: name}). Extend:
+     * computed keys [expr] and spread ...obj when a use case lands. */
+    if (match(parser, TOKEN_LEFT_BRACE)) {
+        int line = parser->previous.line;
+        int column = parser->previous.column;
+        ASTList* fields = ast_list_create();
+        if (!check(parser, TOKEN_RIGHT_BRACE)) {
+            do {
+                char* key = NULL;
+                if (match(parser, TOKEN_IDENTIFIER)) {
+                    key = malloc(parser->previous.length + 1);
+                    memcpy(key, parser->previous.start, parser->previous.length);
+                    key[parser->previous.length] = '\0';
+                } else if (match(parser, TOKEN_STRING)) {
+                    size_t klen = parser->previous.length - 2;  /* strip quotes */
+                    key = malloc(klen + 1);
+                    memcpy(key, parser->previous.start + 1, klen);
+                    key[klen] = '\0';
+                } else {
+                    error_at_current(parser, "Expected field name (identifier or string) in object literal");
+                    ast_list_free(fields);
+                    /* Panic-mode progress law: the offending token must be
+                     * consumed or enclosing loops re-report forever. */
+                    if (!check(parser, TOKEN_EOF)) advance(parser);
+                    return NULL;
+                }
+
+                ASTNode* value = NULL;
+                if (match(parser, TOKEN_COLON)) {
+                    value = parse_expression(parser);
+                } else {
+                    /* Shorthand {k} == {k: k} — value is the key identifier. */
+                    value = ast_create_identifier(key, parser->previous.line, parser->previous.column);
+                }
+                if (!value) {
+                    free(key);
+                    ast_list_free(fields);
+                    return NULL;
+                }
+
+                ASTNode* field_ident = ast_create_identifier(key, line, column);
+                free(key);  /* ast_create_identifier strdups */
+                ASTNode* assign = ast_create_assign(field_ident, value, line, column);
+                ast_list_append(fields, assign);
+                /* Trailing comma is legal (JS parity): break before asking
+                 * for another field if '}' follows the comma. */
+                if (!match(parser, TOKEN_COMMA)) break;
+                if (check(parser, TOKEN_RIGHT_BRACE)) break;
+            } while (true);
+        }
+        consume(parser, TOKEN_RIGHT_BRACE, "Expected '}' after object literal");
+        return ast_create_struct_literal(NULL, fields, line, column);
+    }
+
     // Anonymous function: blast(params) { body }
     if (match(parser, TOKEN_BLAST)) {
         int line = parser->previous.line;
@@ -528,9 +588,15 @@ static ASTNode* parse_call(Parser* parser) {
     if (!expr) return NULL;
     
     while (true) {
-        if (match(parser, TOKEN_LEFT_BRACE)) { // Struct literal
+        /* Struct literal postfix (IDENT { ... }) — SAME LINE ONLY: a '{' on
+         * a fresh line never continues an expression (JS law). Without this,
+         * `{ marker = 1 }` after a complete call statement was swallowed as a
+         * struct-literal continuation and errored (nightshift 20261101). */
+        if (parser->current.type == TOKEN_LEFT_BRACE &&
+            parser->current.line == parser->previous.line) {
+            advance(parser);
             if (expr->type != AST_IDENTIFIER) {
-                error(parser, "Expected struct name before '{'");
+                error(parser, "Unexpected '{' after expression — named struct literals need a struct name (Point {x: 1}); for an anonymous object, wrap it: ({x: 1})");
                 /* Panic path must release the partial AST we own, or every
                  * malformed call leaks callee+args (LSan-confirmed). */
                 ast_free(expr);

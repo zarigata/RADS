@@ -8,7 +8,9 @@ extern Value make_int(long long val);
 extern Value make_string(const char* val);
 extern Value make_bool(bool val);
 extern Value make_null(void);
+extern void value_free(Value* v);
 extern Value interpreter_execute_callback(Value callback, int argc, Value* args);
+extern void interpreter_raise(Value v);
 
 // ANSI Color codes
 #define COLOR_RESET   "\033[0m"
@@ -253,6 +255,33 @@ Value stdlib_test_toBe(Interpreter* interp, int argc, Value* args) {
 Value stdlib_test_toEqual(Interpreter* interp, int argc, Value* args) {
     // Same as toBe for now (deep compare)
     return stdlib_test_toBe(interp, argc, args);
+}
+
+/* assert(cond, message) — global assertion native (nightshift 20261101).
+ * Why: test_http/test_time/test_string/test_struct call a bare assert()
+ * that never existed; before honest-failure it was a SILENT no-op (null,
+ * exit 0), so those suites could not fail. Python parity: raise on false.
+ * The message carries a leading "FAIL: " so the runner's grep and humans
+ * can find assertion failures in output. Returns true on success. */
+Value stdlib_test_assert(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1) {
+        interpreter_raise(make_string("FAIL: assert() requires a condition"));
+        return make_bool(false);
+    }
+    bool passed = is_truthy(&args[0]);
+    if (!passed) {
+        char msg[512];
+        if (argc >= 2 && args[1].type == VAL_STRING) {
+            snprintf(msg, sizeof(msg), "FAIL: assertion failed: %s", args[1].string_val);
+        } else {
+            snprintf(msg, sizeof(msg), "FAIL: assertion failed (got falsy value)");
+        }
+        Value err = make_string(msg);
+        interpreter_raise(err);
+        value_free(&err);
+    }
+    return make_bool(passed);
 }
 
 // test.expect(val).toBeTruthy() - Truthy assertion
@@ -529,6 +558,7 @@ Value stdlib_test_run(Interpreter* interp, int argc, Value* args) {
 }
 
 void stdlib_test_register(void) {
+    register_native("assert", stdlib_test_assert);  /* global — no module (20261101) */
     register_native("test.describe", stdlib_test_describe);
     register_native("test.it", stdlib_test_it);
     register_native("test.expect", stdlib_test_expect);

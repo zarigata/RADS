@@ -777,12 +777,34 @@ static Value eval_call(ASTNode* node) {
             if (full_name) free(full_name);
             return result;
         }
+        /* Undefined/non-callable callee (honest-failure law, nightshift
+         * 20261101). This used to `return make_null()` — a typo like pront()
+         * or a call to a function that never existed silently produced null
+         * and the program kept running (exit 0). Python raises
+         * NameError/TypeError here; now the throw is installed so try/catch
+         * can field it and report_uncaught_throw prints it with a nonzero
+         * exit. Must run BEFORE free(full_name): name aliases full_name for
+         * member-shaped callees (obj.method), so raising after the free
+         * reads freed memory. func_val (fetched above) tells us whether the
+         * name is bound to a non-function value vs not bound at all. */
+        char msg[256];
+        if (func_val.type == VAL_NULL) {
+            snprintf(msg, sizeof(msg), "'%s' is not defined", name);
+        } else {
+            snprintf(msg, sizeof(msg), "'%s' is not a function", name);
+        }
+        Value err = make_string(msg);
+        interpreter_raise(err);
+        value_free(&err);
         value_free(&func_val);
-
         if (full_name) free(full_name);
+        return make_null();
     }
-    
-    // Fallback for user functions (not fully implemented in this prototype)
+
+    /* Non-identifier, non-member callee that dispatched nothing. */
+    Value err = make_string("expression is not callable");
+    interpreter_raise(err);
+    value_free(&err);
     return make_null();
 }
 
@@ -1301,15 +1323,28 @@ static Value eval_expression(ASTNode* node) {
             return env_get(node->identifier.name);
         
         case AST_STRUCT_LITERAL: {
-            ASTNode* def_node = find_struct(node->struct_literal.name);
-            if (!def_node) {
-                fprintf(stderr, "Error: Struct '%s' not defined.\n", node->struct_literal.name);
-                return make_null();
+            /* Anonymous object literal ({k: v}, JS parity 20261101): NULL
+             * name means no registry lookup — build an instance with a NULL
+             * definition, the same shape natives like regex.search return.
+             * Named literals keep the strict find_struct() error path. */
+            const char* lit_name = node->struct_literal.name;
+            ASTNode* def_node = NULL;
+            if (lit_name) {
+                def_node = find_struct(lit_name);
+                if (!def_node) {
+                    fprintf(stderr, "Error: Struct '%s' not defined.\n", lit_name);
+                    return make_null();
+                }
             }
 
             StructInstance* instance = malloc(sizeof(StructInstance));
-            instance->definition = struct_def_intern(node->struct_literal.name, def_node);
+            instance->definition = lit_name ? struct_def_intern(lit_name, def_node) : NULL;
+            /* Insertion order (JS object parity): append at the tail. The
+             * old prepend serialized fields in REVERSE source order — no
+             * test pinned that, and object literals must round-trip in
+             * the order written. */
             instance->fields = NULL;
+            FieldValue** field_tail = &instance->fields;
 
             for (size_t i = 0; i < node->struct_literal.fields->count; i++) {
                 ASTNode* assign_node = node->struct_literal.fields->nodes[i];
@@ -1328,8 +1363,9 @@ static Value eval_expression(ASTNode* node) {
                 field->name = strdup(assign_node->assign_expr.target->identifier.name);
                 field->value = malloc(sizeof(Value));
                 *field->value = eval_expression(assign_node->assign_expr.value);
-                field->next = instance->fields;
-                instance->fields = field;
+                field->next = NULL;
+                *field_tail = field;
+                field_tail = &field->next;
             }
 
             Value v;

@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "stdlib_json.h"
+extern Value value_retain(Value v);
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -658,7 +659,12 @@ Value native_json_get(struct Interpreter* interp, int argc, Value* args) {
     }
 
     free(path_copy);
-    return current;
+    /* `current` ALIASES an item inside args[0] (arr->items[i+1]) — the
+     * interpreter frees the args array right after this call, so returning
+     * the borrowed Value is a use-after-free at env_set/teardown (the 20261024
+     * aliasing-UAF class; this site survived that sweep because json.get
+     * paths only became hot once test_v0.0.12 could run, 20261101). */
+    return value_retain(current);
 }
 
 /* json.keys(parsed_object) → array of key strings */

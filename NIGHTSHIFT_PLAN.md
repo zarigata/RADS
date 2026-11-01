@@ -16,6 +16,45 @@ Branch `nightshift/20261013-stdlib-float-parity` carries the completed port to t
 **clean-build green** (trio 11+8+17 PASS, runner 9/9, exit 0). Merge that branch to unblock main.
 
 ## Night Log
+ - **2026-11-01**: (1) sync: fetch clean, PRs #19-#32 all still open, none merged; cut
+   nightshift/20261101-object-literals from js-syntax head 38b4eed. (2) feat(core,stdlib):
+   **BACKLOG 11 CLOSED — bare-{ object literals + the honest-failure night**. json.stringify({"test":"rads"})
+   — the exact test_http.rads blocker — now parses and runs; test_http.rads PASSED end-to-end (live
+   network, 11 asserts) for the first time in its life. Shipped: (a) parse_primary { branch → anonymous
+   struct instance (NULL name/definition — the shape regex.search already returns); keys: identifier,
+   string, {k} shorthand; trailing comma legal; insertion-order fields (old code PREPENDED — no test
+   pinned reverse order, and JS objects serialize in source order). (b) parse_call struct-literal postfix
+   now SAME-LINE ONLY — `{ marker = 1 }` on the next line was being swallowed as a struct-literal
+   continuation (JS law: { never continues an expression across a newline). (c) ast_create_struct_literal
+   NULL-name guard. (3) THE BIG ONE — undefined calls were SILENT NO-OPS: eval_call's final fallback was
+   `return make_null()` ("not fully implemented in this prototype") — typo'd or imagined function names
+   (pront(), graphql_schema(), ffi.call(), length()) ran as null, exit 0. Now raises 'X is not defined' /
+   'X is not a function' (Python NameError/TypeError parity), catchable via try/catch, uncaught → exit 1.
+   Honest-failure immediately caught: test_memory_truth's chr(10) never existed (suite was green while
+   calling nothing); examples/graphql_server+websocket_echo+ffi_test were built on fantasy APIs; two pulsar
+   demos used imaginary length(). (4) Global natives shipped (first dot-less names): assert(cond,msg)
+   — throws "FAIL: assertion failed: ..." (grep-able, runner-compatible), print(...), str(v), type(v)
+   (null/bool/int/float/string/function/array/struct/iterator), chr/ord (0..255, Python-parity range
+   errors). string.contains alias (test_http uses string.* style). (5) LEAK/UAF CLASS exposed by the
+   newly-runnable paths, all LSan/ASan-verified then killed: csv.parse had UNINITIALIZED instance->definition
+   (garbage pointer copied by value_clone) + leaked every row struct after array_push-clone; http header_cb
+   leaked 273B/8alloc per response (make_string-then-push class); **json.get returned a BORROWED alias into
+   args[0] — use-after-free at env_set/teardown, deterministic 3/3 on BASE (38b4eed), survived the 20261024
+   sweep because test_v0.0.12's json.get paths only became hot once the suite could run (20261031)** — now
+   value_retain. v0.0.12 UAF 2 hits → 0. (6) tests/test_object_literals.rads — 18 pins (literals at arg
+   position, insertion order, shorthand, trailing comma, named-struct strictness, statement-brace-is-block,
+   throw+catch of both error shapes, all new globals), planted-failure negative-tested (exit 1, grep-able
+   FAIL:), wired as suite 24. (7) My own corpse bugs: first object-literal error pointer blamed the '{' not the
+   bad key (error→error_at_current); two test expectations used Python-style escaped quotes in raw strings
+   (rewritten as backticks — same law as last night); printf \\x22 wrote literal backslash-x22 into a test line
+   (caught by the failing check); three patch-script path typos (cachb/, .hermes profiles split, struct
+   placeholder junk line) — every one caught before commit by build/parse/grep gates. Verified: clean build
+   exit 0 (0 errors, 0 new warnings from touched files), runner **24/24 suites PASSED 0 FAIL lines grepped
+   TWICE**, ASan+UBSan+LSan: object_literals/v0.0.12/js_syntax/memory_truth/http/structs ALL 0 findings 0
+   leaks; repo-wide tests/*.rads sweep: only tests/test_filesystem.rads dirty (KNOWN backlog 10
+   async_utils ~32B/callback, pre-existing, untouched); examples sweep incl. subdirs: 0 undefined-call
+   errors. Not verified: CI on the PR. PR: (URL pending — gh pr create next)
+
 
  - **2026-10-31**: (1) sync: fetch clean, PRs #19-#31 all still open, none merged; cut
    nightshift/20261031-js-syntax-parity from struct-leak head d68c72b. (2) f2faa02
@@ -200,4 +239,4 @@ Branch `nightshift/20261013-stdlib-float-parity` carries the completed port to t
 7. ~~scientific-notation float literals~~ SHIPPED 2026-10-29 (PR #30, with the Python-parity float-display fix it exposed).
 9. ~~fn-lambda syntax parity gap~~ CLOSED 2026-10-31 (PR #32): fn(){} lambdas + let + ASI + script mode shipped; test_v0.0.12 resurrected 50/50 (suite 22), test_js_syntax 15 pins (suite 23). BONUS: the test framework's assertions never actually RAN before (chained calls silently null) — fixed with module-shaped chained dispatch; json.parse leak class swept.
 10. **async_utils callback leaks**: stdlib_async_series/parallel leak ~32B per callback via interpreter_execute_callback value_clone + the result Array (LSan on tests/test_filesystem.rads). Pre-existing, untouched by the 2026-10-30 sweep. Needs an event-loop-owned lifetime audit.
-11. **bare-{ object literals at argument position** (JS parity): `json.stringify({"test": "rads"})` — a `{` after `(` parses as struct literal requiring a NAME and fails (`test_http.rads` line 33 is the live repro; the file parses fully once this lands). Needs primary-expression `{` support (map-literal shape like JS) or a clearer diagnostic suggesting named-struct syntax.
+11. ~~bare-{ object literals at argument position~~ CLOSED 2026-11-01: bare `{` at expression position parses as an anonymous struct instance (string/identifier/shorthand keys, trailing comma, insertion order); statement-position `{` stays a block; struct-literal postfix is same-line only. test_http.rads now runs end-to-end. BONUS shipped same night: undefined calls were silent no-ops (make_null fallback) — now throw NameError/TypeError-style errors; global natives assert/print/str/type/chr/ord; csv.parse garbage definition pointer + row leak; http header leak; json.get aliasing UAF (pre-existing on base, 3/3 deterministic) all fixed.

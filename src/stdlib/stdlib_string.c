@@ -700,6 +700,7 @@ void stdlib_string_register(void) {
     register_native("str.len", native_str_length);
     register_native("str.length", native_str_length); /* JS parity alias (20261031) */
     register_native("string.length", native_str_length);
+    register_native("string.contains", native_str_contains);  /* JS-style alias used by test_http (20261101) */
     register_native("str.trim", native_str_trim);
     register_native("str.substring", native_str_substring);
     register_native("str.contains", native_str_contains);

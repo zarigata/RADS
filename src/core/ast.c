@@ -276,12 +276,15 @@ ASTNode* ast_create_member_expr(ASTNode* object, const char* member, int line, i
     return node;
 }
 
+/* name may be NULL: anonymous object literals (JS-style {k: v}, nightshift
+ * 20261101) carry no struct name, and strdup(NULL) would crash. ast_free
+ * calls free(NULL) harmlessly, so the NULL round-trips safely. */
 ASTNode* ast_create_struct_literal(const char* name, ASTList* fields, int line, int column) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_STRUCT_LITERAL;
     node->line = line;
     node->column = column;
-    node->struct_literal.name = strdup(name);
+    node->struct_literal.name = name ? strdup(name) : NULL;
     node->struct_literal.fields = fields;
     return node;
 }
