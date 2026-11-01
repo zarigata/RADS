@@ -1,0 +1,41 @@
+// Scientific notation literals + Python-parity float display — nightshift 20261029
+// Pins taken from CPython 3.14 repr() and node v20 stringify behavior.
+// NOTE: RADS strings are RAW — one backslash per escape, not two.
+blast main() {
+    // --- literal forms: value + type ---
+    if (1e2 == 100.0) { echo("PASS 1e2 value"); } else { echo("FAIL 1e2 value"); }
+    if (typeof(1e2) == "float") { echo("PASS 1e2 is float"); } else { echo("FAIL 1e2 type"); }
+    if (2.5E-3 == 0.0025) { echo("PASS 2.5E-3 value"); } else { echo("FAIL 2.5E-3"); }
+    if (2E+3 == 2000.0) { echo("PASS 2E+3 value"); } else { echo("FAIL 2E+3"); }
+    if (1.5e3 == 1500.0) { echo("PASS 1.5e3 value"); } else { echo("FAIL 1.5e3"); }
+    if (7e0 == 7.0) { echo("PASS 7e0 value"); } else { echo("FAIL 7e0"); }
+    if (3e0 == 3) { echo("PASS 3e0 == 3 cross-type"); } else { echo("FAIL 3e0 cross"); }
+    if (1e-1 == 0.1) { echo("PASS 1e-1 == 0.1"); } else { echo("FAIL 1e-1"); }
+    if (6.02e23 > 6e23) { echo("PASS 6.02e23 > 6e23"); } else { echo("FAIL 6.02gt"); }
+    if (6.02e23 < 6.1e23) { echo("PASS 6.02e23 < 6.1e23"); } else { echo("FAIL 6.02lt"); }
+
+    // --- float display law: "" + x pins (Python repr semantics) ---
+    if ("" + 2.5 == "2.5") { echo("PASS display 2.5"); } else { echo("FAIL display 2.5"); }
+    if ("" + 100.0 == "100.0") { echo("PASS display 100.0"); } else { echo("FAIL display 100.0"); }
+    if ("" + (1e6 + 1) == "1000001.0") { echo("PASS display 1000001.0"); } else { echo("FAIL display 1000001.0"); }
+    if ("" + 0.1 + "" == "0.1") { echo("PASS display 0.1"); } else { echo("FAIL display 0.1"); }
+    if ("" + (0.1 + 0.2) == "0.30000000000000004") { echo("PASS display 0.1+0.2"); } else { echo("FAIL display 0.1+0.2"); }
+    if ("" + 1e-5 == "1e-05") { echo("PASS display 1e-05"); } else { echo("FAIL display 1e-05"); }
+    if ("" + 1e16 == "1e+16") { echo("PASS display 1e+16"); } else { echo("FAIL display 1e+16"); }
+    if ("" + 1e15 == "1000000000000000.0") { echo("PASS display 1e15 fixed"); } else { echo("FAIL display 1e15 fixed"); }
+    if ("" + 3.14 == "3.14") { echo("PASS display 3.14"); } else { echo("FAIL display 3.3.14"); }
+    if ("" + -0.0 == "-0.0") { echo("PASS display -0.0"); } else { echo("FAIL display -0.0"); }
+    if ("" + 123456789.125 == "123456789.125") { echo("PASS display 123456789.125"); }
+    if ("" + (1.0/3.0) == "0.3333333333333333") { echo("PASS display 1/3"); } else { echo("FAIL display 1/3"); }
+    if ("" + 1.7976931348623157e308 == "1.7976931348623157e+308") { echo("PASS display DBL_MAX"); } else { echo("FAIL display DBL_MAX"); }
+    if ("" + 5e-324 == "5e-324") { echo("PASS display subnormal"); } else { echo("FAIL display subnormal"); }
+    if ("" + 6.02e23 == "6.02e+23") { echo("PASS display 6.02e+23"); } else { echo("FAIL display 6.02e+23"); }
+
+    // --- non-exponent 'e' stays an identifier boundary (rollback law) ---
+    turbo hex = "550e8400-e29b";
+    if (str.count(hex, "e") == 2) { echo("PASS e in strings untouched"); } else { echo("FAIL e strings"); }
+
+    // --- integers unaffected ---
+    if ("" + 42 == "42") { echo("PASS int display 42"); } else { echo("FAIL int 42"); }
+    if (typeof(42) == "integer") { echo("PASS typeof 42"); } else { echo("FAIL typeof 42"); }
+}

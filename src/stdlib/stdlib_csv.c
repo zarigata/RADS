@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+extern void value_free(Value* v);
 #include <ctype.h>
 
 extern Value make_string(const char* val);
@@ -115,6 +116,7 @@ static Array* parse_line(const char** cursor, char delimiter, char quote, char e
             v.type = VAL_STRING;
             v.string_val = field;
             array_push(fields, v);
+            free(field); /* array_push clones; the original leaked */
         }
     }
     
@@ -194,6 +196,10 @@ Value stdlib_csv_parse(Interpreter* interp, int argc, Value* args) {
         
         // Create struct instance for this row
         StructInstance* instance = malloc(sizeof(StructInstance));
+        instance->definition = NULL;  /* anonymous row struct — the definition
+                                        pointer was UNINITIALIZED garbage before
+                                        (20261101); value_clone copies it and any
+                                        member-error print would deref garbage. */
         instance->fields = NULL;
         FieldValue* last_field = NULL;
         
@@ -233,6 +239,15 @@ Value stdlib_csv_parse(Interpreter* interp, int argc, Value* args) {
         item.type = VAL_STRUCT_INSTANCE;
         item.struct_instance = instance;
         array_push(result, item);
+        /* array_push deep-copies (value_clone): the local original must be
+         * released or every row struct leaks (same class as the 20261030
+         * array_push-clone sweep — this site was missed because chr(10)
+         * never worked, so the multi-row path NEVER RAN until honest-
+         * failure made undefined calls throw). */
+        Value tmp;
+        tmp.type = VAL_STRUCT_INSTANCE;
+        tmp.struct_instance = instance;
+        value_free(&tmp);
     }
     
     // Free headers if allocated
@@ -300,7 +315,7 @@ Value stdlib_csv_stringify(Interpreter* interp, int argc, Value* args) {
         while (field) {
             Value name;
             name.type = VAL_STRING;
-            name.string_val = strdup(field->name);
+            name.string_val = field->name; /* array_push clones it — the pre-strdup leaked */
             array_push(field_names, name);
             field = field->next;
         }
