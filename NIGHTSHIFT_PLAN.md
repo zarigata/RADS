@@ -53,7 +53,7 @@ Branch `nightshift/20261013-stdlib-float-parity` carries the completed port to t
    TWICE**, ASan+UBSan+LSan: object_literals/v0.0.12/js_syntax/memory_truth/http/structs ALL 0 findings 0
    leaks; repo-wide tests/*.rads sweep: only tests/test_filesystem.rads dirty (KNOWN backlog 10
    async_utils ~32B/callback, pre-existing, untouched); examples sweep incl. subdirs: 0 undefined-call
-   errors. Not verified: CI on the PR. PR: (URL pending — gh pr create next)
+   errors. Not verified: CI on the PR. PR #33: https://github.com/zarigata/RADS/pull/33
 
 
  - **2026-10-31**: (1) sync: fetch clean, PRs #19-#31 all still open, none merged; cut
@@ -211,6 +211,7 @@ Branch `nightshift/20261013-stdlib-float-parity` carries the completed port to t
 
 ## Open PR Review
 | PR | Title | Status | Verdict |
+| 33 | object literals + honest call failures + global natives | OPEN — head Dagoth-Ur-69:nightshift/20261101-object-literals | awaiting master review; backlog 11 closed, test_http.rads runs end-to-end for the first time; json.get UAF fixed |
 |----|-------|--------|---------|
 | 20 | nostalgia module + clean-build fix for main | OPEN — head Dagoth-Ur-69:nightshift/20261017-forge-sync, +1 comment (pool_closed, bb7db17) | awaiting master review; carries the main clean-build fix |
 | 21 | regex named groups + replace heap-overflow fix | OPEN — head Dagoth-Ur-69:nightshift/20261018-re-named-groups | awaiting master review |
