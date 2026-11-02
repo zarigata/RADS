@@ -42,6 +42,7 @@ test_files=(
     "test_v0.0.12.rads"
     "test_js_syntax.rads"
     "test_object_literals.rads"
+    "test_slices.rads"
 )
 
 for test_file in "${test_files[@]}"; do

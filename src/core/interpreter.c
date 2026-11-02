@@ -1155,6 +1155,133 @@ static Value eval_binary_op(ASTNode* node) {
 }
 
 // Evaluate expression
+/* ── Python-parity indexing & slicing (nightshift 20261102) ─────────
+ * Helpers shared by AST_INDEX_EXPR eval, optional-chain index, and
+ * index assignment. Strings index/slice by UTF-8 CODE POINT (same law
+ * as string iterators, 20261025) but slices return byte-accurate
+ * substrings; arrays by item. Errors throw (catchable), matching the
+ * honest-failure law of 20261101: Python raises IndexError/TypeError/
+ * ValueError, never a silent null. */
+
+/* Human name for a Value's type, for error text. */
+static const char* value_type_name(ValueType t) {
+    switch (t) {
+        case VAL_INT:   return "int";
+        case VAL_FLOAT: return "float";
+        case VAL_BOOL:  return "bool";
+        case VAL_STRING: return "string";
+        case VAL_ARRAY: return "array";
+        case VAL_NULL:  return "null";
+        case VAL_FUNCTION: return "function";
+        case VAL_STRUCT_DEF: return "struct_def";
+        case VAL_STRUCT_INSTANCE: return "struct";
+        case VAL_ITERATOR: return "iterator";
+    }
+    return "unknown";
+}
+
+/* Byte length of the UTF-8 code point starting at s (byte-safe: any
+ * invalid lead falls back to 1). Mirrors the iterator's decoder. */
+static size_t utf8_cp_len(const char* s) {
+    unsigned char c = (unsigned char)s[0];
+    if ((c & 0x80) == 0) return 1;
+    if ((c & 0xE0) == 0xC0) return 2;
+    if ((c & 0xF0) == 0xE0) return 3;
+    if ((c & 0xF8) == 0xF0) return 4;
+    return 1;
+}
+
+/* Count code points in a NUL-terminated string. */
+static size_t utf8_count(const char* s) {
+    size_t n = 0;
+    while (*s) { s += utf8_cp_len(s); n++; }
+    return n;
+}
+
+/* Resolve a Python slice's three arms against a length. Any arm may be
+ * NULL (omitted) or negative (from the end). Returns false + installs a
+ * throw on step==0 (ValueError parity). Output i begins at start and
+ * advances by step while 0<=i<end_bound (end_bound excluded). */
+static bool slice_bounds(long long len, const Value* start, const Value* end,
+                         const Value* step, long long* out_i, long long* out_bound,
+                         long long* out_step) {
+    long long s_step = (step && step->type == VAL_INT) ? step->int_val : 1;
+    if (step && step->type == VAL_NULL) s_step = 1;      /* explicit null = default */
+    if (s_step == 0) {
+        Value e = make_string("slice step cannot be zero");
+        interpreter_raise(e); value_free(&e);
+        return false;
+    }
+    /* Omitted arms take step-sign defaults (CPython PySlice_Unpack).
+     * CRITICAL: omitted end under a NEGATIVE step is the stop sentinel
+     * "before element 0" — NOT the integer -1 (which normalizes to
+     * len-1). a[3::-1] == [3,2,1,0] but a[3:-1:-1] == []. We mark the
+     * omitted case with a flag so the sentinel never passes through
+     * the negative-index normalization below. */
+    bool start_given = start && start->type == VAL_INT;
+    bool end_given   = end   && end->type   == VAL_INT;
+    long long s_start = s_step > 0 ? 0 : len - 1;
+    long long s_end;
+    if (s_step > 0) {
+        s_end = len;
+    } else {
+        s_end = -1; /* sentinel: stop BEFORE element 0 (i > bound loop makes this exact) */
+    }
+    if (start_given) s_start = start->int_val;
+    if (end_given)   s_end   = end->int_val;
+
+    /* Negative values count from the end (then clamp). */
+    if (start_given && s_start < 0) s_start += len;
+    if (end_given   && s_end   < 0) s_end   += len;
+
+    /* Clamp to the valid window (PySlice_AdjustIndices law): positive
+     * steps clamp into [0, len]; negative steps into [-1, len-1] — but
+     * our -2 sentinel and an explicit -1-into-len-1 both just work with
+     * the i > bound loop guard, and start len clamps to len-1 only via
+     * the first iteration guard (an OOB i would read items[len]; we
+     * clamp start to len-1 instead, matching CPython). */
+    if (s_step > 0) {
+        if (!start_given && s_start < 0) s_start = 0;
+        if (start_given) {
+            if (s_start < 0) s_start = 0;
+            if (s_start > len) s_start = len;
+        }
+        if (end_given) {
+            if (s_end < 0) s_end = 0;
+            if (s_end > len) s_end = len;
+        }
+    } else {
+        if (start_given) {
+            if (s_start < -1) s_start = -1;
+            if (s_start > len - 1) s_start = len - 1;
+        }
+        if (end_given) {
+            if (s_end < -1) s_end = -1;
+            if (s_end > len - 1) s_end = len - 1;
+        }
+    }
+    *out_i = s_start; *out_bound = s_end; *out_step = s_step;
+    return true;
+}
+
+/* Convert an int index (possibly negative) to an in-range position.
+ * Returns -1 and installs a throw when out of bounds (IndexError parity).
+ * Strings: pass cp_count in len and the raw string for message context. */
+static long long resolve_index(ValueType elem_type, long long len, long long idx,
+                               const char* subj) {
+    long long i = idx < 0 ? idx + len : idx;
+    if (i < 0 || i >= len) {
+        char msg[192];
+        const char* kind = (elem_type == VAL_STRING) ? "string" : "list";
+        snprintf(msg, sizeof(msg), "%s index %lld out of range", kind, idx);
+        (void)subj;
+        Value e = make_string(msg);
+        interpreter_raise(e); value_free(&e);
+        return -1;
+    }
+    return i;
+}
+
 static Value eval_expression(ASTNode* node) {
     if (!node) return make_null();
     
@@ -1175,22 +1302,96 @@ static Value eval_expression(ASTNode* node) {
             return make_array_from_list(node->array_literal.elements);
         
         case AST_INDEX_EXPR: {
-            Value arr = eval_expression(node->index_expr.array);
+            /* Python-parity rewrite (nightshift 20261102): strings index
+             * by UTF-8 code point (s[0] used to return null!), negative
+             * indices count from the end, [a:b:c] slices parse (they were
+             * a parse error), and out-of-range/type misuse THROWS instead
+             * of returning null (IndexError/TypeError parity). Arrays keep
+             * the 20261027 UAF law: results are value_clone'd. */
+            Value seq = eval_expression(node->index_expr.array);
+
+            if (node->index_expr.is_slice) {
+                Value sv_start = node->index_expr.slice_start ? eval_expression(node->index_expr.slice_start) : make_null();
+                Value sv_end   = node->index_expr.slice_end   ? eval_expression(node->index_expr.slice_end)   : make_null();
+                Value sv_step  = node->index_expr.slice_step  ? eval_expression(node->index_expr.slice_step)  : make_null();
+                Value result = make_null();
+                if (seq.type == VAL_ARRAY) {
+                    long long i, bound, st;
+                    if (slice_bounds((long long)seq.array_val->count, &sv_start, &sv_end, &sv_step, &i, &bound, &st)) {
+                        Array* out = array_create(8);
+                        for (; (st > 0) ? (i < bound) : (i > bound); i += st) {
+                            array_push(out, seq.array_val->items[i]);
+                        }
+                        result.type = VAL_ARRAY; result.array_val = out;
+                    }
+                } else if (seq.type == VAL_STRING && seq.string_val) {
+                    /* Code-point slice with a step may be non-contiguous
+                     * ("hello"[::2] == "hlo"), so: one pass builds a byte-
+                     * offset table (off[k] = byte offset of code point k,
+                     * off[cps] = strlen), then the kept points are appended
+                     * in visit order — negative steps append reversed. */
+                    size_t cps = utf8_count(seq.string_val);
+                    long long i, bound, st;
+                    if (slice_bounds((long long)cps, &sv_start, &sv_end, &sv_step, &i, &bound, &st)) {
+                        size_t blen = strlen(seq.string_val);
+                        size_t* off = malloc(sizeof(size_t) * (cps + 1));
+                        const char* p = seq.string_val;
+                        for (size_t k = 0; k < cps; k++) {
+                            off[k] = (size_t)(p - seq.string_val);
+                            p += utf8_cp_len(p);
+                        }
+                        off[cps] = blen;
+                        char* outstr = malloc(blen + 1);
+                        size_t n = 0;
+                        for (long long k = i; (st > 0) ? (k < bound) : (k > bound); k += st) {
+                            size_t b0 = off[k], b1 = off[k + 1];
+                            memcpy(outstr + n, seq.string_val + b0, b1 - b0);
+                            n += b1 - b0;
+                        }
+                        outstr[n] = '\0';
+                        free(off);
+                        result.type = VAL_STRING; result.string_val = outstr;
+                    }
+                } else {
+                    Value e = make_string("only arrays and strings support slicing");
+                    interpreter_raise(e); value_free(&e);
+                }
+                value_free(&seq); value_free(&sv_start); value_free(&sv_end); value_free(&sv_step);
+                return result;
+            }
+
             Value idx = eval_expression(node->index_expr.index);
             Value result = make_null();
-            if (arr.type == VAL_ARRAY && idx.type == VAL_INT) {
-                if (idx.int_val >= 0 && (size_t)idx.int_val < arr.array_val->count) {
-                    /* UAF fix (nightshift 20261027): the old code shallow-copied
-                     * struct instances (and ignored iterator refcounts) and then
-                     * value_free(&arr) below released the array, freeing the very
-                     * struct this result points at — `turbo p = arr[0]; p.x`
-                     * segfaulted. value_clone does the right thing for every
-                     * type: strdup strings, refcount++ arrays/iterators, deep
-                     * copy struct instances, trivial copy scalars. */
-                    result = value_clone(arr.array_val->items[idx.int_val]);
+            if (seq.type == VAL_ARRAY && idx.type == VAL_INT) {
+                long long i = resolve_index(VAL_ARRAY, (long long)seq.array_val->count, idx.int_val, NULL);
+                if (i >= 0) {
+                    /* UAF fix (nightshift 20261027): value_clone — see above. */
+                    result = value_clone(seq.array_val->items[i]);
                 }
+            } else if (seq.type == VAL_STRING && seq.string_val && idx.type == VAL_INT) {
+                size_t cps = utf8_count(seq.string_val);
+                long long i = resolve_index(VAL_STRING, (long long)cps, idx.int_val, NULL);
+                if (i >= 0) {
+                    const char* p = seq.string_val;
+                    long long seen = 0;
+                    while (*p && seen < i) { p += utf8_cp_len(p); seen++; }
+                    size_t cl = utf8_cp_len(p);
+                    char* out = malloc(cl + 1);
+                    memcpy(out, p, cl); out[cl] = '\0';
+                    result.type = VAL_STRING; result.string_val = out;
+                }
+            } else if (seq.type == VAL_ARRAY || seq.type == VAL_STRING) {
+                char msg[160];
+                snprintf(msg, sizeof(msg), "%s indices must be integers or slices, not %s",
+                         seq.type == VAL_ARRAY ? "list" : "string",
+                         value_type_name(idx.type));
+                Value e = make_string(msg); interpreter_raise(e); value_free(&e);
+            } else {
+                char msg[160];
+                snprintf(msg, sizeof(msg), "'%s' object is not subscriptable", value_type_name(seq.type));
+                Value e = make_string(msg); interpreter_raise(e); value_free(&e);
             }
-            value_free(&arr);
+            value_free(&seq);
             value_free(&idx);
             return result;
         }
@@ -1276,6 +1477,61 @@ static Value eval_expression(ASTNode* node) {
 
             if (target->type == AST_IDENTIFIER) {
                 env_set(target->identifier.name, value);
+            } else if (target->type == AST_INDEX_EXPR && !target->index_expr.is_slice) {
+                /* Index assignment a[i] = v (nightshift 20261102): was a
+                 * SILENT NO-OP — the assign case only handled identifiers
+                 * and members, so array writes evaluated the value and
+                 * dropped it (exit 0, array unchanged; every in-place sort
+                 * example in the repo has never worked). env_get_ref gives
+                 * the array's own storage; we value_clone the RHS into the
+                 * slot (releasing the old payload first) — same ownership
+                 * law as member assignment. Negative indices Python-parity;
+                 * OOB/non-int throws instead of vanishing. */
+                /* Base may be an identifier OR a nested expression
+                 * (m[1][0] = v): eval yields a refcounted array Value
+                 * whose storage is SHARED with the original, so writing
+                 * through the clone mutates the source array — the same
+                 * aliasing law that makes `row = m[1]; row[0] = 9` work.
+                 * Strings/copy semantics would silently not persist; for
+                 * those we stay loud (error) rather than lying. */
+                Value base_val;
+                bool base_owned = false;
+                Value* ref = NULL;
+                if (target->index_expr.array->type == AST_IDENTIFIER) {
+                    ref = env_get_ref(target->index_expr.array->identifier.name);
+                } else {
+                    base_val = eval_expression(target->index_expr.array);
+                    base_owned = true;
+                    if (base_val.type == VAL_ARRAY) ref = &base_val;
+                }
+                Value idx = eval_expression(target->index_expr.index);
+                if (ref && ref->type == VAL_ARRAY && idx.type == VAL_INT) {
+                    long long len = (long long)ref->array_val->count;
+                    long long i = idx.int_val < 0 ? idx.int_val + len : idx.int_val;
+                    if (i >= 0 && i < len) {
+                        value_release(&ref->array_val->items[i]);
+                        ref->array_val->items[i] = value_clone(value);
+                    } else {
+                        char msg[128];
+                        snprintf(msg, sizeof(msg), "list assignment index %lld out of range", idx.int_val);
+                        Value e = make_string(msg); interpreter_raise(e); value_free(&e);
+                    }
+                } else if (ref && (ref->type == VAL_ARRAY)) {
+                    char msg[128];
+                    snprintf(msg, sizeof(msg), "list indices must be integers, not %s", value_type_name(idx.type));
+                    Value e = make_string(msg); interpreter_raise(e); value_free(&e);
+                } else if (ref && ref->type == VAL_STRING) {
+                    Value e = make_string("'string' object does not support item assignment");
+                    interpreter_raise(e); value_free(&e);
+                } else if (!ref) {
+                    Value e = make_string("cannot assign through index of this expression");
+                    interpreter_raise(e); value_free(&e);
+                }
+                if (base_owned) value_release(&base_val);
+                value_free(&idx);
+            } else if (target->type == AST_INDEX_EXPR && target->index_expr.is_slice) {
+                /* Slice assignment is out of scope tonight: loud, not silent. */
+                fprintf(stderr, "Error: slice assignment is not supported yet");
             } else if (target->type == AST_MEMBER_EXPR) {
                 // For member assignment, we need to modify the struct in the environment
                 // If the object is a simple identifier, modify it directly in the environment

@@ -305,6 +305,26 @@ ASTNode* ast_create_index(ASTNode* array, ASTNode* index, int line, int column) 
     node->column = column;
     node->index_expr.array = array;
     node->index_expr.index = index;
+    node->index_expr.slice_start = NULL;  /* not a slice (20261102) */
+    node->index_expr.slice_end = NULL;
+    node->index_expr.slice_step = NULL;
+    node->index_expr.is_slice = false;
+    return node;
+}
+
+/* Python [start:end:step] slice literal. Any arm may be NULL (omitted);
+ * the interpreter applies Python defaults per step sign. (20261102) */
+ASTNode* ast_create_slice(ASTNode* array, ASTNode* start, ASTNode* end, ASTNode* step, int line, int column) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = AST_INDEX_EXPR;
+    node->line = line;
+    node->column = column;
+    node->index_expr.array = array;
+    node->index_expr.index = NULL;          /* plain-index arm unused */
+    node->index_expr.slice_start = start;
+    node->index_expr.slice_end = end;
+    node->index_expr.slice_step = step;
+    node->index_expr.is_slice = true;
     return node;
 }
 
@@ -503,6 +523,9 @@ void ast_free(ASTNode* node) {
         case AST_INDEX_EXPR:
             ast_free(node->index_expr.array);
             ast_free(node->index_expr.index);
+            ast_free(node->index_expr.slice_start); /* slice arms (20261102) */
+            ast_free(node->index_expr.slice_end);
+            ast_free(node->index_expr.slice_step);
             break;
         case AST_ASSIGN_EXPR:
             ast_free(node->assign_expr.target);

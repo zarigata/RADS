@@ -667,14 +667,52 @@ static ASTNode* parse_call(Parser* parser) {
             expr = ast_create_member_expr(expr, name, parser->previous.line, parser->previous.column);
             free(name);
         } else if (match(parser, TOKEN_LEFT_BRACKET)) {
-            ASTNode* index = parse_expression(parser);
+            /* Python slice parity (nightshift 20261102): inside [ ] a ':'
+             * (or '::' — the lexer fuses them into DOUBLE_COLON) makes a
+             * slice: [a], [a:b], [:b], [a:], [:], [::2], [a::2], [1::-1].
+             * Omitted arms are NULL; the interpreter applies Python's
+             * step-sign defaults. */
+            ASTNode* start = NULL;
+            ASTNode* end = NULL;
+            ASTNode* step = NULL;
+            bool is_slice = false;
+            int colons_seen = 0;
+            if (!check(parser, TOKEN_RIGHT_BRACKET)) {
+                if (!check(parser, TOKEN_COLON) && !check(parser, TOKEN_DOUBLE_COLON)) {
+                    start = parse_expression(parser);
+                }
+                if (match(parser, TOKEN_COLON)) { colons_seen = 1; is_slice = true; }
+                else if (match(parser, TOKEN_DOUBLE_COLON)) { colons_seen = 2; is_slice = true; }
+                if (is_slice && colons_seen == 1) {
+                    /* one colon so far: optional end arm, then maybe ':'/'::' */
+                    if (!check(parser, TOKEN_RIGHT_BRACKET) && !check(parser, TOKEN_COLON)
+                        && !check(parser, TOKEN_DOUBLE_COLON)) {
+                        end = parse_expression(parser);
+                    }
+                    if (match(parser, TOKEN_COLON) || match(parser, TOKEN_DOUBLE_COLON)) {
+                        colons_seen = 2;
+                    }
+                }
+                if (is_slice && colons_seen >= 2) {
+                    if (!check(parser, TOKEN_RIGHT_BRACKET)) {
+                        step = parse_expression(parser);
+                    }
+                }
+            }
+            if (is_slice) {
+                expr = ast_create_slice(expr, start, end, step,
+                                        parser->previous.line, parser->previous.column);
+            } else if (start != NULL) {
+                expr = ast_create_index(expr, start, parser->previous.line, parser->previous.column);
+            } else {
+                error(parser, "Expected expression before ']'");
+            }
             consume(parser, TOKEN_RIGHT_BRACKET, "Expected ']' after index expression");
-            expr = ast_create_index(expr, index, parser->previous.line, parser->previous.column);
         } else {
             break;
         }
     }
-    
+
     return expr;
 }
 

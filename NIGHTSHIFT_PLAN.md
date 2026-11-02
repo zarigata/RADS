@@ -16,6 +16,36 @@ Branch `nightshift/20261013-stdlib-float-parity` carries the completed port to t
 **clean-build green** (trio 11+8+17 PASS, runner 9/9, exit 0). Merge that branch to unblock main.
 
 ## Night Log
+ - **2026-11-02**: (1) sync: fetch clean, PRs #19-#33 all still open, none merged; cut
+   nightshift/20261102-string-parity from object-literals head 66ba05f (freshest green). (2) feat(core):
+   **Python-parity indexing + slicing + index assignment** — the third silent-failure family in as many
+   nights, found by probe: `"s"[0]` returned null (string indexing NEVER existed), `a[1:3]` was a parse
+   error (no slice syntax at all), and `a[0] = 9` was a SILENT NO-OP (assign only handled identifiers and
+   members — every in-place sort example in the repo has never actually sorted). Shipped: (a) parser: [ ]
+   postfix now parses [a], [a:b], [:b], [a:], [:], [::2], [a::2], [1::-1] — omitted arms NULL; the lexer's
+   fused DOUBLE_COLON token (never consumed by anything before tonight) is handled as two colons.
+   (b) interpreter: slice_bounds() implements CPython PySlice_Unpack/AdjustIndices law EXACTLY — including
+   the trap that killed my first two drafts: omitted end under a NEGATIVE step is the stop sentinel' before- element-0', NOT the integer -1 (a[3::-1] == [4,3,2,1] but a[3:-1:-1] == []); clamp windows
+   differ per step sign; step==0 throws. Strings index/slice by UTF-8 CODE POINT (byte-offset table,
+   same law as string iterators) — u[1] on "añb☺c" is ñ, not a broken byte. (c) index assignment:
+   a[i]=v writes through env_get_ref (identifiers) or through eval'd refcounted clones (m[1][0]=99,
+   sobj.arr[0]=50 persist — arrays share storage through clones); negative indices legal; OOB/non-int/
+   string-target throw instead of vanishing. (d) honest failures everywhere: IndexError-shape reads &
+   writes, TypeError-shape wrong key type + not-subscriptable + string-item-assign, ValueError-shape
+   zero step — all catchable via try/catch, all Python-worded. (3) tests/test_slices.rads — 41 pins
+   (every CPython edge incl. a[-100::-1], a[100::-1], a[3:-100:-1], a[2:-2:-1]; UTF-8 reversal; nested &
+   member-base assignment persistence; all six throw shapes), planted-failure negative-tested (FAIL:
+   line + runner Failed: 1), wired as suite 25. (4) My own corpse bugs, all caught by gates before commit:
+   patch script matched the WRONG else-if branch (?. optional-index) and ate the DOT branch — brace-balance
+   check + gcc -fsyntax-only caught it; two fprintf newlines mangled by heredoc escaping (compiler caught);
+   expected-count 34 vs 41 real check sites (the suite's own gate caught it); first slice_bounds draft
+   read items[-1] as a real index ([null, 1, 2, 3, 4, 5] — the probe caught it). Verified: clean build
+   exit 0, runner **25/25 suites PASSED 0 FAIL lines grepped twice**, ASan+UBSan+LSan 41/41 0 findings 0
+   leaks, repo-wide tests sweep: only test_filesystem dirty (KNOWN backlog-10, pre-existing); the 5
+   erroring examples fail IDENTICALLY on base 66ba05f (pre-existing fantasy-API examples, untouched).
+   Not verified: CI on the PR. Slice ASSIGNMENT (a[1:3] = [x]) deliberately loud-not-silent, backlog.
+   PR #34: https://github.com/zarigata/RADS/pull/34
+
  - **2026-11-01**: (1) sync: fetch clean, PRs #19-#32 all still open, none merged; cut
    nightshift/20261101-object-literals from js-syntax head 38b4eed. (2) feat(core,stdlib):
    **BACKLOG 11 CLOSED — bare-{ object literals + the honest-failure night**. json.stringify({"test":"rads"})
@@ -211,6 +241,7 @@ Branch `nightshift/20261013-stdlib-float-parity` carries the completed port to t
 
 ## Open PR Review
 | PR | Title | Status | Verdict |
+| 34 | Python-parity slicing + string indexing + index assignment | OPEN — head Dagoth-Ur-69:nightshift/20261102-string-parity | awaiting master review; a[1:3] was a parse error, s[0] returned null, a[0]=x was a silent no-op |
 |----|-------|--------|---------|
 | 20 | nostalgia module + clean-build fix for main | OPEN — head Dagoth-Ur-69:nightshift/20261017-forge-sync, +1 comment (pool_closed, bb7db17) | awaiting master review; carries the main clean-build fix |
 | 21 | regex named groups + replace heap-overflow fix | OPEN — head Dagoth-Ur-69:nightshift/20261018-re-named-groups | awaiting master review |
