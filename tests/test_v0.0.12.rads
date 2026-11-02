@@ -91,13 +91,13 @@ test.describe("process module", fn() {
 
 test.describe("json.parse — full parser", fn() {
     test.it("parses simple object", fn() {
-        let data = json.parse("{\"name\":\"RADS\",\"version\":12}")
+        let data = json.parse(`{"name":"RADS","version":12}`)
         test.expect(json.has_key(data, "name")).toBeTruthy()
         test.expect(json.has_key(data, "version")).toBeTruthy()
     })
 
     test.it("parses nested object", fn() {
-        let data = json.parse("{\"user\":{\"name\":\"Z\",\"age\":30}}")
+        let data = json.parse(`{"user":{"name":"Z","age":30}}`)
         let user = json.get(data, "user")
         test.expect(json.has_key(user, "name")).toBeTruthy()
     })
@@ -108,19 +108,19 @@ test.describe("json.parse — full parser", fn() {
     })
 
     test.it("parses booleans and null", fn() {
-        let data = json.parse("{\"a\":true,\"b\":false,\"c\":null}")
+        let data = json.parse(`{"a":true,"b":false,"c":null}`)
         test.expect(json.has_key(data, "a")).toBeTruthy()
         test.expect(json.has_key(data, "b")).toBeTruthy()
         test.expect(json.has_key(data, "c")).toBeTruthy()
     })
 
     test.it("parses floats", fn() {
-        let data = json.parse("{\"pi\":3.14159}")
+        let data = json.parse(`{"pi":3.14159}`)
         test.expect(json.has_key(data, "pi")).toBeTruthy()
     })
 
     test.it("parses unicode escapes", fn() {
-        let data = json.parse("{\"emoji\":\"\\u0048\\u0065\\u006c\\u006c\\u006f\"}")
+        let data = json.parse(`{"emoji":"\\u0048\\u0065\\u006c\\u006c\\u006f"}`)
         test.expect(json.has_key(data, "emoji")).toBeTruthy()
     })
 })
@@ -132,13 +132,14 @@ test.describe("json.stringify — full serializer", fn() {
     })
 
     test.it("stringifies pretty", fn() {
-        let data = json.parse("{\"a\":1,\"b\":2}")
+        let data = json.parse(`{"a":1,"b":2}`)
         let s = json.stringify_pretty(data)
-        test.expect(str.contains(s, "\\n")).toBeTruthy()
+        test.expect(str.contains(s, `
+`)).toBeTruthy()
     })
 
     test.it("round-trips JSON", fn() {
-        let original = "{\"x\":42,\"y\":[1,2,3]}"
+        let original = `{"x":42,"y":[1,2,3]}`
         let parsed = json.parse(original)
         let output = json.stringify(parsed)
         test.expect(str.contains(output, "x")).toBeTruthy()
@@ -148,19 +149,19 @@ test.describe("json.stringify — full serializer", fn() {
 
 test.describe("json helpers", fn() {
     test.it("json.get with dot path", fn() {
-        let data = json.parse("{\"a\":{\"b\":{\"c\":99}}}")
+        let data = json.parse(`{"a":{"b":{"c":99}}}`)
         let val = json.get(data, "a.b.c")
         test.expect(val).toBe(99)
     })
 
     test.it("json.keys returns key array", fn() {
-        let data = json.parse("{\"x\":1,\"y\":2,\"z\":3}")
+        let data = json.parse(`{"x":1,"y":2,"z":3}`)
         let keys = json.keys(data)
         test.expect(array.count(keys)).toBe(3)
     })
 
     test.it("json.values returns value array", fn() {
-        let data = json.parse("{\"x\":1,\"y\":2,\"z\":3}")
+        let data = json.parse(`{"x":1,"y":2,"z":3}`)
         let vals = json.values(data)
         test.expect(array.count(vals)).toBe(3)
     })

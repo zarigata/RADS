@@ -1,0 +1,75 @@
+// Test: template literals `...${expr}...` (nightshift 20261026).
+// Pins generated against node v20.19.2 on this box (exact-string pins where
+// RADS canonical formatting matches JS), plus RADS-law pins:
+//   LAW 1: `${x}` === "" + x  (same conversion the + operator uses)
+//   LAW 2: template text is RAW — no escape unescaping (house gotcha)
+//   LAW 3: multi-line templates keep embedded newlines verbatim
+// ⚕ Forged for Master Zarigata 🜂
+
+struct Point { i32 x; i32 y; }
+blast dbl(x) { return x * 2; }
+blast greet(name) { return `yo ${name}`; }
+
+blast main() {
+    turbo name = "Zarigata";
+    turbo n = 42;
+
+    // --- basic interpolation (JS pin) ---
+    turbo s = `${name} has ${n} problems`;
+    if (s == "Zarigata has 42 problems") { echo("PASS basic interpolate"); } else { echo("FAIL basic: " + s); }
+
+    // --- LAW 1: `${7}` is "7" even with no literal head ---
+    if (`${7}` == "7") { echo("PASS int-only hole"); } else { echo("FAIL int-only"); }
+    if (`${3.14}` == "3.14") { echo("PASS float hole"); } else { echo("FAIL float hole"); }
+    if (`${true}` == "true") { echo("PASS bool hole"); } else { echo("FAIL bool hole"); }
+    if (`${null}` == "null") { echo("PASS null hole"); } else { echo("FAIL null hole"); }
+
+    // --- LAW 1 equivalence with + operator ---
+    turbo arr = [1, 2, 3];
+    if (`${arr}` == "" + arr) { echo("PASS array law1"); } else { echo("FAIL array law1"); }
+    if (`${n}` == "" + n) { echo("PASS int law1"); } else { echo("FAIL int law1"); }
+
+    // --- multiple adjacent holes (JS pin: "424242") ---
+    if (`${n}${n}${n}` == "424242") { echo("PASS adjacent holes"); } else { echo("FAIL adjacent"); }
+
+    // --- expression holes ---
+    if (`dbl(7)=${dbl(7)}` == "dbl(7)=14") { echo("PASS call in hole"); } else { echo("FAIL call hole"); }
+    if (`sum=${n + 8}` == "sum=50") { echo("PASS arithmetic in hole"); } else { echo("FAIL arith hole"); }
+    if (`m=${n % 5}` == "m=2") { echo("PASS modulo in hole"); } else { echo("FAIL modulo"); }
+
+    // --- nested templates (JS pin: "a b 42 c d") ---
+    turbo deep = `a ${`b ${n} c`} d`;
+    if (deep == "a b 42 c d") { echo("PASS nested template"); } else { echo("FAIL nested: " + deep); }
+
+    // --- LAW 2: raw text ---
+    turbo raw = `tab\there`;
+    if (raw == "tab\there") { echo("PASS raw backslash"); } else { echo("FAIL raw backslash"); }
+    turbo bt = `before \` after`;
+    if (str.count(bt, "`") == 1) { echo("PASS escaped backtick kept"); } else { echo("FAIL esc backtick"); }
+
+    // --- LAW 3: multi-line text (newline embedded via source, counted by line split) ---
+    turbo m = `line one
+line two`;
+    if (str.count(m, "line") == 2) { echo("PASS multiline count"); } else { echo("FAIL multiline"); }
+    if (m == "line one
+line two") { echo("PASS multiline literal"); } else { echo("FAIL multiline literal"); }
+
+    // --- empty forms ---
+    if (`` == "") { echo("PASS empty template"); } else { echo("FAIL empty"); }
+
+    // --- template returned from function ---
+    if (greet("moot") == "yo moot") { echo("PASS template from fn"); } else { echo("FAIL fn template"); }
+
+    // --- member access in hole (struct defined at top level) ---
+    turbo p = Point { x: 3, y: 4 };
+    turbo pt = `p=${p.x},${p.y}`;
+    if (pt == "p=3,4") { echo("PASS member access in hole"); } else { echo("FAIL member: " + pt); }
+
+    // --- template as fn argument ---
+    if (str.count(`count ${name}`, "Zarigata") == 1) { echo("PASS template as arg"); } else { echo("FAIL arg"); }
+
+    // --- long interpolation chain (dynamic concat, no 256-byte clip) ---
+    turbo long_head = "AAAA";
+    turbo built = `x${long_head}${long_head}${long_head}${long_head}${long_head}${long_head}${long_head}${long_head}`;
+    if (str.count(built, "AAAA") == 8) { echo("PASS long chain no clip"); } else { echo("FAIL long chain"); }
+}

@@ -254,10 +254,15 @@ struct ASTNode {
             ASTList* elements;
         } array_literal;
         
-        // Index expression
+        // Index expression; is_slice=true carries start/end/step (Python
+        // slice parity, nightshift 20261102). Plain index keeps .index only.
         struct {
             ASTNode* array;
             ASTNode* index;
+            ASTNode* slice_start;   /* NULL = default (0 / len-1 for neg step) */
+            ASTNode* slice_end;     /* NULL = default (len / before-start for neg step) */
+            ASTNode* slice_step;    /* NULL = 1 */
+            bool is_slice;
         } index_expr;
         
         // Member expression
@@ -338,6 +343,7 @@ ASTNode* ast_create_member_expr(ASTNode* object, const char* member, int line, i
 ASTNode* ast_create_struct_literal(const char* name, ASTList* fields, int line, int column);
 ASTNode* ast_create_array_literal(ASTList* elements, int line, int column);
 ASTNode* ast_create_index(ASTNode* array, ASTNode* index, int line, int column);
+ASTNode* ast_create_slice(ASTNode* array, ASTNode* start, ASTNode* end, ASTNode* step, int line, int column); /* Python [a:b:c] parity (20261102) */
 ASTNode* ast_create_assign(ASTNode* target, ASTNode* value, int line, int column);
 ASTNode* ast_create_cruise(const char* iterator, ASTNode* iterable, ASTNode* body, int line, int column);
 ASTNode* ast_create_break(int line, int column);

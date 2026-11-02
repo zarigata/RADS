@@ -59,7 +59,7 @@ blast main() {
     echo("=== PATH Directories ===");
     
     turbo paths = env.paths();
-    echo("Found " + length(paths) + " PATH directories");
+    echo("Found " + array.count(paths) + " PATH directories");
     
     echo("");
 

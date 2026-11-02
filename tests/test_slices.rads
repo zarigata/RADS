@@ -1,0 +1,116 @@
+// ═══════════════════════════════════════════════════════════
+// Python-parity indexing & slicing (20261102)
+// Pins: [a:b:c] slices (arrays + UTF-8 strings), negative indices,
+// s[0] on strings, index ASSIGNMENT a[i]=v (was silent no-op),
+// IndexError/TypeError/ValueError-parity throws (catchable).
+// No semicolons ON PURPOSE (ASI). Gate law: expected == check() sites.
+// ═══════════════════════════════════════════════════════════
+
+let pass = 0
+let expected = 41
+
+blast check(name, cond) {
+    if (cond) {
+        echo("PASS " + name)
+        return 1
+    }
+    echo("FAIL: " + name)
+    return 0
+}
+
+// ── array slices, CPython-pinned ────────────────────────────
+turbo a = [1, 2, 3, 4, 5]
+pass = pass + check("a[1:3] == [2,3]", str(a[1:3]) == "[2, 3]")
+pass = pass + check("a[1:4:2] == [2,4]", str(a[1:4:2]) == "[2, 4]")
+pass = pass + check("a[:3] == [1,2,3]", str(a[:3]) == "[1, 2, 3]")
+pass = pass + check("a[3:] == [4,5]", str(a[3:]) == "[4, 5]")
+pass = pass + check("a[::2] == [1,3,5]", str(a[::2]) == "[1, 3, 5]")
+pass = pass + check("a[::-1] == [5,4,3,2,1]", str(a[::-1]) == "[5, 4, 3, 2, 1]")
+pass = pass + check("a[::-2] == [5,3,1]", str(a[::-2]) == "[5, 3, 1]")
+pass = pass + check("a[4:1:-1] == [5,4,3]", str(a[4:1:-1]) == "[5, 4, 3]")
+pass = pass + check("a[-2:] == [4,5]", str(a[-2:]) == "[4, 5]")
+pass = pass + check("a[:-1] == [1,2,3,4]", str(a[:-1]) == "[1, 2, 3, 4]")
+pass = pass + check("a[-4:-2] == [2,3]", str(a[-4:-2]) == "[2, 3]")
+pass = pass + check("a[1:100] == [2,3,4,5]", str(a[1:100]) == "[2, 3, 4, 5]")
+pass = pass + check("a[100:] empty", str(a[100:]) == "[]")
+pass = pass + check("a[:-100] empty", str(a[:-100]) == "[]")
+pass = pass + check("a[-100:] == all", str(a[-100:]) == "[1, 2, 3, 4, 5]")
+pass = pass + check("a[3::-1] == [4,3,2,1]", str(a[3::-1]) == "[4, 3, 2, 1]")
+pass = pass + check("a[100::-1] == full reversed", str(a[100::-1]) == "[5, 4, 3, 2, 1]")
+pass = pass + check("a[-100::-1] empty", str(a[-100::-1]) == "[]")
+pass = pass + check("a[3:-100:-1] == [4,3,2,1]", str(a[3:-100:-1]) == "[4, 3, 2, 1]")
+pass = pass + check("a[2:-2:-1] empty", str(a[2:-2:-1]) == "[]")
+pass = pass + check("a[-1:-4:-1] == [5,4,3]", str(a[-1:-4:-1]) == "[5, 4, 3]")
+pass = pass + check("a[:2:-1] == [5,4]", str(a[:2:-1]) == "[5, 4]")
+pass = pass + check("a[1::-1] == [2,1]", str(a[1::-1]) == "[2, 1]")
+pass = pass + check("a[:] whole copy", str(a[:]) == "[1, 2, 3, 4, 5]")
+
+// ── string indexing (UTF-8 code points) ─────────────────────
+turbo h = "hello"
+pass = pass + check("h[0] == h", h[0] == "h")
+pass = pass + check("h[-1] == o", h[-1] == "o")
+pass = pass + check("h[1:4] == ell", h[1:4] == "ell")
+pass = pass + check("h[::-1] == olleh", h[::-1] == "olleh")
+pass = pass + check("h[-3:] == llo", h[-3:] == "llo")
+turbo u = "añb☺c"
+pass = pass + check("utf8 u[1] == ñ", u[1] == "ñ")
+pass = pass + check("utf8 u[0:3] == añb", u[0:3] == "añb")
+pass = pass + check("utf8 reversed", u[::-1] == "c☺bña")
+
+// ── index assignment (was a silent no-op!) ──────────────────
+turbo b = [1, 2, 3]
+b[0] = 9
+b[-1] = 7
+pass = pass + check("b == [9,2,7] after b[0]=9, b[-1]=7", str(b) == "[9, 2, 7]")
+turbo m = [[1, 2], [3, 4]]
+m[1][0] = 99
+pass = pass + check("nested m[1][0]=99 persists", str(m) == "[[1, 2], [99, 4]]")
+turbo sobj = {arr: [1, 2]}
+sobj.arr[0] = 50
+pass = pass + check("member-base sobj.arr[0]=50 persists", str(sobj.arr) == "[50, 2]")
+
+// ── honest failures (Python parity) ─────────────────────────
+try {
+    turbo x = a[10]
+    pass = pass + check("OOB read throws", false)
+} catch (e) {
+    pass = pass + check("OOB read throws IndexError-shape", e == "list index 10 out of range")
+}
+try {
+    a[5] = 1
+    pass = pass + check("OOB write throws", false)
+} catch (e) {
+    pass = pass + check("OOB write throws", e == "list assignment index 5 out of range")
+}
+try {
+    turbo y = a["x"]
+    pass = pass + check("string index throws", false)
+} catch (e) {
+    pass = pass + check("str key throws TypeError-shape", e == "list indices must be integers or slices, not string")
+}
+try {
+    turbo z = a[::0]
+    pass = pass + check("zero step throws", false)
+} catch (e) {
+    pass = pass + check("zero step throws ValueError-shape", e == "slice step cannot be zero")
+}
+try {
+    turbo n = 5
+    turbo w = n[0]
+    pass = pass + check("int index throws", false)
+} catch (e) {
+    pass = pass + check("int not subscriptable", e == "'int' object is not subscriptable")
+}
+try {
+    turbo sc = "abc"
+    sc[0] = "x"
+    pass = pass + check("string assign throws", false)
+} catch (e) {
+    pass = pass + check("string item assign throws", e == "'string' object does not support item assignment")
+}
+
+if (pass == expected) {
+    echo("ALL " + expected + " SLICE ASSERTIONS PASSED")
+} else {
+    echo("FAIL: " + pass + "/" + expected + " assertions passed")
+}

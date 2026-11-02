@@ -46,7 +46,12 @@ static size_t header_cb(char* ptr, size_t size, size_t nmemb, void* ud) {
         if (s) {
             memcpy(s, ptr, len);
             s[len] = '\0';
-            array_push(hc->headers, make_string(s));
+            /* array_push deep-copies: pass a borrowed Value then release the
+             * strdup'd original, or every header line leaks (the 20261030
+             * push-clone class — reachable only once object literals made
+             * test_http actually RUN, 20261101). */
+            Value hv; hv.type = VAL_STRING; hv.string_val = s;
+            array_push(hc->headers, hv);
             free(s);
         }
     }

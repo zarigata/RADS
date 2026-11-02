@@ -1,36 +1,15 @@
-// WebSocket Echo Server Example - RADS v0.0.6
-// Demonstrates real-time bidirectional WebSocket communication
+// WebSocket echo example — real API (nightshift 20261101)
+// The old version called websocket_new()/websocket_on_message() — natives
+// that NEVER existed (silent no-ops before honest-failure). ws.server_new/
+// ws.send_text/ws.close are the real surface; this demo stays offline-safe:
+// it exercises the handle lifecycle without binding a port.
 
 blast main() {
-    echo("🚀 RADS WebSocket Echo Server v0.0.6");
-    echo("Starting on ws://localhost:8080");
-    echo("Press Ctrl+C to stop\n");
-
-    // Create WebSocket server on port 8080
-    turbo ws = websocket_new(8080);
-
-    // Set message handler
-    websocket_on_message(ws, handle_message);
-
-    // Set connection handler
-    websocket_on_connect(ws, handle_connect);
-
-    // Start listening
-    websocket_listen(ws);
+    echo("ws natives present:")
+    let h = ws.server_new(0)
+    echo("server_new -> " + type(h))
+    ws.close(h)
+    echo("closed ok")
+    return 0
 }
-
-// Handle incoming messages and echo them back
-blast handle_message(client, message) {
-    echo("📩 Received: " + message);
-
-    // Echo the message back to client
-    websocket_send(client, "Echo: " + message);
-}
-
-// Handle new connections
-blast handle_connect(client) {
-    echo("✅ Client connected: " + websocket_get_client_id(client));
-
-    // Send welcome message
-    websocket_send(client, "🎉 Welcome to RADS WebSocket Server!");
-}
+main()

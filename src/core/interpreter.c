@@ -6,9 +6,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h> /* fmod for float modulo in binary ops */
+#include <ctype.h>  /* isdigit for float-format normalization */
 #include <signal.h>
 
 static Value eval_expression(ASTNode* node);
+/* forward decl: value_print (line ~230) renders floats before the full
+ * definition below (line ~734) — keeps -Wimplicit-decl off our back */
+static const char* format_float_shortest(double v, char* buf, size_t buflen);
 static ExecResult exec_statement(ASTNode* node);
 static void exec_function(ASTNode* node);
 static bool is_truthy(Value v);
@@ -66,6 +71,14 @@ Value make_int(long long val) { Value v = { .type = VAL_INT, .int_val = val }; r
 Value make_float(double val) { Value v = { .type = VAL_FLOAT, .float_val = val }; return v; }
 Value make_string(const char* val) { Value v = { .type = VAL_STRING, .string_val = strdup(val) }; return v; }
 
+/* Canonical error return for native modules: say what's wrong in a human
+ * voice, then hand back null so the script continues or the caller checks.
+ * Extending: add a VAL_ERROR tag someday if scripts need to test for it. */
+Value make_error(const char* msg) {
+    fprintf(stderr, "Error: %s\n", msg);
+    return make_null();
+}
+
 Array* array_create(size_t capacity) {
     Array* arr = malloc(sizeof(Array));
     arr->refcount = 1;
@@ -121,6 +134,9 @@ static Value value_clone(Value v) {
         case VAL_ARRAY:
             if (v.array_val) v.array_val->refcount++;
             break;
+        case VAL_ITERATOR:
+            if (v.iterator_val) v.iterator_val->refcount++;
+            break;
         case VAL_STRUCT_INSTANCE:
             if (v.struct_instance) {
                 StructInstance* new_instance = malloc(sizeof(StructInstance));
@@ -167,6 +183,16 @@ static void value_release(Value* value) {
                 }
             }
             break;
+        case VAL_ITERATOR:
+            if (value->iterator_val) {
+                Iterator* it = value->iterator_val;
+                if (it->refcount > 0) it->refcount--;
+                if (it->refcount == 0) {
+                    if (it->vtable && it->vtable->cleanup) it->vtable->cleanup(it);
+                    free(it);
+                }
+            }
+            break;
         case VAL_STRUCT_DEF:
             // Handled by the struct registry
             break;
@@ -201,9 +227,13 @@ void value_print(Value* value) {
         case VAL_INT:
             printf("%lld", value->int_val);
             break;
-        case VAL_FLOAT:
-            printf("%f", value->float_val);
+        case VAL_FLOAT: {
+            /* Python parity: shortest round-trip, ".0" on integral floats
+             * ("%f" padded 2.5 to "2.500000" — fixed in nightshift 20261029) */
+            char fbuf[64];
+            printf("%s", format_float_shortest(value->float_val, fbuf, sizeof(fbuf)));
             break;
+        }
         case VAL_STRING:
             printf("%s", value->string_val);
             break;
@@ -223,16 +253,53 @@ void value_print(Value* value) {
                 printf("<blast anonymous function>");
             }
             break;
+        case VAL_ITERATOR:
+            printf("<iterator>");
+            break;
         case VAL_STRUCT_DEF:
             printf("<struct def %s>", value->struct_def->name);
             break;
         case VAL_STRUCT_INSTANCE:
-            printf("<struct instance %s>", value->struct_instance->definition->name);
+            /* Anonymous instances (built by natives like regex.search) carry a
+             * NULL definition — printing must not dereference it. */
+            if (value->struct_instance->definition) {
+                printf("<struct instance %s>", value->struct_instance->definition->name);
+            } else {
+                printf("<struct instance>");
+            }
             break;
     }
 }
 
 void value_free(Value* value) { value_release(value); }
+
+// Public wrapper so stdlib natives can safely return/alias arg memory:
+// the interpreter frees the args array right after a native call, so any
+// Value handed back must own its payload (strdup for strings, refcount++ for
+// arrays, deep-copy for struct instances). Never return args[i] raw.
+Value value_retain(Value v) { return value_clone(v); }
+
+// --- Lazy iterator runtime (nightshift 20261025) ---
+// Constructor: caller hands a malloc'd flavor state; iterator owns it and
+// frees it via vtable->cleanup when the last reference drops.
+Value make_iterator(const IteratorVTable* vtable, void* state) {
+    Iterator* it = malloc(sizeof(Iterator));
+    it->refcount = 1;
+    it->vtable = vtable;
+    it->state = state;
+    Value v;
+    v.type = VAL_ITERATOR;
+    v.iterator_val = it;
+    return v;
+}
+
+// Pull one OWNED value; false = exhausted (sticky) or not an iterator.
+bool iterator_next(Value* itv, Value* out) {
+    if (!itv || itv->type != VAL_ITERATOR || !itv->iterator_val || !out) return false;
+    Iterator* it = itv->iterator_val;
+    if (!it->vtable || !it->vtable->next) return false;
+    return it->vtable->next(it, out);
+}
 
 // Environment (Variables)
 typedef struct Environment {
@@ -302,6 +369,80 @@ static void env_free() {
     global_env = NULL;
 }
 
+/* env_remove — drop a binding created inside a finished call frame (param
+ * that had no caller binding). Why: without it, calling a function would
+ * permanently litter the global env with its parameter names. */
+static void env_remove(const char* name) {
+    Environment** link = &global_env;
+    while (*link) {
+        if (strcmp((*link)->name, name) == 0) {
+            Environment* dead = *link;
+            *link = dead->next;
+            free(dead->name);
+            value_free(&dead->value);
+            free(dead);
+            return;
+        }
+        link = &(*link)->next;
+    }
+
+}
+
+/* ===== Scoped call frames (nightshift 20261026) =====
+ * Why: parameters and locals bound to the single global environment leaked
+ *      into the caller's scope — worse, RECURSION was broken: an inner call
+ *      rebound the outer frame's n mid-expression (fib(10) returned -80).
+ *      Fix: each call pushes a frame of shadowed bindings; on return the
+ *      old values are restored. Locals still live in the global list (the
+ *      prototype's architecture), but a call can no longer vandalize the
+ *      caller's variables.
+ * Extend: replace with a real frame chain when closures arrive; the
+ *      save/restore protocol here is the migration seam. */
+
+typedef struct EnvShadow {
+    char* name;          /* variable name as written in env (owned) */
+    bool existed;        /* false = binding created by the callee, remove it */
+    Value saved;         /* the caller's value (owned clone) */
+    struct EnvShadow* next;
+} EnvShadow;
+
+/* frame_push_param — record the caller's binding for one param name before
+ * the callee overwrites it, so frame_pop can restore it later. */
+static void frame_push_param(EnvShadow** frame, const char* pname) {
+    EnvShadow* sh = malloc(sizeof(EnvShadow));
+    sh->name = strdup(pname);
+    Environment* binding = NULL;
+    for (Environment* cur = global_env; cur; cur = cur->next) {
+        if (strcmp(cur->name, pname) == 0) { binding = cur; break; }
+    }
+    if (binding) {
+        sh->existed = true;
+        sh->saved = value_clone(binding->value);
+    } else {
+        sh->existed = false;
+        sh->saved = make_null();
+    }
+    sh->next = *frame;
+    *frame = sh;
+}
+
+/* frame_pop — restore all shadowed bindings in reverse order (LIFO), so
+ * nested calls with the same param name unwind correctly. */
+static void frame_pop(EnvShadow* frame) {
+    while (frame) {
+        EnvShadow* next = frame->next;
+        if (frame->existed) {
+            env_set(frame->name, frame->saved);
+        } else {
+            env_remove(frame->name);
+        }
+        free(frame->name);
+        value_free(&frame->saved);
+        free(frame);
+        frame = next;
+    }
+}
+
 // Native function registry
 typedef struct NativeBinding {
     char* name;
@@ -369,6 +510,44 @@ static ASTNode* find_struct(const char* name) {
     return NULL;
 }
 
+/* --- Interned StructDef table (backlog 3b) -------------------------------
+ * Eval of a struct literal used to malloc a fresh StructDef + strdup the
+ * name for EVERY instance; value_free never released them (clones share
+ * the pointer, so freeing per-instance would double-free). Interning gives
+ * one immortal-per-program StructDef per struct NAME -- same ownership
+ * model the stdlib already uses (datetime_def() et al. are static structs)
+ * -- and interpreter_cleanup_environment() frees the table at teardown.
+ */
+typedef struct InternedStructDef {
+    StructDef def;
+    struct InternedStructDef* next;
+} InternedStructDef;
+
+static InternedStructDef* interned_struct_defs = NULL;
+
+static StructDef* struct_def_intern(const char* name, ASTNode* ast_node) {
+    for (InternedStructDef* it = interned_struct_defs; it; it = it->next) {
+        if (strcmp(it->def.name, name) == 0) return &it->def;
+    }
+    InternedStructDef* entry = malloc(sizeof(InternedStructDef));
+    entry->def.name = strdup(name);
+    entry->def.ast_node = ast_node;
+    entry->next = interned_struct_defs;
+    interned_struct_defs = entry;
+    return &entry->def;
+}
+
+static void interned_struct_defs_free(void) {
+    InternedStructDef* it = interned_struct_defs;
+    while (it) {
+        InternedStructDef* next = it->next;
+        free(it->def.name);
+        free(it);
+        it = next;
+    }
+    interned_struct_defs = NULL;
+}
+
 static void env_free_structs() {
     StructDefBinding* current = struct_definitions;
     while (current) {
@@ -421,6 +600,8 @@ static void env_free_enums() {
 }
 
 // Evaluate call expression
+bool interpreter_has_throw(void);  /* pending-throw query (declared in interpreter.h, defined below) */
+
 static Value eval_call(ASTNode* node) {
     // For now, only support calling global native functions or simple function calls
     // Real implementation would need full environment/scope support
@@ -488,6 +669,65 @@ static Value eval_call(ASTNode* node) {
             full_name = malloc(len);
             sprintf(full_name, "%s.%s", obj_name, member);
             name = full_name;
+        } else if (obj->type == AST_CALL_EXPR && member) {
+            /* Chained call on a call result (nightshift 20261031):
+             * `test.expect(v).toBe(x)` — the receiver is itself a call.
+             * When that inner call's callee is module-shaped
+             * (`IDENT . member (...)`), the chain dispatches the SAME
+             * module's native with the inner RESULT as first argument:
+             * test.expect(3).toBe(4) -> native "test.toBe"(3, 4).
+             * This is the contract the test framework was designed around;
+             * before this branch existed the whole assertion chain silently
+             * returned null — expect(1+2).toBe(4) "passed" (LSan probes). */
+            ASTNode* inner_callee = obj->call_expr.callee;
+            if (inner_callee->type == AST_MEMBER_EXPR &&
+                inner_callee->member_expr.object->type == AST_IDENTIFIER) {
+                const char* module = inner_callee->member_expr.object->identifier.name;
+                char chained[128];
+                snprintf(chained, sizeof(chained), "%s.%s", module, member);
+                NativeFn native = find_native(chained);
+                if (native) {
+                    Value inner = eval_call(obj);   /* e.g. expect() result */
+                    if (interpreter_has_throw()) { value_free(&inner); return make_null(); }
+                    int argc = node->call_expr.arguments ? (int)node->call_expr.arguments->count : 0;
+                    Value* args = malloc(sizeof(Value) * (argc + 1));
+                    args[0] = inner;                /* receiver first */
+                    for (int i = 0; i < argc; i++) {
+                        args[i + 1] = eval_expression(node->call_expr.arguments->nodes[i]);
+                    }
+                    Value result = native(global_interpreter, argc + 1, args);
+                    for (int i = 0; i < argc + 1; i++) value_free(&args[i]);
+                    free(args);
+                    return result;
+                }
+            }
+            /* String-valued receiver: allow str.* methods chained on any
+             * string-producing expression (`json.stringify(x).len()`). */
+            Value inner = eval_call(obj);
+            if (interpreter_has_throw()) { value_free(&inner); return make_null(); }
+            if (inner.type == VAL_STRING) {
+                char native_name[128];
+                snprintf(native_name, sizeof(native_name), "str.%s", member);
+                NativeFn native = find_native(native_name);
+                if (native) {
+                    int argc = node->call_expr.arguments ? (int)node->call_expr.arguments->count : 0;
+                    Value* args = malloc(sizeof(Value) * (argc + 1));
+                    args[0] = value_retain(inner);
+                    for (int i = 0; i < argc; i++) {
+                        args[i + 1] = eval_expression(node->call_expr.arguments->nodes[i]);
+                    }
+                    Value result = native(global_interpreter, argc + 1, args);
+                    for (int i = 0; i < argc + 1; i++) value_free(&args[i]);
+                    free(args);
+                    value_free(&inner);
+                    return result;
+                }
+            }
+            value_free(&inner);
+            /* Nothing dispatched: this is a real programming error now, not
+             * a silent null (honest-failure law). */
+            fprintf(stderr, "Error: cannot call method '%s' on call result\n", member);
+            return make_null();
         }
     } else if (node->call_expr.callee->type == AST_IDENTIFIER) {
         name = node->call_expr.callee->identifier.name;
@@ -537,12 +777,34 @@ static Value eval_call(ASTNode* node) {
             if (full_name) free(full_name);
             return result;
         }
+        /* Undefined/non-callable callee (honest-failure law, nightshift
+         * 20261101). This used to `return make_null()` — a typo like pront()
+         * or a call to a function that never existed silently produced null
+         * and the program kept running (exit 0). Python raises
+         * NameError/TypeError here; now the throw is installed so try/catch
+         * can field it and report_uncaught_throw prints it with a nonzero
+         * exit. Must run BEFORE free(full_name): name aliases full_name for
+         * member-shaped callees (obj.method), so raising after the free
+         * reads freed memory. func_val (fetched above) tells us whether the
+         * name is bound to a non-function value vs not bound at all. */
+        char msg[256];
+        if (func_val.type == VAL_NULL) {
+            snprintf(msg, sizeof(msg), "'%s' is not defined", name);
+        } else {
+            snprintf(msg, sizeof(msg), "'%s' is not a function", name);
+        }
+        Value err = make_string(msg);
+        interpreter_raise(err);
+        value_free(&err);
         value_free(&func_val);
-
         if (full_name) free(full_name);
+        return make_null();
     }
-    
-    // Fallback for user functions (not fully implemented in this prototype)
+
+    /* Non-identifier, non-member callee that dispatched nothing. */
+    Value err = make_string("expression is not callable");
+    interpreter_raise(err);
+    value_free(&err);
     return make_null();
 }
 
@@ -579,6 +841,117 @@ static Value eval_unary_op(ASTNode* node) {
 }
 
 // Evaluate binary operation
+/* value_to_owned_string — convert any Value to a malloc'd string with the
+ * SAME semantics the + operator used (int %lld, float %g, bool true/false,
+ * string verbatim, arrays as [a, b, c], else "null"). Replaces the old
+ * 256-byte stack buffers in OP_ADD that silently clipped long values and
+ * could overrun on array joins — one dynamic home for the conversion now.
+ * Contract: caller owns the returned pointer; never NULL ("" on OOM). */
+/* format_float_shortest — Python/TS parity float rendering.
+ * Why: %g (6 sig digits) display-rounded 1000001.0 to "1e+06" and %f padded
+ *      "2.5" to "2.500000". Python/JS print the SHORTEST string that
+ *      round-trips to the same double, with ".0" on integral floats and
+ *      scientific notation only in Python's exponent window (|x|>=1e16 or
+ *      <1e-4). One home so value_print, concat, and templates never drift.
+ * How to upgrade: if locale-aware decimal commas ever matter, swap snprintf
+ *      for the C locale equivalents; if float128 arrives, widen the buffer.
+ */
+static const char* format_float_shortest(double v, char* buf, size_t buflen) {
+    if (v != v) { snprintf(buf, buflen, "nan"); return buf; }
+    if (v == INFINITY) { snprintf(buf, buflen, "inf"); return buf; }
+    if (v == -INFINITY) { snprintf(buf, buflen, "-inf"); return buf; }
+    if (v == 0.0) { snprintf(buf, buflen, "%s", signbit(v) ? "-0.0" : "0.0"); return buf; }
+
+    int dec_exp = (int)floor(log10(fabs(v)));  /* floor(log10|x|), v!=0 here */
+    bool sci = (dec_exp >= 16 || dec_exp < -4);  /* CPython repr window */
+
+    if (sci) {
+        /* %.*e is ALWAYS scientific with signed 2-digit-min exponent, exactly
+         * CPython's style; increase digits-after-point until it round-trips */
+        for (int p = 0; p <= 16; p++) {
+            snprintf(buf, buflen, "%.*e", p, v);
+            char* e = strchr(buf, 'e');
+            char* end = e;
+            while (end > buf && end[-1] == '0') end--;  /* mantissa zeros */
+            if (end > buf && end[-1] == '.') end--;     /* trailing dot */
+            if (end < e) memmove(end, e, strlen(e) + 1);
+            if (strtod(buf, NULL) == v) return buf;
+        }
+        snprintf(buf, buflen, "%.16e", v);  /* unreachable safety net */
+        return buf;
+    }
+
+    /* fixed window: %.*g flips to sci for small P — skip wrong-form tries */
+    int first_p = dec_exp + 1;
+    if (first_p < 1) first_p = 1;
+    for (int P = first_p; P <= 17; P++) {
+        snprintf(buf, buflen, "%.*g", P, v);
+        if (strchr(buf, 'e')) continue;         /* wrong form for this window */
+        if (strtod(buf, NULL) == v) break;
+    }
+    if (!strchr(buf, '.')) {
+        /* Python prints 100.0, not 100 — integral floats keep ".0" */
+        size_t len = strlen(buf);
+        if (len + 3 <= buflen) { buf[len] = '.'; buf[len+1] = '0'; buf[len+2] = '\0'; }
+    }
+    return buf;
+}
+
+static char* value_to_owned_string(Value v) {
+    switch (v.type) {
+        case VAL_STRING:
+            return strdup(v.string_val ? v.string_val : "");
+        case VAL_INT: {
+            int needed = snprintf(NULL, 0, "%lld", v.int_val);
+            char* out = malloc((size_t)needed + 1);
+            if (out) snprintf(out, (size_t)needed + 1, "%lld", v.int_val);
+            return out;
+        }
+        case VAL_FLOAT: {
+            char fbuf[64];
+            format_float_shortest(v.float_val, fbuf, sizeof(fbuf));
+            return strdup(fbuf);
+        }
+        case VAL_BOOL:
+            return strdup(v.bool_val ? "true" : "false");
+        case VAL_NULL:
+            return strdup("null");
+        case VAL_ARRAY: {
+            if (!v.array_val) return strdup("[]");
+            /* sizing pass: sum worst-case renders + separator slack */
+            size_t cap = 8;
+            for (size_t i = 0; i < v.array_val->count; i++) {
+                Value* item = &v.array_val->items[i];
+                if (item->type == VAL_STRING && item->string_val)
+                    cap += strlen(item->string_val);
+                else if (item->type == VAL_ARRAY || item->type == VAL_STRUCT_INSTANCE)
+                    cap += 64;
+                else
+                    cap += 32;
+                cap += 4;
+            }
+            char* out = malloc(cap);
+            if (!out) return strdup("[]");
+            size_t pos = 0;
+            out[pos++] = '[';
+            for (size_t i = 0; i < v.array_val->count; i++) {
+                if (i > 0) { out[pos++] = ','; out[pos++] = ' '; }
+                char* item = value_to_owned_string(v.array_val->items[i]);
+                size_t ilen = item ? strlen(item) : 0;
+                if (pos + ilen + 2 > cap) ilen = cap - pos - 2; /* belt+braces */
+                memcpy(out + pos, item, ilen);
+                pos += ilen;
+                free(item);
+            }
+            out[pos++] = ']';
+            out[pos] = '\0';
+            return out;
+        }
+        default:
+            return strdup("null");
+    }
+}
+
 static Value eval_binary_op(ASTNode* node) {
     Value left = eval_expression(node->binary_op.left);
     Value right = eval_expression(node->binary_op.right);
@@ -591,106 +964,29 @@ static Value eval_binary_op(ASTNode* node) {
                 result = make_int(left.int_val + right.int_val);
             } else if (left.type == VAL_FLOAT && right.type == VAL_FLOAT) {
                 result = make_float(left.float_val + right.float_val);
+            } else if (left.type == VAL_INT && right.type == VAL_FLOAT) {
+                result = make_float((double)left.int_val + right.float_val);
+            } else if (left.type == VAL_FLOAT && right.type == VAL_INT) {
+                result = make_float(left.float_val + (double)right.int_val);
             } else if (left.type == VAL_STRING || right.type == VAL_STRING) {
-                // String concatenation with automatic conversion
-                char left_buf[256] = "";
-                char right_buf[256] = "";
-                const char* left_str = left_buf;
-                const char* right_str = right_buf;
-
-                // Convert left to string
-                if (left.type == VAL_STRING) {
-                    left_str = left.string_val;
-                } else if (left.type == VAL_INT) {
-                    snprintf(left_buf, sizeof(left_buf), "%lld", left.int_val);
-                } else if (left.type == VAL_FLOAT) {
-                    snprintf(left_buf, sizeof(left_buf), "%g", left.float_val);
-                } else if (left.type == VAL_BOOL) {
-                    snprintf(left_buf, sizeof(left_buf), "%s", left.bool_val ? "true" : "false");
-                } else if (left.type == VAL_ARRAY) {
-                    // Convert array to string representation
-                    if (left.array_val) {
-                        char* arr_str = malloc(1024);
-                        strcpy(arr_str, "[");
-                        for (size_t i = 0; i < left.array_val->count && strlen(arr_str) < 1000; i++) {
-                            if (i > 0) strcat(arr_str, ", ");
-                            Value* item = &left.array_val->items[i];
-                            char item_buf[64];
-                            if (item->type == VAL_INT) {
-                                snprintf(item_buf, sizeof(item_buf), "%lld", item->int_val);
-                            } else if (item->type == VAL_FLOAT) {
-                                snprintf(item_buf, sizeof(item_buf), "%g", item->float_val);
-                            } else if (item->type == VAL_STRING) {
-                                snprintf(item_buf, sizeof(item_buf), "%s", item->string_val);
-                            } else if (item->type == VAL_BOOL) {
-                                strcpy(item_buf, item->bool_val ? "true" : "false");
-                            } else {
-                                strcpy(item_buf, "null");
-                            }
-                            strcat(arr_str, item_buf);
-                        }
-                        strcat(arr_str, "]");
-                        left_str = left_buf;
-                        strncpy(left_buf, arr_str, sizeof(left_buf) - 1);
-                        left_buf[sizeof(left_buf) - 1] = '\0';
-                        free(arr_str);
-                    } else {
-                        strcpy(left_buf, "[]");
+                /* String concatenation with automatic conversion — dynamic and
+                 * overflow-proof (the old 256-byte stack buffers clipped long
+                 * values; template literals made this path hot, so it must be
+                 * correct for any length). */
+                char* ls = value_to_owned_string(left);
+                char* rs = value_to_owned_string(right);
+                if (ls && rs) {
+                    size_t len = strlen(ls) + strlen(rs) + 1;
+                    char* str = malloc(len);
+                    if (str) {
+                        strcpy(str, ls);
+                        strcat(str, rs);
+                        result = make_string(str);
+                        free(str);
                     }
-                } else {
-                    strcpy(left_buf, "null");
                 }
-
-                // Convert right to string
-                if (right.type == VAL_STRING) {
-                    right_str = right.string_val;
-                } else if (right.type == VAL_INT) {
-                    snprintf(right_buf, sizeof(right_buf), "%lld", right.int_val);
-                } else if (right.type == VAL_FLOAT) {
-                    snprintf(right_buf, sizeof(right_buf), "%g", right.float_val);
-                } else if (right.type == VAL_BOOL) {
-                    snprintf(right_buf, sizeof(right_buf), "%s", right.bool_val ? "true" : "false");
-                } else if (right.type == VAL_ARRAY) {
-                    // Convert array to string representation
-                    if (right.array_val) {
-                        char* arr_str = malloc(1024);
-                        strcpy(arr_str, "[");
-                        for (size_t i = 0; i < right.array_val->count && strlen(arr_str) < 1000; i++) {
-                            if (i > 0) strcat(arr_str, ", ");
-                            Value* item = &right.array_val->items[i];
-                            char item_buf[64];
-                            if (item->type == VAL_INT) {
-                                snprintf(item_buf, sizeof(item_buf), "%lld", item->int_val);
-                            } else if (item->type == VAL_FLOAT) {
-                                snprintf(item_buf, sizeof(item_buf), "%g", item->float_val);
-                            } else if (item->type == VAL_STRING) {
-                                snprintf(item_buf, sizeof(item_buf), "%s", item->string_val);
-                            } else if (item->type == VAL_BOOL) {
-                                strcpy(item_buf, item->bool_val ? "true" : "false");
-                            } else {
-                                strcpy(item_buf, "null");
-                            }
-                            strcat(arr_str, item_buf);
-                        }
-                        strcat(arr_str, "]");
-                        right_str = right_buf;
-                        strncpy(right_buf, arr_str, sizeof(right_buf) - 1);
-                        right_buf[sizeof(right_buf) - 1] = '\0';
-                        free(arr_str);
-                    } else {
-                        strcpy(right_buf, "[]");
-                    }
-                } else {
-                    strcpy(right_buf, "null");
-                }
-
-                // Concatenate
-                size_t len = strlen(left_str) + strlen(right_str) + 1;
-                char* str = malloc(len);
-                strcpy(str, left_str);
-                strcat(str, right_str);
-                result = make_string(str);
-                free(str);
+                free(ls);
+                free(rs);
             }
             break;
         case OP_RANGE:
@@ -703,17 +999,41 @@ static Value eval_binary_op(ASTNode* node) {
         case OP_SUB:
             if (left.type == VAL_INT && right.type == VAL_INT) {
                 result = make_int(left.int_val - right.int_val);
+            } else if (left.type == VAL_FLOAT && right.type == VAL_FLOAT) {
+                result = make_float(left.float_val - right.float_val);
+            } else if (left.type == VAL_INT && right.type == VAL_FLOAT) {
+                result = make_float((double)left.int_val - right.float_val);
+            } else if (left.type == VAL_FLOAT && right.type == VAL_INT) {
+                result = make_float(left.float_val - (double)right.int_val);
             }
             break;
         case OP_MUL:
             if (left.type == VAL_INT && right.type == VAL_INT) {
                 result = make_int(left.int_val * right.int_val);
+            } else if (left.type == VAL_FLOAT && right.type == VAL_FLOAT) {
+                result = make_float(left.float_val * right.float_val);
+            } else if (left.type == VAL_INT && right.type == VAL_FLOAT) {
+                result = make_float((double)left.int_val * right.float_val);
+            } else if (left.type == VAL_FLOAT && right.type == VAL_INT) {
+                result = make_float(left.float_val * (double)right.int_val);
             }
             break;
         case OP_DIV:
             if (left.type == VAL_INT && right.type == VAL_INT) {
                 if (right.int_val != 0) {
                     result = make_int(left.int_val / right.int_val);
+                }
+            } else if (left.type == VAL_FLOAT && right.type == VAL_FLOAT) {
+                if (right.float_val != 0.0) {
+                    result = make_float(left.float_val / right.float_val);
+                }
+            } else if (left.type == VAL_INT && right.type == VAL_FLOAT) {
+                if (right.float_val != 0.0) {
+                    result = make_float((double)left.int_val / right.float_val);
+                }
+            } else if (left.type == VAL_FLOAT && right.type == VAL_INT) {
+                if (right.int_val != 0) {
+                    result = make_float(left.float_val / (double)right.int_val);
                 }
             }
             break;
@@ -722,6 +1042,18 @@ static Value eval_binary_op(ASTNode* node) {
                 if (right.int_val != 0) {
                     result = make_int(left.int_val % right.int_val);
                 }
+            } else if (left.type == VAL_FLOAT && right.type == VAL_FLOAT) {
+                if (right.float_val != 0.0) {
+                    result = make_float(fmod(left.float_val, right.float_val));
+                }
+            } else if (left.type == VAL_INT && right.type == VAL_FLOAT) {
+                if (right.float_val != 0.0) {
+                    result = make_float(fmod((double)left.int_val, right.float_val));
+                }
+            } else if (left.type == VAL_FLOAT && right.type == VAL_INT) {
+                if (right.int_val != 0) {
+                    result = make_float(fmod(left.float_val, (double)right.int_val));
+                }
             }
             break;
         case OP_EQ:
@@ -729,6 +1061,10 @@ static Value eval_binary_op(ASTNode* node) {
                 result = make_bool(left.int_val == right.int_val);
             } else if (left.type == VAL_FLOAT && right.type == VAL_FLOAT) {
                 result = make_bool(left.float_val == right.float_val);
+            } else if (left.type == VAL_INT && right.type == VAL_FLOAT) {
+                result = make_bool((double)left.int_val == right.float_val);
+            } else if (left.type == VAL_FLOAT && right.type == VAL_INT) {
+                result = make_bool(left.float_val == (double)right.int_val);
             } else if (left.type == VAL_BOOL && right.type == VAL_BOOL) {
                 result = make_bool(left.bool_val == right.bool_val);
             } else if (left.type == VAL_STRING && right.type == VAL_STRING) {
@@ -744,6 +1080,10 @@ static Value eval_binary_op(ASTNode* node) {
                 result = make_bool(left.int_val != right.int_val);
             } else if (left.type == VAL_FLOAT && right.type == VAL_FLOAT) {
                 result = make_bool(left.float_val != right.float_val);
+            } else if (left.type == VAL_INT && right.type == VAL_FLOAT) {
+                result = make_bool((double)left.int_val != right.float_val);
+            } else if (left.type == VAL_FLOAT && right.type == VAL_INT) {
+                result = make_bool(left.float_val != (double)right.int_val);
             } else if (left.type == VAL_BOOL && right.type == VAL_BOOL) {
                 result = make_bool(left.bool_val != right.bool_val);
             } else if (left.type == VAL_STRING && right.type == VAL_STRING) {
@@ -759,6 +1099,10 @@ static Value eval_binary_op(ASTNode* node) {
                 result = make_bool(left.int_val < right.int_val);
             } else if (left.type == VAL_FLOAT && right.type == VAL_FLOAT) {
                 result = make_bool(left.float_val < right.float_val);
+            } else if (left.type == VAL_INT && right.type == VAL_FLOAT) {
+                result = make_bool((double)left.int_val < right.float_val);
+            } else if (left.type == VAL_FLOAT && right.type == VAL_INT) {
+                result = make_bool(left.float_val < (double)right.int_val);
             }
             break;
         case OP_LTE:
@@ -766,6 +1110,10 @@ static Value eval_binary_op(ASTNode* node) {
                 result = make_bool(left.int_val <= right.int_val);
             } else if (left.type == VAL_FLOAT && right.type == VAL_FLOAT) {
                 result = make_bool(left.float_val <= right.float_val);
+            } else if (left.type == VAL_INT && right.type == VAL_FLOAT) {
+                result = make_bool((double)left.int_val <= right.float_val);
+            } else if (left.type == VAL_FLOAT && right.type == VAL_INT) {
+                result = make_bool(left.float_val <= (double)right.int_val);
             }
             break;
         case OP_GT:
@@ -773,6 +1121,10 @@ static Value eval_binary_op(ASTNode* node) {
                 result = make_bool(left.int_val > right.int_val);
             } else if (left.type == VAL_FLOAT && right.type == VAL_FLOAT) {
                 result = make_bool(left.float_val > right.float_val);
+            } else if (left.type == VAL_INT && right.type == VAL_FLOAT) {
+                result = make_bool((double)left.int_val > right.float_val);
+            } else if (left.type == VAL_FLOAT && right.type == VAL_INT) {
+                result = make_bool(left.float_val > (double)right.int_val);
             }
             break;
         case OP_GTE:
@@ -780,6 +1132,10 @@ static Value eval_binary_op(ASTNode* node) {
                 result = make_bool(left.int_val >= right.int_val);
             } else if (left.type == VAL_FLOAT && right.type == VAL_FLOAT) {
                 result = make_bool(left.float_val >= right.float_val);
+            } else if (left.type == VAL_INT && right.type == VAL_FLOAT) {
+                result = make_bool((double)left.int_val >= right.float_val);
+            } else if (left.type == VAL_FLOAT && right.type == VAL_INT) {
+                result = make_bool(left.float_val >= (double)right.int_val);
             }
             break;
         case OP_AND:
@@ -799,6 +1155,133 @@ static Value eval_binary_op(ASTNode* node) {
 }
 
 // Evaluate expression
+/* ── Python-parity indexing & slicing (nightshift 20261102) ─────────
+ * Helpers shared by AST_INDEX_EXPR eval, optional-chain index, and
+ * index assignment. Strings index/slice by UTF-8 CODE POINT (same law
+ * as string iterators, 20261025) but slices return byte-accurate
+ * substrings; arrays by item. Errors throw (catchable), matching the
+ * honest-failure law of 20261101: Python raises IndexError/TypeError/
+ * ValueError, never a silent null. */
+
+/* Human name for a Value's type, for error text. */
+static const char* value_type_name(ValueType t) {
+    switch (t) {
+        case VAL_INT:   return "int";
+        case VAL_FLOAT: return "float";
+        case VAL_BOOL:  return "bool";
+        case VAL_STRING: return "string";
+        case VAL_ARRAY: return "array";
+        case VAL_NULL:  return "null";
+        case VAL_FUNCTION: return "function";
+        case VAL_STRUCT_DEF: return "struct_def";
+        case VAL_STRUCT_INSTANCE: return "struct";
+        case VAL_ITERATOR: return "iterator";
+    }
+    return "unknown";
+}
+
+/* Byte length of the UTF-8 code point starting at s (byte-safe: any
+ * invalid lead falls back to 1). Mirrors the iterator's decoder. */
+static size_t utf8_cp_len(const char* s) {
+    unsigned char c = (unsigned char)s[0];
+    if ((c & 0x80) == 0) return 1;
+    if ((c & 0xE0) == 0xC0) return 2;
+    if ((c & 0xF0) == 0xE0) return 3;
+    if ((c & 0xF8) == 0xF0) return 4;
+    return 1;
+}
+
+/* Count code points in a NUL-terminated string. */
+static size_t utf8_count(const char* s) {
+    size_t n = 0;
+    while (*s) { s += utf8_cp_len(s); n++; }
+    return n;
+}
+
+/* Resolve a Python slice's three arms against a length. Any arm may be
+ * NULL (omitted) or negative (from the end). Returns false + installs a
+ * throw on step==0 (ValueError parity). Output i begins at start and
+ * advances by step while 0<=i<end_bound (end_bound excluded). */
+static bool slice_bounds(long long len, const Value* start, const Value* end,
+                         const Value* step, long long* out_i, long long* out_bound,
+                         long long* out_step) {
+    long long s_step = (step && step->type == VAL_INT) ? step->int_val : 1;
+    if (step && step->type == VAL_NULL) s_step = 1;      /* explicit null = default */
+    if (s_step == 0) {
+        Value e = make_string("slice step cannot be zero");
+        interpreter_raise(e); value_free(&e);
+        return false;
+    }
+    /* Omitted arms take step-sign defaults (CPython PySlice_Unpack).
+     * CRITICAL: omitted end under a NEGATIVE step is the stop sentinel
+     * "before element 0" — NOT the integer -1 (which normalizes to
+     * len-1). a[3::-1] == [3,2,1,0] but a[3:-1:-1] == []. We mark the
+     * omitted case with a flag so the sentinel never passes through
+     * the negative-index normalization below. */
+    bool start_given = start && start->type == VAL_INT;
+    bool end_given   = end   && end->type   == VAL_INT;
+    long long s_start = s_step > 0 ? 0 : len - 1;
+    long long s_end;
+    if (s_step > 0) {
+        s_end = len;
+    } else {
+        s_end = -1; /* sentinel: stop BEFORE element 0 (i > bound loop makes this exact) */
+    }
+    if (start_given) s_start = start->int_val;
+    if (end_given)   s_end   = end->int_val;
+
+    /* Negative values count from the end (then clamp). */
+    if (start_given && s_start < 0) s_start += len;
+    if (end_given   && s_end   < 0) s_end   += len;
+
+    /* Clamp to the valid window (PySlice_AdjustIndices law): positive
+     * steps clamp into [0, len]; negative steps into [-1, len-1] — but
+     * our -2 sentinel and an explicit -1-into-len-1 both just work with
+     * the i > bound loop guard, and start len clamps to len-1 only via
+     * the first iteration guard (an OOB i would read items[len]; we
+     * clamp start to len-1 instead, matching CPython). */
+    if (s_step > 0) {
+        if (!start_given && s_start < 0) s_start = 0;
+        if (start_given) {
+            if (s_start < 0) s_start = 0;
+            if (s_start > len) s_start = len;
+        }
+        if (end_given) {
+            if (s_end < 0) s_end = 0;
+            if (s_end > len) s_end = len;
+        }
+    } else {
+        if (start_given) {
+            if (s_start < -1) s_start = -1;
+            if (s_start > len - 1) s_start = len - 1;
+        }
+        if (end_given) {
+            if (s_end < -1) s_end = -1;
+            if (s_end > len - 1) s_end = len - 1;
+        }
+    }
+    *out_i = s_start; *out_bound = s_end; *out_step = s_step;
+    return true;
+}
+
+/* Convert an int index (possibly negative) to an in-range position.
+ * Returns -1 and installs a throw when out of bounds (IndexError parity).
+ * Strings: pass cp_count in len and the raw string for message context. */
+static long long resolve_index(ValueType elem_type, long long len, long long idx,
+                               const char* subj) {
+    long long i = idx < 0 ? idx + len : idx;
+    if (i < 0 || i >= len) {
+        char msg[192];
+        const char* kind = (elem_type == VAL_STRING) ? "string" : "list";
+        snprintf(msg, sizeof(msg), "%s index %lld out of range", kind, idx);
+        (void)subj;
+        Value e = make_string(msg);
+        interpreter_raise(e); value_free(&e);
+        return -1;
+    }
+    return i;
+}
+
 static Value eval_expression(ASTNode* node) {
     if (!node) return make_null();
     
@@ -819,26 +1302,96 @@ static Value eval_expression(ASTNode* node) {
             return make_array_from_list(node->array_literal.elements);
         
         case AST_INDEX_EXPR: {
-            Value arr = eval_expression(node->index_expr.array);
+            /* Python-parity rewrite (nightshift 20261102): strings index
+             * by UTF-8 code point (s[0] used to return null!), negative
+             * indices count from the end, [a:b:c] slices parse (they were
+             * a parse error), and out-of-range/type misuse THROWS instead
+             * of returning null (IndexError/TypeError parity). Arrays keep
+             * the 20261027 UAF law: results are value_clone'd. */
+            Value seq = eval_expression(node->index_expr.array);
+
+            if (node->index_expr.is_slice) {
+                Value sv_start = node->index_expr.slice_start ? eval_expression(node->index_expr.slice_start) : make_null();
+                Value sv_end   = node->index_expr.slice_end   ? eval_expression(node->index_expr.slice_end)   : make_null();
+                Value sv_step  = node->index_expr.slice_step  ? eval_expression(node->index_expr.slice_step)  : make_null();
+                Value result = make_null();
+                if (seq.type == VAL_ARRAY) {
+                    long long i, bound, st;
+                    if (slice_bounds((long long)seq.array_val->count, &sv_start, &sv_end, &sv_step, &i, &bound, &st)) {
+                        Array* out = array_create(8);
+                        for (; (st > 0) ? (i < bound) : (i > bound); i += st) {
+                            array_push(out, seq.array_val->items[i]);
+                        }
+                        result.type = VAL_ARRAY; result.array_val = out;
+                    }
+                } else if (seq.type == VAL_STRING && seq.string_val) {
+                    /* Code-point slice with a step may be non-contiguous
+                     * ("hello"[::2] == "hlo"), so: one pass builds a byte-
+                     * offset table (off[k] = byte offset of code point k,
+                     * off[cps] = strlen), then the kept points are appended
+                     * in visit order — negative steps append reversed. */
+                    size_t cps = utf8_count(seq.string_val);
+                    long long i, bound, st;
+                    if (slice_bounds((long long)cps, &sv_start, &sv_end, &sv_step, &i, &bound, &st)) {
+                        size_t blen = strlen(seq.string_val);
+                        size_t* off = malloc(sizeof(size_t) * (cps + 1));
+                        const char* p = seq.string_val;
+                        for (size_t k = 0; k < cps; k++) {
+                            off[k] = (size_t)(p - seq.string_val);
+                            p += utf8_cp_len(p);
+                        }
+                        off[cps] = blen;
+                        char* outstr = malloc(blen + 1);
+                        size_t n = 0;
+                        for (long long k = i; (st > 0) ? (k < bound) : (k > bound); k += st) {
+                            size_t b0 = off[k], b1 = off[k + 1];
+                            memcpy(outstr + n, seq.string_val + b0, b1 - b0);
+                            n += b1 - b0;
+                        }
+                        outstr[n] = '\0';
+                        free(off);
+                        result.type = VAL_STRING; result.string_val = outstr;
+                    }
+                } else {
+                    Value e = make_string("only arrays and strings support slicing");
+                    interpreter_raise(e); value_free(&e);
+                }
+                value_free(&seq); value_free(&sv_start); value_free(&sv_end); value_free(&sv_step);
+                return result;
+            }
+
             Value idx = eval_expression(node->index_expr.index);
             Value result = make_null();
-            if (arr.type == VAL_ARRAY && idx.type == VAL_INT) {
-                if (idx.int_val >= 0 && (size_t)idx.int_val < arr.array_val->count) {
-                    // return copy
-                    Value elem = arr.array_val->items[idx.int_val];
-                    // shallow copy ok; duplicate strings
-                    if (elem.type == VAL_STRING) {
-                        result = make_string(elem.string_val);
-                    } else if (elem.type == VAL_ARRAY) {
-                        // simplistic: not deep copy; share
-                        result.type = VAL_ARRAY;
-                        result.array_val = elem.array_val;
-                    } else {
-                        result = elem;
-                    }
+            if (seq.type == VAL_ARRAY && idx.type == VAL_INT) {
+                long long i = resolve_index(VAL_ARRAY, (long long)seq.array_val->count, idx.int_val, NULL);
+                if (i >= 0) {
+                    /* UAF fix (nightshift 20261027): value_clone — see above. */
+                    result = value_clone(seq.array_val->items[i]);
                 }
+            } else if (seq.type == VAL_STRING && seq.string_val && idx.type == VAL_INT) {
+                size_t cps = utf8_count(seq.string_val);
+                long long i = resolve_index(VAL_STRING, (long long)cps, idx.int_val, NULL);
+                if (i >= 0) {
+                    const char* p = seq.string_val;
+                    long long seen = 0;
+                    while (*p && seen < i) { p += utf8_cp_len(p); seen++; }
+                    size_t cl = utf8_cp_len(p);
+                    char* out = malloc(cl + 1);
+                    memcpy(out, p, cl); out[cl] = '\0';
+                    result.type = VAL_STRING; result.string_val = out;
+                }
+            } else if (seq.type == VAL_ARRAY || seq.type == VAL_STRING) {
+                char msg[160];
+                snprintf(msg, sizeof(msg), "%s indices must be integers or slices, not %s",
+                         seq.type == VAL_ARRAY ? "list" : "string",
+                         value_type_name(idx.type));
+                Value e = make_string(msg); interpreter_raise(e); value_free(&e);
+            } else {
+                char msg[160];
+                snprintf(msg, sizeof(msg), "'%s' object is not subscriptable", value_type_name(seq.type));
+                Value e = make_string(msg); interpreter_raise(e); value_free(&e);
             }
-            value_free(&arr);
+            value_free(&seq);
             value_free(&idx);
             return result;
         }
@@ -859,6 +1412,7 @@ static Value eval_expression(ASTNode* node) {
                 case VAL_FUNCTION: type_str = "function"; break;
                 case VAL_STRUCT_DEF: type_str = "struct_def"; break;
                 case VAL_STRUCT_INSTANCE: type_str = "struct"; break;
+                case VAL_ITERATOR: type_str = "iterator"; break;
             }
             value_free(&val);
             return make_string(type_str);
@@ -901,7 +1455,9 @@ static Value eval_expression(ASTNode* node) {
                     }
                     current = current->next;
                 }
-                fprintf(stderr, "Error: Struct '%s' has no member '%s'.\n", object.struct_instance->definition->name, member_name);
+                const char* sname = object.struct_instance->definition
+                                      ? object.struct_instance->definition->name : "<anonymous>";
+                fprintf(stderr, "Error: Struct '%s' has no member '%s'.\n", sname, member_name);
             } else if (object.type == VAL_ARRAY) {
                 const char* member_name = node->member_expr.member;
                 if (strcmp(member_name, "length") == 0) {
@@ -921,6 +1477,61 @@ static Value eval_expression(ASTNode* node) {
 
             if (target->type == AST_IDENTIFIER) {
                 env_set(target->identifier.name, value);
+            } else if (target->type == AST_INDEX_EXPR && !target->index_expr.is_slice) {
+                /* Index assignment a[i] = v (nightshift 20261102): was a
+                 * SILENT NO-OP — the assign case only handled identifiers
+                 * and members, so array writes evaluated the value and
+                 * dropped it (exit 0, array unchanged; every in-place sort
+                 * example in the repo has never worked). env_get_ref gives
+                 * the array's own storage; we value_clone the RHS into the
+                 * slot (releasing the old payload first) — same ownership
+                 * law as member assignment. Negative indices Python-parity;
+                 * OOB/non-int throws instead of vanishing. */
+                /* Base may be an identifier OR a nested expression
+                 * (m[1][0] = v): eval yields a refcounted array Value
+                 * whose storage is SHARED with the original, so writing
+                 * through the clone mutates the source array — the same
+                 * aliasing law that makes `row = m[1]; row[0] = 9` work.
+                 * Strings/copy semantics would silently not persist; for
+                 * those we stay loud (error) rather than lying. */
+                Value base_val;
+                bool base_owned = false;
+                Value* ref = NULL;
+                if (target->index_expr.array->type == AST_IDENTIFIER) {
+                    ref = env_get_ref(target->index_expr.array->identifier.name);
+                } else {
+                    base_val = eval_expression(target->index_expr.array);
+                    base_owned = true;
+                    if (base_val.type == VAL_ARRAY) ref = &base_val;
+                }
+                Value idx = eval_expression(target->index_expr.index);
+                if (ref && ref->type == VAL_ARRAY && idx.type == VAL_INT) {
+                    long long len = (long long)ref->array_val->count;
+                    long long i = idx.int_val < 0 ? idx.int_val + len : idx.int_val;
+                    if (i >= 0 && i < len) {
+                        value_release(&ref->array_val->items[i]);
+                        ref->array_val->items[i] = value_clone(value);
+                    } else {
+                        char msg[128];
+                        snprintf(msg, sizeof(msg), "list assignment index %lld out of range", idx.int_val);
+                        Value e = make_string(msg); interpreter_raise(e); value_free(&e);
+                    }
+                } else if (ref && (ref->type == VAL_ARRAY)) {
+                    char msg[128];
+                    snprintf(msg, sizeof(msg), "list indices must be integers, not %s", value_type_name(idx.type));
+                    Value e = make_string(msg); interpreter_raise(e); value_free(&e);
+                } else if (ref && ref->type == VAL_STRING) {
+                    Value e = make_string("'string' object does not support item assignment");
+                    interpreter_raise(e); value_free(&e);
+                } else if (!ref) {
+                    Value e = make_string("cannot assign through index of this expression");
+                    interpreter_raise(e); value_free(&e);
+                }
+                if (base_owned) value_release(&base_val);
+                value_free(&idx);
+            } else if (target->type == AST_INDEX_EXPR && target->index_expr.is_slice) {
+                /* Slice assignment is out of scope tonight: loud, not silent. */
+                fprintf(stderr, "Error: slice assignment is not supported yet");
             } else if (target->type == AST_MEMBER_EXPR) {
                 // For member assignment, we need to modify the struct in the environment
                 // If the object is a simple identifier, modify it directly in the environment
@@ -932,7 +1543,8 @@ static Value eval_expression(ASTNode* node) {
                         FieldValue* current = object_ref->struct_instance->fields;
                         while (current) {
                             if (strcmp(current->name, member_name) == 0) {
-                                value_release(current->value);
+                                value_release(current->value); /* free old contents... */
+                                free(current->value);           /* ...and the box itself (was leaked) */
                                 current->value = malloc(sizeof(Value));
                                 *current->value = value_clone(value);
                                 break;
@@ -948,7 +1560,8 @@ static Value eval_expression(ASTNode* node) {
                         FieldValue* current = object.struct_instance->fields;
                         while (current) {
                             if (strcmp(current->name, member_name) == 0) {
-                                value_release(current->value);
+                                value_release(current->value); /* free old contents... */
+                                free(current->value);           /* ...and the box itself (was leaked) */
                                 current->value = malloc(sizeof(Value));
                                 *current->value = value_clone(value);
                                 break;
@@ -966,17 +1579,28 @@ static Value eval_expression(ASTNode* node) {
             return env_get(node->identifier.name);
         
         case AST_STRUCT_LITERAL: {
-            ASTNode* def_node = find_struct(node->struct_literal.name);
-            if (!def_node) {
-                fprintf(stderr, "Error: Struct '%s' not defined.\n", node->struct_literal.name);
-                return make_null();
+            /* Anonymous object literal ({k: v}, JS parity 20261101): NULL
+             * name means no registry lookup — build an instance with a NULL
+             * definition, the same shape natives like regex.search return.
+             * Named literals keep the strict find_struct() error path. */
+            const char* lit_name = node->struct_literal.name;
+            ASTNode* def_node = NULL;
+            if (lit_name) {
+                def_node = find_struct(lit_name);
+                if (!def_node) {
+                    fprintf(stderr, "Error: Struct '%s' not defined.\n", lit_name);
+                    return make_null();
+                }
             }
 
             StructInstance* instance = malloc(sizeof(StructInstance));
-            instance->definition = malloc(sizeof(StructDef));
-            instance->definition->name = strdup(node->struct_literal.name);
-            instance->definition->ast_node = def_node;
+            instance->definition = lit_name ? struct_def_intern(lit_name, def_node) : NULL;
+            /* Insertion order (JS object parity): append at the tail. The
+             * old prepend serialized fields in REVERSE source order — no
+             * test pinned that, and object literals must round-trip in
+             * the order written. */
             instance->fields = NULL;
+            FieldValue** field_tail = &instance->fields;
 
             for (size_t i = 0; i < node->struct_literal.fields->count; i++) {
                 ASTNode* assign_node = node->struct_literal.fields->nodes[i];
@@ -995,8 +1619,9 @@ static Value eval_expression(ASTNode* node) {
                 field->name = strdup(assign_node->assign_expr.target->identifier.name);
                 field->value = malloc(sizeof(Value));
                 *field->value = eval_expression(assign_node->assign_expr.value);
-                field->next = instance->fields;
-                instance->fields = field;
+                field->next = NULL;
+                *field_tail = field;
+                field_tail = &field->next;
             }
 
             Value v;
@@ -1088,6 +1713,7 @@ static bool is_truthy(Value v) {
         case VAL_STRING:
             return v.string_val && v.string_val[0] != '\0';
         case VAL_FUNCTION:
+        case VAL_ITERATOR:
         case VAL_NULL:
         default:
             return false;
@@ -1097,8 +1723,26 @@ static bool is_truthy(Value v) {
 // Execute statement
 static ExecResult exec_statement(ASTNode* node) {
     if (!node) return EXEC_OK;
-    
+
+    /* Throw barrier: an exception in flight from a previous statement (e.g. a
+     * bare call to a throwing function) unwinds from the next statement on.
+     * Try statements are exempt — their block handles entry with pending state
+     * by catching it, which keeps `boom(); try {...} catch` coherent. */
+    if (has_thrown_value && node->type != AST_TRY_STMT) {
+        return EXEC_THROW;
+    }
+
     switch (node->type) {
+        case AST_FUNCTION_DECL:
+            /* Nested `blast` inside another function body: register it in the
+             * global env instead of letting it fall to `default:` where the
+             * VAL_FUNCTION value was evaluated and discarded. Local scoping
+             * (shadowing an outer name) is future work with closures; this
+             * restores the documented semantics that a declared function is
+             * callable for the rest of the program. */
+            exec_function(node);
+            return EXEC_OK;
+
         case AST_STRUCT_DECL:
             register_struct(node->struct_decl.name, node);
             return EXEC_OK;
@@ -1159,6 +1803,12 @@ static ExecResult exec_statement(ASTNode* node) {
                 ExecResult r = exec_statement(node->block.statements->nodes[i]);
                 if (r == EXEC_BREAK || r == EXEC_CONTINUE || r == EXEC_RETURN || r == EXEC_THROW) {
                     return r;
+                }
+                /* Throw barrier (nightshift 20261027): a callee's throw leaves
+                 * pending state even when the call expression itself returned
+                 * EXEC_OK — unwind here so enclosing try/catch can see it. */
+                if (has_thrown_value) {
+                    return EXEC_THROW;
                 }
             }
             return EXEC_OK;
@@ -1232,6 +1882,34 @@ static ExecResult exec_statement(ASTNode* node) {
                     }
                 }
             }
+            // General path (nightshift 20261025): evaluate the iterable once and
+            // drive any array or lazy iterator value. The old code only handled
+            // the `a..b` range op — `cruise (x in [1,2,3])` silently ran zero
+            // times. Arrays keep snapshot semantics (count fixed at loop start).
+            {
+                Value iterable = eval_expression(iter);
+                ExecResult r = EXEC_OK;
+                if (iterable.type == VAL_ARRAY && iterable.array_val) {
+                    size_t n = iterable.array_val->count;
+                    for (size_t i = 0; i < n; i++) {
+                        env_set(node->cruise_stmt.iterator, iterable.array_val->items[i]); /* env_set clones */
+                        r = exec_statement(node->cruise_stmt.body);
+                        if (r == EXEC_BREAK) { r = EXEC_OK; break; }
+                        if (r == EXEC_RETURN || r == EXEC_THROW) break;
+                    }
+                } else if (iterable.type == VAL_ITERATOR && iterable.iterator_val) {
+                    Value item;
+                    while (iterator_next(&iterable, &item)) {
+                        env_set(node->cruise_stmt.iterator, item); /* env owns it now */
+                        r = exec_statement(node->cruise_stmt.body);
+                        value_free(&item);
+                        if (r == EXEC_BREAK) { r = EXEC_OK; break; }
+                        if (r == EXEC_RETURN || r == EXEC_THROW) break;
+                     }
+                }
+                value_free(&iterable);
+                return r;
+            }
             return EXEC_OK;
         }
         
@@ -1282,7 +1960,24 @@ static ExecResult exec_statement(ASTNode* node) {
             }
             
             if (node->try_stmt.finally_block) {
+                /* Park an in-flight throw so the finally body actually runs
+                 * (the statement-level barrier would skip it otherwise). */
+                bool parked_pending = has_thrown_value;
+                Value parked_value = thrown_value;
+                if (parked_pending) {
+                    has_thrown_value = false;
+                }
                 ExecResult fr = exec_statement(node->try_stmt.finally_block);
+                if (parked_pending) {
+                    if (has_thrown_value) {
+                        /* TS semantics: a throw from finally REPLACES the
+                         * in-flight exception — the newer one wins. */
+                        value_free(&parked_value);
+                    } else {
+                        thrown_value = parked_value;
+                        has_thrown_value = true;
+                    }
+                }
                 if (fr == EXEC_RETURN) {
                     return EXEC_RETURN;
                 }
@@ -1379,6 +2074,10 @@ static ExecResult exec_statement(ASTNode* node) {
 
 // Execute function
 static void exec_function(ASTNode* node) {
+    /* Anonymous lambdas (fn(){}/blast(){}) have name==NULL: there is no
+     * global name to bind — they live only as first-class values inside
+     * expressions. Guard env_set against NULL (nightshift 20261031). */
+    if (node->function_decl.name == NULL) return;
     // Store in environment for lookup (including as first-class values)
     Value v;
     v.type = VAL_FUNCTION;
@@ -1397,14 +2096,18 @@ Value interpreter_execute_callback(Value callback, int argc, Value* args) {
     }
 
     ASTNode* func = callback.func_node;
-    // Bind parameters naively to globals for now
+    /* Scoped call frames (nightshift 20261026): save each param's caller
+     * binding, bind for the callee, restore on exit — fixes param leakage
+     * into the caller AND makes recursion correct (inner calls no longer
+     * clobber the outer frame's bindings mid-expression). */
+    EnvShadow* frame = NULL;
     if (func->function_decl.parameters) {
         int param_count = (int)func->function_decl.parameters->count;
         for (int i = 0; i < param_count; i++) {
             ASTNode* param_node = func->function_decl.parameters->nodes[i];
             const char* pname;
             Value arg;
-            
+
             if (param_node->type == AST_VARIABLE_DECL) {
                 pname = param_node->variable_decl.name;
                 if (i < argc && args) {
@@ -1418,11 +2121,13 @@ Value interpreter_execute_callback(Value callback, int argc, Value* args) {
                 pname = param_node->identifier.name;
                 arg = (i < argc && args) ? value_clone(args[i]) : make_null();
             }
+            frame_push_param(&frame, pname);
             env_set(pname, arg);
             value_free(&arg);
         }
     }
     ExecResult r = exec_statement(func->function_decl.body);
+    frame_pop(frame);
     if (r == EXEC_RETURN && has_return_value) {
         Value rv = value_clone(current_return_value);
         value_free(&current_return_value);
@@ -1430,6 +2135,56 @@ Value interpreter_execute_callback(Value callback, int argc, Value* args) {
         return rv;
     }
     return make_null();
+}
+
+/* Report an exception that reached the top of the program without a
+ * matching catch — Python/TS parity: message on stderr, nonzero exit. */
+static void report_uncaught_throw(void) {
+    fprintf(stderr, "Uncaught");
+    switch (thrown_value.type) {
+        case VAL_STRING: fprintf(stderr, " error: %s", thrown_value.string_val); break;
+        case VAL_INT:    fprintf(stderr, " error: %lld", thrown_value.int_val); break;
+        case VAL_FLOAT: {
+            /* shortest round-trip like echo/concat (was %f padding) */
+            char fbuf[64];
+            fprintf(stderr, " error: %s", format_float_shortest(thrown_value.float_val, fbuf, sizeof(fbuf)));
+            break;
+        }
+        case VAL_BOOL:   fprintf(stderr, " error: %s", thrown_value.bool_val ? "true" : "false"); break;
+        default:         fprintf(stderr, " error: <value>"); break;
+    }
+    fprintf(stderr, "\n");
+    value_free(&thrown_value);
+    has_thrown_value = false;
+}
+
+/* Peek: is an exception currently in flight? (Promise natives need to
+ * distinguish "nothing thrown" from "null was thrown" before taking.) */
+bool interpreter_has_throw(void) {
+    return has_thrown_value;
+}
+
+/* Take ownership of a pending throw (if any): returns a clone of the thrown
+ * value and clears the pending state. Natives like Promise.allSettled use
+ * this to convert a callback's throw into a rejection record. */
+Value interpreter_take_throw(void) {
+    if (!has_thrown_value) {
+        return make_null();
+    }
+    Value out = value_clone(thrown_value);
+    value_free(&thrown_value);
+    has_thrown_value = false;
+    return out;
+}
+
+/* Raise a value as an in-flight exception from native code (e.g. Promise.all
+ * re-raising the first rejection so the caller's try/catch sees it). */
+void interpreter_raise(Value v) {
+    if (has_thrown_value) {
+        value_free(&thrown_value);
+    }
+    thrown_value = value_clone(v);
+    has_thrown_value = true;
 }
 
 // Main interpreter
@@ -1466,19 +2221,55 @@ int interpret(ASTNode* program) {
     if (main_val.type == VAL_FUNCTION) {
         exec_statement(main_val.func_node->function_decl.body);
         value_free(&main_val);
+        if (has_thrown_value) {
+            report_uncaught_throw();
+            interpreter_cleanup_environment();
+            interpreter_cleanup_event_loop();
+            return 1; /* Python/Node parity: uncaught exception -> nonzero exit */
+        }
     } else {
         // Fallback: search declarations (legacy)
+        bool found_main = false;
         for (size_t i = 0; i < program->program.declarations->count; i++) {
             ASTNode* decl = program->program.declarations->nodes[i];
-            if (decl->type == AST_FUNCTION_DECL && strcmp(decl->function_decl.name, "main") == 0) {
+            if (decl->type == AST_FUNCTION_DECL && decl->function_decl.name != NULL &&
+                strcmp(decl->function_decl.name, "main") == 0) {
                 exec_statement(decl->function_decl.body);
+                found_main = true;
                 break;
+            }
+        }
+
+        /* Script mode (nightshift 20261031, JS parity): a file with NO
+         * main() executes its top-level statements in order — test_v0.0.12
+         * and test_http are plain scripts. Structs/enums/functions are
+         * already registered by Pass 1; every OTHER declaration runs now.
+         * A pending throw unwinds like an uncaught exception (same law as
+         * the main() path above). */
+        if (!found_main) {
+            for (size_t i = 0; i < program->program.declarations->count; i++) {
+                ASTNode* decl = program->program.declarations->nodes[i];
+                if (decl->type == AST_FUNCTION_DECL || decl->type == AST_STRUCT_DECL ||
+                    decl->type == AST_ENUM_DECL || decl->type == AST_IMPORT_STMT) {
+                    continue;   /* already handled by Pass 0/1 */
+                }
+                exec_statement(decl);
+                if (has_thrown_value) break;
+            }
+            if (has_thrown_value) {
+                report_uncaught_throw();
+                interpreter_cleanup_environment();
+                interpreter_cleanup_event_loop();
+                return 1;
             }
         }
     }
 
 
-    env_free();
+    /* Full teardown on the file path too: env + struct/enum registries +
+     * interned StructDefs. Previously only env_free() ran here, so every
+     * file run leaked the struct/enum binding tables (LSan-visible). */
+    interpreter_cleanup_environment();
     interpreter_cleanup_event_loop();
     return 0;
 }
@@ -1492,12 +2283,18 @@ int interpret_repl_statement(ASTNode* stmt) {
     // Execute the statement directly
     // Environment persists across calls for REPL
     exec_statement(stmt);
+    /* A throw the user never caught must not poison the next REPL line —
+     * report it and clear, the way Python/Node REPLs do. */
+    if (has_thrown_value) {
+        report_uncaught_throw();
+    }
     return 0;
 }
 
 // Clean up the global environment (call when exiting REPL)
 void interpreter_cleanup_environment(void) {
     env_free();
+    interned_struct_defs_free();
     env_free_structs();
     env_free_enums();
 }
