@@ -1282,6 +1282,113 @@ static long long resolve_index(ValueType elem_type, long long len, long long idx
     return i;
 }
 
+/* ── Slice assignment (nightshift 20261103) ────────────────────
+ * CPython list slice assignment, pinned against 3.14:
+ *  - step==1 (omitted or explicit): SPLICE — the [lo,hi) window is
+ *    replaced by the RHS whatever its length (grow, shrink, delete,
+ *    insert; a[3:1]=[9] inserts at 3; a[100:200]=[9] appends).
+ *  - any other step: EXTENDED — visited-slot count must equal the RHS
+ *    length exactly (ValueError otherwise), items written in visit
+ *    order (a[::-1]=[1,2,3,4,5] gives [5,4,3,2,1]).
+ *  - RHS may be array, string (code points), or iterator; anything
+ *    else raises TypeError (must assign iterable to extended slice).
+ *  - RHS is SNAPSHOTTED into owned clones before mutation so a[0:2]=a
+ *    sees pre-assignment contents, exactly like CPython.
+ * Ownership law: the target Array* is mutated IN PLACE, never
+ * replaced, so shares (row = m[1]) observe the splice. */
+
+/* Collect an iterable RHS into a heap C array of OWNED Values.
+ * Returns false (throw installed) for non-iterables. */
+static bool slice_rhs_snapshot(Value rhs, Value** out, size_t* out_n) {
+    if (rhs.type == VAL_ARRAY && rhs.array_val) {
+        Array* a = rhs.array_val;
+        Value* snap = malloc(sizeof(Value) * (a->count ? a->count : 1));
+        for (size_t k = 0; k < a->count; k++) snap[k] = value_clone(a->items[k]);
+        *out = snap; *out_n = a->count;
+        return true;
+    }
+    if (rhs.type == VAL_STRING && rhs.string_val) {
+        size_t cps = utf8_count(rhs.string_val);
+        Value* snap = malloc(sizeof(Value) * (cps ? cps : 1));
+        const char* q = rhs.string_val;
+        for (size_t k = 0; k < cps; k++) {
+            size_t cl = utf8_cp_len(q);
+            char* one = malloc(cl + 1);
+            memcpy(one, q, cl); one[cl] = 0;
+            snap[k].type = VAL_STRING; snap[k].string_val = one;
+            q += cl;
+        }
+        *out = snap; *out_n = cps;
+        return true;
+    }
+    if (rhs.type == VAL_ITERATOR && rhs.iterator_val) {
+        size_t cap = 8, n = 0;
+        Value* snap = malloc(sizeof(Value) * cap);
+        Value item;
+        while (iterator_next(&rhs, &item)) {
+            if (n == cap) { cap *= 2; snap = realloc(snap, sizeof(Value) * cap); }
+            snap[n++] = item;
+        }
+        *out = snap; *out_n = n;
+        return true;
+    }
+    Value e = make_string("must assign iterable to extended slice");
+    interpreter_raise(e); value_free(&e);
+    return false;
+}
+
+/* Splice: replace arr[lo,hi) with snap[0..n) in place (CPython step-1
+ * path). Window items are released BEFORE the tail moves so nothing is
+ * orphaned; snap values are MOVED in (ownership transfers). */
+static void slice_splice(Array* arr, long long lo, long long hi,
+                         Value* snap, size_t n) {
+    long long len = (long long)arr->count;
+    if (lo < 0) lo = 0;
+    if (hi > len) hi = len;
+    if (hi < lo) hi = lo;
+    for (long long k = lo; k < hi; k++) value_release(&arr->items[k]);
+    long long tail = len - hi;
+    long long new_count = lo + (long long)n + tail;
+    if ((size_t)new_count > arr->capacity) {
+        size_t want = arr->capacity ? arr->capacity : 4;
+        while (want < (size_t)new_count) want *= 2;
+        arr->items = realloc(arr->items, want * sizeof(Value));
+        arr->capacity = want;
+    }
+    memmove(arr->items + lo + (long long)n, arr->items + hi,
+            (size_t)tail * sizeof(Value));
+    for (size_t k = 0; k < n; k++) arr->items[lo + (long long)k] = snap[k];
+    arr->count = (size_t)new_count;
+    free(snap);
+}
+
+/* Extended slice (step != 1): count visited slots, demand an exact-
+ * length RHS (ValueError parity), then write in visit order. */
+static void slice_assign_extended(Array* arr, long long i, long long bound,
+                                  long long st, Value* snap, size_t n) {
+    long long slots = 0;
+    for (long long k = i; (st > 0) ? (k < bound) : (k > bound); k += st) slots++;
+    if ((long long)n != slots) {
+        char msg[128];
+        snprintf(msg, sizeof(msg),
+                 "attempt to assign sequence of size %zu to extended slice of size %lld",
+                 n, slots);
+        Value e = make_string(msg);
+        interpreter_raise(e); value_free(&e);
+        /* snap values are still ours; release before unwinding */
+        for (size_t k = 0; k < n; k++) value_release(&snap[k]);
+        free(snap);
+        return;
+    }
+    long long k = i;
+    size_t r = 0;
+    for (; (st > 0) ? (k < bound) : (k > bound); k += st, r++) {
+        value_release(&arr->items[k]);
+        arr->items[k] = snap[r]; /* ownership moves in, visit order */
+    }
+    free(snap);
+}
+
 static Value eval_expression(ASTNode* node) {
     if (!node) return make_null();
     
@@ -1530,8 +1637,47 @@ static Value eval_expression(ASTNode* node) {
                 if (base_owned) value_release(&base_val);
                 value_free(&idx);
             } else if (target->type == AST_INDEX_EXPR && target->index_expr.is_slice) {
-                /* Slice assignment is out of scope tonight: loud, not silent. */
-                fprintf(stderr, "Error: slice assignment is not supported yet");
+                /* Slice ASSIGNMENT a[lo:hi(:st)] = rhs (nightshift 20261103)
+                 * — was a stderr shrug that kept running with exit 0.
+                 * CPython law: step==1 splices (any length), other steps
+                 * are extended (exact length, visit-order writes). Base
+                 * resolution follows the index-assign law above: ident-
+                 * ifiers via env_get_ref, nested bases via a refcounted
+                 * share — the Array* is mutated in place so aliases see
+                 * it. Strings/int targets throw (TypeError parity). */
+                Value base_val;
+                bool base_owned = false;
+                Value* ref = NULL;
+                if (target->index_expr.array->type == AST_IDENTIFIER) {
+                    ref = env_get_ref(target->index_expr.array->identifier.name);
+                } else {
+                    base_val = eval_expression(target->index_expr.array);
+                    base_owned = true;
+                    if (base_val.type == VAL_ARRAY) ref = &base_val;
+                }
+                if (!ref) {
+                    Value e = make_string("cannot assign through index of this expression");
+                    interpreter_raise(e); value_free(&e);
+                } else if (ref->type != VAL_ARRAY) {
+                    char msg[96];
+                    snprintf(msg, sizeof(msg), "'%s' object does not support item assignment", value_type_name(ref->type));
+                    Value e = make_string(msg);
+                    interpreter_raise(e); value_free(&e);
+                } else {
+                    Value sv_s = target->index_expr.slice_start ? eval_expression(target->index_expr.slice_start) : make_null();
+                    Value sv_e = target->index_expr.slice_end ? eval_expression(target->index_expr.slice_end) : make_null();
+                    Value sv_t = target->index_expr.slice_step ? eval_expression(target->index_expr.slice_step) : make_null();
+                    long long i, bound, st;
+                    if (slice_bounds((long long)ref->array_val->count, &sv_s, &sv_e, &sv_t, &i, &bound, &st)) {
+                        Value* snap = NULL; size_t n = 0;
+                        if (slice_rhs_snapshot(value, &snap, &n)) {
+                            if (st == 1) slice_splice(ref->array_val, i, bound, snap, n);
+                            else slice_assign_extended(ref->array_val, i, bound, st, snap, n);
+                        }
+                    }
+                    value_free(&sv_s); value_free(&sv_e); value_free(&sv_t);
+                }
+                if (base_owned) value_release(&base_val);
             } else if (target->type == AST_MEMBER_EXPR) {
                 // For member assignment, we need to modify the struct in the environment
                 // If the object is a simple identifier, modify it directly in the environment
