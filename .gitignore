@@ -341,3 +341,12 @@ cscope.out
 cscope.files
 .gdb_history
 .sisyphus/
+
+# nightshift 2026-10-17: build artifacts & root symlinks (backlog #4)
+benchmarks/
+/radpkg
+/rads
+/rads-mask
+/rstar
+/rpm
+/tools/rads-mask/rads-mask

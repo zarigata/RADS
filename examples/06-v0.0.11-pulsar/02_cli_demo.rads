@@ -23,7 +23,7 @@ blast main() {
     
     turbo args = cli.args();
     if (args != null) {
-        echo("Arguments received: " + length(args));
+        echo("Arguments received: " + array.count(args));
     }
     
     echo("");

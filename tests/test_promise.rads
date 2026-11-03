@@ -1,0 +1,77 @@
+// tests/test_promise.rads — Promise combinators, TS parity (nightshift 20261027)
+// Pins generated against real Node v20.19.2 output (scratch/pin.js):
+//   allSettled mixed -> fulfilled,11 / rejected,nope / fulfilled,22
+//   allSettled all-reject -> rejected,rejected (never throws)
+//   any skip-rejects -> 11 ; any all-reject -> AggregateError w/ errors in order
+//   race -> first settled wins ; all -> first rejection re-raised
+// Rejections are `throw` inside the function body — same model TS uses.
+
+blast ok1() { return 11; }
+blast ok2() { return 22; }
+blast bad() { throw "nope"; return 0; }
+blast bad2() { throw "second"; return 0; }
+
+blast main() {
+    echo("=== Promise.allSettled ===");
+    turbo r = Promise.allSettled([ok1, bad, ok2]);
+    if (r.length == 3) { echo("PASS as len 3"); } else { echo("FAIL as len"); }
+    if (r[0].status == "fulfilled" && r[0].value == 11) { echo("PASS as f0"); } else { echo("FAIL as f0"); }
+    if (r[1].status == "rejected" && r[1].reason == "nope") { echo("PASS as r1"); } else { echo("FAIL as r1"); }
+    if (r[2].status == "fulfilled" && r[2].value == 22) { echo("PASS as f2"); } else { echo("FAIL as f2"); }
+    // never rejects, even when everything rejects
+    turbo r2 = Promise.allSettled([bad, bad2]);
+    if (r2[0].status == "rejected" && r2[1].status == "rejected") { echo("PASS as all-rej"); } else { echo("FAIL as all-rej"); }
+    // empty input resolves empty (TS: resolves with [])
+    turbo r3 = Promise.allSettled([]);
+    if (r3.length == 0) { echo("PASS as empty"); } else { echo("FAIL as empty"); }
+    // non-function inputs settle as rejected, not crash
+    turbo r4 = Promise.allSettled([42]);
+    if (r4[0].status == "rejected") { echo("PASS as nonfn"); } else { echo("FAIL as nonfn"); }
+
+    echo("=== Promise.all ===");
+    turbo a = Promise.all([ok1, ok2]);
+    if (a.length == 2 && a[0] == 11 && a[1] == 22) { echo("PASS all vals"); } else { echo("FAIL all vals"); }
+    try {
+        Promise.all([ok1, bad, ok2]);
+        echo("FAIL all reject (swallowed)");
+    } catch (e) {
+        if (e == "nope") { echo("PASS all reject re-raised"); } else { echo("FAIL all reject reason"); }
+    }
+
+    echo("=== Promise.any ===");
+    turbo w = Promise.any([bad, ok1]);
+    if (w == 11) { echo("PASS any skips rejects"); } else { echo("FAIL any skip"); }
+    try {
+        Promise.any([bad, bad2]);
+        echo("FAIL any aggregate (swallowed)");
+    } catch (e) {
+        if (e.name == "AggregateError") { echo("PASS any agg name"); } else { echo("FAIL any agg name"); }
+        if (e.errors[0] == "nope" && e.errors[1] == "second") { echo("PASS any agg errors"); } else { echo("FAIL any agg errors"); }
+    }
+
+    echo("=== Promise.race ===");
+    turbo f = Promise.race([ok1, ok2]);
+    if (f == 11) { echo("PASS race first"); } else { echo("FAIL race first"); }
+    try {
+        Promise.race([bad, ok1]);
+        echo("FAIL race reject (swallowed)");
+    } catch (e) {
+        if (e == "nope") { echo("PASS race reject re-raised"); } else { echo("FAIL race reason"); }
+    }
+
+    echo("=== throw parity (core fix regression) ===");
+    blast_not_needed = 1;
+    // try/catch across call boundary — the 20261027 throw-barrier fix
+    try { bad(); echo("FAIL cross-call throw"); } catch (e) { if (e == "nope") { echo("PASS cross-call catch"); } else { echo("FAIL cross-call reason"); } }
+    // finally runs during unwind; catch swallows, execution continues
+    turbo fin_ran = 0;
+    try { bad(); } catch (e) { } finally { fin_ran = 1; }
+    if (fin_ran == 1) { echo("PASS finally during unwind"); } else { echo("FAIL finally unwind"); }
+    // nesting: inner catch stops the unwind at the right level
+    try { try { bad(); } catch (e) { echo("PASS inner catch"); } } catch (e2) { echo("FAIL leaked to outer"); }
+    // stale-flag misfire check: a caught throw must not poison later statements
+    turbo after = 5 + 5;
+    if (after == 10) { echo("PASS no stale poison"); } else { echo("FAIL stale poison"); }
+
+    echo("promise suite complete");
+}

@@ -1,0 +1,92 @@
+// ═══════════════════════════════════════════════════════════
+// Object literals + honest failures + global natives (20261101)
+// Pins: bare-{ object literals (backlog 11), undefined-call throws,
+// assert/print/str/type/chr/ord globals, insertion-order fields.
+// No semicolons ON PURPOSE (ASI). No main() ON PURPOSE (script mode).
+// Gate law: expected MUST equal the number of check() call sites.
+// ═══════════════════════════════════════════════════════════
+
+let pass = 0
+let expected = 18
+
+blast check(name, cond) {
+    if (cond) {
+        echo("PASS " + name)
+        return 1
+    }
+    echo("FAIL: " + name)
+    return 0
+}
+
+// ── the test_http.rads blocker, verbatim ─────────────────────
+let s = json.stringify({"test": "rads"})
+pass = pass + check("json.stringify object literal arg", s == `{"test":"rads"}`)
+
+// ── string keys, identifier keys, shorthand, nesting ────────
+let obj = {"name": "Z", score: 99, nested: {"deep": [1, 2, 3]}}
+pass = pass + check("string key read", obj.name == "Z")
+pass = pass + check("identifier key read", obj.score == 99)
+pass = pass + check("nested literal read", obj.nested.deep[1] == 2)
+pass = pass + check("stringify preserves insertion order", str.contains(json.stringify(obj), `{"name":"Z","score":99,"nested":{"deep":[1,2,3]}}`))
+
+// ── shorthand + empty + trailing comma ───────────────────────
+let key = "field"
+let short = {key}
+pass = pass + check("shorthand {k} == {k: k}", short.key == "field")
+pass = pass + check("empty object literal", json.stringify({}) == "{}")
+let trail = {"x": 1, "y": 2,}
+pass = pass + check("trailing comma legal", trail.y == 2)
+
+// ── member assignment + named structs unaffected ────────────
+let o = {"a": 1}
+o.a = 42
+pass = pass + check("member assignment on object", o.a == 42)
+
+struct Player { str name; i32 score; }
+turbo Player p = Player {name: "R", score: 5};
+pass = pass + check("named struct literal still strict", p.name == "R" && p.score == 5)
+
+// ── statement-position { is still a block ────────────────────
+let marker = 0
+{ marker = 1 }
+pass = pass + check("statement brace is a block", marker == 1)
+
+// ── honest failures: undefined calls throw, catchable ────────
+let caught1 = ""
+try {
+    let r = no_such_fn(5)
+} catch (e) {
+    caught1 = e
+}
+pass = pass + check("undefined call throws catchable", str.contains(caught1, "is not defined"))
+
+let seven = 7
+let caught2 = ""
+try {
+    seven(3)
+} catch (e) {
+    caught2 = e
+}
+pass = pass + check("non-function call throws", str.contains(caught2, "is not a function"))
+
+// ── global natives ──────────────────────────────────────────
+assert(true, "assert true passes")
+let caught3 = ""
+try {
+    assert(false, "planted")
+} catch (e) {
+    caught3 = e
+}
+pass = pass + check("assert throws on false", str.contains(caught3, "FAIL:"))
+pass = pass + check("str(42) == \"42\"", str(42) == "42")
+pass = pass + check("type(3.5) == float", type(3.5) == "float")
+pass = pass + check("chr(10) is newline", str.len(chr(10)) == 1 && ord(chr(65)) == 65)
+pass = pass + check("string.contains alias", string.contains("hello world", "world"))
+
+if (pass == expected) {
+    echo("")
+    echo("ALL OBJECT LITERAL TESTS PASSED (" + pass + "/" + expected + ")")
+} else {
+    echo("")
+    echo("SOME OBJECT LITERAL TESTS FAILED (" + pass + "/" + expected + ")")
+}
