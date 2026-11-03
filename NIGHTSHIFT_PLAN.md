@@ -16,6 +16,33 @@ Branch `nightshift/20261013-stdlib-float-parity` carries the completed port to t
 **clean-build green** (trio 11+8+17 PASS, runner 9/9, exit 0). Merge that branch to unblock main.
 
 ## Night Log
+
+ - **2026-11-03**: (1) sync: fetch clean, PRs #19-#34 all still open, none merged; cut
+   nightshift/20261103-slice-assign from string-parity head 369b598 (freshest green). (2) feat(core):
+   **BACKLOG-adjacent CLOSED — slice assignment a[lo:hi(:st)] = rhs** (last night left it a loud stderr
+   shrug; tonight it is real). Was: "Error: slice assignment is not supported yet" on stderr, then the
+   program KEPT RUNNING with the array unchanged, exit 0. CPython 3.14 law, every pin from real python3
+   runs on this box: step==1 (omitted OR explicit) SPLICES the [lo,hi) window at any length (grow, shrink,
+   delete, a[3:1]=[9] inserts at 3, a[100:200]=[9] appends, a[:]=[7,8] replaces, empty arrays grow); any
+   other step is EXTENDED — visited-slot count must equal RHS length exactly (ValueError, CPython wording)
+   and slots written in visit order (a[::-1]=[1,2,3,4,5] gives [5,4,3,2,1]). RHS may be array, string
+   (per UTF-8 code point), or lazy iterator (itertools pipelines drain straight in); non-iterables raise
+   must assign iterable. a[0:2]=a SNAPSHOTS the rhs first (self-assign sees pre-assign contents). Ownership
+   law: target Array* mutated IN PLACE, never replaced — m[1][0:2]=[90,91], sobj.arr[0:1]=[50], and alias
+   shares (b=a; a[:0]=[0]) all observe the splice; grow path reallocs by doubling like array_push. All
+   failures catchable, Python-worded (ValueError size-mismatch/zero-step, TypeError non-iterable/string/
+   int-target). (3) tests/test_slice_assign.rads — 25 pins, wired as suite 26; runner gate negative-tested
+   with a planted expectation break (suite FAILED, grep-able FAIL: line — first plant only renamed a check
+   and the runner correctly passed it, proving the gate needs a REAL break). (4) My own corpse bugs tonight,
+   all caught by gates before commit: branch-body chunk had 3 junk lines from a botched printf (dup snprintf
+   + stray statement — syntax check caught); old fprintf stub survived line-surgery (deleted lines[n-1] AND
+   lines[n], probe caught the ghost); char-literal 0x27 passed to %s (gcc -Wformat caught); error message
+   first dropped then half-quoted the type name (probe diff vs CPython caught); expected=24 vs 25 real
+   checks (suite gate caught); two sed/python misfires on a test line (parse errors caught). Verified:
+   clean build exit 0, 0 warnings from interpreter.c, runner **26/26 suites PASSED 0 FAIL lines grepped
+   twice**, ASan+UBSan+LSan new suite 25/25 0 findings 0 leaks (slices/itertools_lazy/object_literals/
+   structs/memory_truth/v0.0.12 also clean). Not verified: CI on the PR. PR #35:
+   https://github.com/zarigata/RADS/pull/35
  - **2026-11-02**: (1) sync: fetch clean, PRs #19-#33 all still open, none merged; cut
    nightshift/20261102-string-parity from object-literals head 66ba05f (freshest green). (2) feat(core):
    **Python-parity indexing + slicing + index assignment** — the third silent-failure family in as many
@@ -241,6 +268,7 @@ Branch `nightshift/20261013-stdlib-float-parity` carries the completed port to t
 
 ## Open PR Review
 | PR | Title | Status | Verdict |
+| 35 | Python-parity slice assignment (splice + extended) | OPEN — head Dagoth-Ur-69:nightshift/20261103-slice-assign | awaiting master review; closes last night's loud stopgap |
 | 34 | Python-parity slicing + string indexing + index assignment | OPEN — head Dagoth-Ur-69:nightshift/20261102-string-parity | awaiting master review; a[1:3] was a parse error, s[0] returned null, a[0]=x was a silent no-op |
 |----|-------|--------|---------|
 | 20 | nostalgia module + clean-build fix for main | OPEN — head Dagoth-Ur-69:nightshift/20261017-forge-sync, +1 comment (pool_closed, bb7db17) | awaiting master review; carries the main clean-build fix |
