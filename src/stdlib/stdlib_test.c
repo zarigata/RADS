@@ -80,7 +80,7 @@ Value stdlib_test_describe(Interpreter* interp, int argc, Value* args) {
     // Create new suite
     TestSuite* suite = malloc(sizeof(TestSuite));
     suite->name = strdup(args[0].string_val);
-    suite->callback = args[1];
+    suite->callback = value_retain(args[1]);   /* retain closure (scope ref) */
     suite->tests = NULL;
     suite->next = NULL;
     suite->passed = 0;
@@ -117,7 +117,7 @@ Value stdlib_test_it(Interpreter* interp, int argc, Value* args) {
     // Create test case (we'll add it to current suite during run)
     TestCase* test = malloc(sizeof(TestCase));
     test->name = strdup(args[0].string_val);
-    test->callback = args[1];
+    test->callback = value_retain(args[1]);    /* retain closure (scope ref) */
     test->next = NULL;
     
     // We need to store this for later execution
@@ -437,7 +437,7 @@ Value stdlib_test_beforeEach(Interpreter* interp, int argc, Value* args) {
         return make_null();
     }
     
-    before_each_callback = args[0];
+    before_each_callback = value_retain(args[0]);   /* retain closure */
     has_before_each = true;
     
     return make_null();
@@ -452,7 +452,7 @@ Value stdlib_test_afterEach(Interpreter* interp, int argc, Value* args) {
         return make_null();
     }
     
-    after_each_callback = args[0];
+    after_each_callback = value_retain(args[0]);    /* retain closure */
     has_after_each = true;
     
     return make_null();

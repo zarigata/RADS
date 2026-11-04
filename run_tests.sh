@@ -44,6 +44,7 @@ test_files=(
     "test_object_literals.rads"
     "test_slices.rads"
     "test_slice_assign.rads"
+    "test_closures.rads"
 )
 
 for test_file in "${test_files[@]}"; do

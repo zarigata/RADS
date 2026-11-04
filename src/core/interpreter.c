@@ -88,8 +88,17 @@ Array* array_create(size_t capacity) {
     return arr;
 }
 
+typedef struct Scope {
+    struct Environment* bindings;      /* frame-local binding list (owned) */
+    struct Scope* parent;              /* lexical parent; NULL = global */
+    size_t refs;                       /* 1 = executing frame; +1 per closure */
+    struct Scope* reg_next;            /* teardown registry links (all scopes) */
+    struct Scope* reg_prev;
+} Scope;
+
 static Value value_clone(Value v);
 static void value_release(Value* v);
+static void scope_release(Scope* sc);
 
 void array_push(Array* arr, Value v) {
     if (arr->count >= arr->capacity) {
@@ -130,6 +139,13 @@ static Value value_clone(Value v) {
     switch (v.type) {
         case VAL_STRING:
             out.string_val = strdup(v.string_val);
+            break;
+        case VAL_FUNCTION:
+            /* closures share the captured frame by reference (JS law):
+             * every owned copy holds one scope ref, released in
+             * value_release. Raw stack temporaries that never cloned
+             * must never be value_free'd — constructors ref first. */
+            if (v.closure) v.closure->refs++;
             break;
         case VAL_ARRAY:
             if (v.array_val) v.array_val->refcount++;
@@ -192,6 +208,9 @@ static void value_release(Value* value) {
                     free(it);
                 }
             }
+            break;
+        case VAL_FUNCTION:
+            if (value->closure) scope_release(value->closure);
             break;
         case VAL_STRUCT_DEF:
             // Handled by the struct registry
@@ -308,51 +327,188 @@ typedef struct Environment {
     struct Environment* next;
 } Environment;
 
+
 static Environment* global_env = NULL;
 
-static void env_set(const char* name, Value value) {
-    // Always clone the value to ensure proper ownership
-    Value cloned_value = value_clone(value);
+/* ===== Lexical scope chain + closures (nightshift 20261104) =====
+ * Why: bindings lived in ONE global list, so (a) a function's locals
+ *      leaked into the caller and into sibling functions (probe: a()
+ *      declares x, b() reads it — Python raises NameError there), and
+ *      (b) a callee's assignment to a caller's name CLOBBERED it
+ *      (outer's x became 99 via inner's plain assignment; Python: 1).
+ *      The 20261026 EnvShadow patch papered over params only.
+ * Law (JS/TS semantics, which the corpus already relies on):
+ *      - every blast/fn call pushes a Scope frame; params + turbo/let
+ *        decls + catch vars + destructured names bind INTO it;
+ *      - reads walk the frame chain, then the global env;
+ *      - plain assignment `x = v` walks the chain and writes the frame
+ *        that HAS x (accumulator callbacks keep working — deliberate,
+ *        documented divergence from Python's local-or-global law);
+ *        a name seen nowhere binds in the innermost frame;
+ *      - a VAL_FUNCTION captures its DECLARING scope (per-value, so
+ *        make_adder(5) and make_adder(7) carry different frames).
+ * Lifetime: refcounted. An uncaptured frame dies at return (recursion
+ *      stays O(1) memory). A captured frame lives while any closure
+ *      value references it. Self-capture (a frame holding a closure to
+ *      itself) is a cycle that only the teardown sweep breaks — bounded
+ *      by program size, freed in interpreter_cleanup_environment.
+ * Extend: when a bytecode VM lands, Scopes become frame objects with
+ *      the same walk law; the registry sweep maps to arena reset. */
 
-    // Check existing
-    Environment* current = global_env;
-    while (current) {
-        if (strcmp(current->name, name) == 0) {
-            value_free(&current->value); // Free old value
-            current->value = cloned_value;
-            return;
-        }
-        current = current->next;
-    }
+static Scope* current_scope = NULL;    /* innermost executing frame (NULL = global) */
+static Scope* scope_registry_head = NULL;
 
-    // Create new
-    Environment* env = malloc(sizeof(Environment));
-    env->name = strdup(name);
-    env->value = cloned_value;
-    env->next = global_env;
-    global_env = env;
+/* scope_create — new frame with lexical parent `parent` (retained). */
+static Scope* scope_create(Scope* parent) {
+    Scope* sc = malloc(sizeof(Scope));
+    sc->bindings = NULL;
+    sc->parent = parent;
+    if (parent) parent->refs++;
+    sc->refs = 1;                      /* the executing call owns this ref */
+    sc->reg_prev = NULL;
+    sc->reg_next = scope_registry_head;
+    if (scope_registry_head) scope_registry_head->reg_prev = sc;
+    scope_registry_head = sc;
+    return sc;
 }
 
-static Value env_get(const char* name) {
-    Environment* current = global_env;
-    while (current) {
-        if (strcmp(current->name, name) == 0) {
-            // Return a clone to ensure proper ownership
-            return value_clone(current->value);
-        }
-        current = current->next;
+/* scope_free — drop one reference; at zero, release the parent chain and
+ * the frame's bindings, and unlink from the registry. */
+static void scope_release(Scope* sc) {
+    if (!sc) return;
+    if (sc->refs == SIZE_MAX) return;   /* frozen by the teardown sweep */
+    if (--sc->refs > 0) return;
+    /* unlink from registry so the teardown sweep never double-frees */
+    if (sc->reg_prev) sc->reg_prev->reg_next = sc->reg_next;
+    else if (scope_registry_head == sc) scope_registry_head = sc->reg_next;
+    if (sc->reg_next) sc->reg_next->reg_prev = sc->reg_prev;
+    Environment* cur = sc->bindings;
+    while (cur) {
+        Environment* next = cur->next;
+        free(cur->name);
+        value_release(&cur->value);
+        free(cur);
+        cur = next;
     }
+    scope_release(sc->parent);
+    free(sc);
+}
+
+/* scope_find — innermost frame (or global sentinel) holding `name`.
+ * Returns (Scope*, Environment*); env==NULL with scope==NULL when the
+ * name exists nowhere. The global list is represented by scope==NULL. */
+static Environment* scope_find(Scope* sc, const char* name, Scope** owner) {
+    for (; sc; sc = sc->parent) {
+        for (Environment* cur = sc->bindings; cur; cur = cur->next) {
+            if (strcmp(cur->name, name) == 0) { *owner = sc; return cur; }
+        }
+    }
+    *owner = NULL;
+    for (Environment* cur = global_env; cur; cur = cur->next) {
+        if (strcmp(cur->name, name) == 0) return cur;
+    }
+    return NULL;
+}
+
+/* scope_bind — create-or-overwrite `name` in exactly this frame. */
+static void scope_bind(Scope* sc, const char* name, Value value) {
+    for (Environment* cur = sc->bindings; cur; cur = cur->next) {
+        if (strcmp(cur->name, name) == 0) {
+            value_release(&cur->value);
+            cur->value = value_clone(value);
+            return;
+        }
+    }
+    Environment* env = malloc(sizeof(Environment));
+    env->name = strdup(name);
+    env->value = value_clone(value);
+    env->next = sc->bindings;
+    sc->bindings = env;
+}
+
+/* scope_registry_sweep — free every frame still alive at teardown
+ * (captured cycles the refcounts can never break). Refcounts are
+ * inflated first so value_release() cascades during binding frees can
+ * never hit zero mid-sweep and free a scope twice. */
+static void scope_registry_sweep(void) {
+    for (Scope* sc = scope_registry_head; sc; sc = sc->reg_next) {
+        sc->refs = SIZE_MAX;   /* freeze: scope_release becomes a no-op */
+    }
+    Scope* sc = scope_registry_head;
+    while (sc) {
+        Scope* next = sc->reg_next;
+        Environment* cur = sc->bindings;
+        while (cur) {
+            Environment* n2 = cur->next;
+            free(cur->name);
+            value_release(&cur->value);
+            free(cur);
+            cur = n2;
+        }
+        free(sc);
+        sc = next;
+    }
+    scope_registry_head = NULL;
+    current_scope = NULL;
+}
+
+
+/* env_set — ASSIGNMENT law (nightshift 20261104): write the innermost
+ * frame that already holds the name (chain first, then global); a name
+ * seen nowhere binds in the innermost frame (global when none active).
+ * JS non-strict semantics: the accumulator idiom `total = total + x`
+ * inside a callback must reach the enclosing frame, not mint a local. */
+static void env_set(const char* name, Value value) {
+    Scope* owner = NULL;
+    Environment* hit = scope_find(current_scope, name, &owner);
+    if (hit) {
+        value_release(&hit->value);
+        hit->value = value_clone(value);
+        return;
+    }
+    if (owner == NULL && current_scope == NULL) {
+        /* global assignment with no frame active */
+        Environment* env = malloc(sizeof(Environment));
+        env->name = strdup(name);
+        env->value = value_clone(value);
+        env->next = global_env;
+        global_env = env;
+        return;
+    }
+    scope_bind(current_scope, name, value);
+}
+
+/* env_declare — DECLARATION law: turbo/let, params, catch vars,
+ * destructured names and function names bind in the CURRENT frame
+ * (global when no frame is active). Assignments still walk; decls
+ * shadow deliberately, Python `x = ...` local-law approximated by
+ * declaring with turbo/let. */
+static void env_declare(const char* name, Value value) {
+    if (current_scope == NULL) {
+        env_set(name, value);   /* top level / script mode: global binding */
+        return;
+    }
+    scope_bind(current_scope, name, value);
+}
+
+/* env_get — read through the frame chain first, then the global env.
+ * Unbound name → null (the historic contract callers rely on). */
+static Value env_get(const char* name) {
+    Scope* owner = NULL;
+    Environment* hit = scope_find(current_scope, name, &owner);
+    if (hit) return value_clone(hit->value);
     return make_null();
 }
 
 // Get a reference to a value in the environment (for in-place modification)
+/* env_get_ref — chain-aware storage ref for in-place writes
+ * (index/member assignment). Falls back to the global list. */
 static Value* env_get_ref(const char* name) {
-    Environment* current = global_env;
-    while (current) {
-        if (strcmp(current->name, name) == 0) {
-            return &current->value;
-        }
-        current = current->next;
+    Scope* owner = NULL;
+    Environment* hit = scope_find(current_scope, name, &owner);
+    if (hit) return &hit->value;
+    for (Environment* cur = global_env; cur; cur = cur->next) {
+        if (strcmp(cur->name, name) == 0) return &cur->value;
     }
     return NULL;
 }
@@ -367,80 +523,6 @@ static void env_free() {
         current = next;
     }
     global_env = NULL;
-}
-
-/* env_remove — drop a binding created inside a finished call frame (param
- * that had no caller binding). Why: without it, calling a function would
- * permanently litter the global env with its parameter names. */
-static void env_remove(const char* name) {
-    Environment** link = &global_env;
-    while (*link) {
-        if (strcmp((*link)->name, name) == 0) {
-            Environment* dead = *link;
-            *link = dead->next;
-            free(dead->name);
-            value_free(&dead->value);
-            free(dead);
-            return;
-        }
-        link = &(*link)->next;
-    }
-
-}
-
-/* ===== Scoped call frames (nightshift 20261026) =====
- * Why: parameters and locals bound to the single global environment leaked
- *      into the caller's scope — worse, RECURSION was broken: an inner call
- *      rebound the outer frame's n mid-expression (fib(10) returned -80).
- *      Fix: each call pushes a frame of shadowed bindings; on return the
- *      old values are restored. Locals still live in the global list (the
- *      prototype's architecture), but a call can no longer vandalize the
- *      caller's variables.
- * Extend: replace with a real frame chain when closures arrive; the
- *      save/restore protocol here is the migration seam. */
-
-typedef struct EnvShadow {
-    char* name;          /* variable name as written in env (owned) */
-    bool existed;        /* false = binding created by the callee, remove it */
-    Value saved;         /* the caller's value (owned clone) */
-    struct EnvShadow* next;
-} EnvShadow;
-
-/* frame_push_param — record the caller's binding for one param name before
- * the callee overwrites it, so frame_pop can restore it later. */
-static void frame_push_param(EnvShadow** frame, const char* pname) {
-    EnvShadow* sh = malloc(sizeof(EnvShadow));
-    sh->name = strdup(pname);
-    Environment* binding = NULL;
-    for (Environment* cur = global_env; cur; cur = cur->next) {
-        if (strcmp(cur->name, pname) == 0) { binding = cur; break; }
-    }
-    if (binding) {
-        sh->existed = true;
-        sh->saved = value_clone(binding->value);
-    } else {
-        sh->existed = false;
-        sh->saved = make_null();
-    }
-    sh->next = *frame;
-    *frame = sh;
-}
-
-/* frame_pop — restore all shadowed bindings in reverse order (LIFO), so
- * nested calls with the same param name unwind correctly. */
-static void frame_pop(EnvShadow* frame) {
-    while (frame) {
-        EnvShadow* next = frame->next;
-        if (frame->existed) {
-            env_set(frame->name, frame->saved);
-        } else {
-            env_remove(frame->name);
-        }
-        free(frame->name);
-        value_free(&frame->saved);
-        free(frame);
-        frame = next;
-    }
 }
 
 // Native function registry
@@ -799,6 +881,28 @@ static Value eval_call(ASTNode* node) {
         value_free(&func_val);
         if (full_name) free(full_name);
         return make_null();
+    }
+
+    /* Index-expression callee: fns[0](x) — the function VALUE lives in
+     * an array slot (JS/Python parity). Evaluated like any expression,
+     * then invoked through the callback seam. Before this branch the
+     * call raised "expression is not callable". */
+    if (node->call_expr.callee->type == AST_INDEX_EXPR) {
+        Value fv = eval_expression(node->call_expr.callee);
+        if (fv.type == VAL_FUNCTION) {
+            int argc = node->call_expr.arguments ? (int)node->call_expr.arguments->count : 0;
+            Value* args = malloc(sizeof(Value) * (argc > 0 ? argc : 1));
+            for (int i = 0; i < argc; i++) {
+                args[i] = eval_expression(node->call_expr.arguments->nodes[i]);
+            }
+            Value result = interpreter_execute_callback(fv, argc, args);
+            for (int i = 0; i < argc; i++) value_free(&args[i]);
+            free(args);
+            value_free(&fv);
+            if (full_name) free(full_name);
+            return result;
+        }
+        value_free(&fv);
     }
 
     /* Non-identifier, non-member callee that dispatched nothing. */
@@ -1777,9 +1881,14 @@ static Value eval_expression(ASTNode* node) {
         }
 
         case AST_FUNCTION_DECL: {
+            /* Lambda/fn expression value: capture the declaring frame.
+             * Owned-ref law: the returned Value holds one scope ref
+             * (released by value_release); clone adds its own. */
             Value v;
             v.type = VAL_FUNCTION;
             v.func_node = node;
+            v.closure = current_scope;
+            if (current_scope) current_scope->refs++;
             return v;
         }
 
@@ -2010,7 +2119,7 @@ static ExecResult exec_statement(ASTNode* node) {
                 
                 for (long long i = start; i < end; i++) {
                     Value idx = make_int(i);
-                    env_set(node->cruise_stmt.iterator, idx);
+                    env_declare(node->cruise_stmt.iterator, idx);
                     value_free(&idx);
                     
                     ExecResult r = exec_statement(node->cruise_stmt.body);
@@ -2038,7 +2147,7 @@ static ExecResult exec_statement(ASTNode* node) {
                 if (iterable.type == VAL_ARRAY && iterable.array_val) {
                     size_t n = iterable.array_val->count;
                     for (size_t i = 0; i < n; i++) {
-                        env_set(node->cruise_stmt.iterator, iterable.array_val->items[i]); /* env_set clones */
+                        env_declare(node->cruise_stmt.iterator, iterable.array_val->items[i]); /* env_set clones */
                         r = exec_statement(node->cruise_stmt.body);
                         if (r == EXEC_BREAK) { r = EXEC_OK; break; }
                         if (r == EXEC_RETURN || r == EXEC_THROW) break;
@@ -2046,7 +2155,7 @@ static ExecResult exec_statement(ASTNode* node) {
                 } else if (iterable.type == VAL_ITERATOR && iterable.iterator_val) {
                     Value item;
                     while (iterator_next(&iterable, &item)) {
-                        env_set(node->cruise_stmt.iterator, item); /* env owns it now */
+                        env_declare(node->cruise_stmt.iterator, item); /* env owns it now */
                         r = exec_statement(node->cruise_stmt.body);
                         value_free(&item);
                         if (r == EXEC_BREAK) { r = EXEC_OK; break; }
@@ -2097,7 +2206,7 @@ static ExecResult exec_statement(ASTNode* node) {
             if (r == EXEC_THROW && node->try_stmt.catch_block) {
                 if (has_thrown_value) {
                     if (node->try_stmt.catch_var) {
-                        env_set(node->try_stmt.catch_var, thrown_value);
+                        env_declare(node->try_stmt.catch_var, thrown_value);  /* fresh per catch */
                     }
                     value_free(&thrown_value);
                     has_thrown_value = false;
@@ -2163,13 +2272,13 @@ static ExecResult exec_statement(ASTNode* node) {
                                 Value rest_val;
                                 rest_val.type = VAL_ARRAY;
                                 rest_val.array_val = rest_arr;
-                                env_set(elem->destructure_rest.name, rest_val);
+                                env_declare(elem->destructure_rest.name, rest_val);
                                 value_free(&rest_val);
                             } else if (elem->type == AST_IDENTIFIER) {
                                 if (array_index < arr->count) {
-                                    env_set(elem->identifier.name, arr->items[array_index]);
+                                    env_declare(elem->identifier.name, arr->items[array_index]);
                                 } else {
-                                    env_set(elem->identifier.name, make_null());
+                                    env_declare(elem->identifier.name, make_null());
                                 }
                                 array_index++;
                             }
@@ -2191,20 +2300,20 @@ static ExecResult exec_statement(ASTNode* node) {
                                 FieldValue* fv = instance->fields;
                                 while (fv) {
                                     if (strcmp(fv->name, field_name) == 0) {
-                                        env_set(var_name, *fv->value);
+                                        env_declare(var_name, *fv->value);
                                         break;
                                     }
                                     fv = fv->next;
                                 }
                                 if (!fv) {
-                                    env_set(var_name, make_null());
+                                    env_declare(var_name, make_null());
                                 }
                             }
                         }
                     }
                 }
             } else if (node->variable_decl.name) {
-                env_set(node->variable_decl.name, val);
+                env_declare(node->variable_decl.name, val);  /* turbo/let: local binding */
             }
             value_free(&val);
             return EXEC_OK;
@@ -2224,11 +2333,17 @@ static void exec_function(ASTNode* node) {
      * global name to bind — they live only as first-class values inside
      * expressions. Guard env_set against NULL (nightshift 20261031). */
     if (node->function_decl.name == NULL) return;
-    // Store in environment for lookup (including as first-class values)
+    // Bind the function name in the CURRENT frame, capturing it as a
+    // closure over its own declaration scope (JS law: hoisted-sibling
+    // calls like test_debugger's outer_function() resolve through the
+    // enclosing frame; self-recursion sees the binding before body runs).
     Value v;
     v.type = VAL_FUNCTION;
     v.func_node = node;
-    env_set(node->function_decl.name, v);
+    v.closure = current_scope;         /* NULL at top level = global */
+    if (current_scope) current_scope->refs++;   /* owned-value ref law */
+    env_declare(node->function_decl.name, v);   /* clone adds one more */
+    if (current_scope) scope_release(current_scope);  /* drop ours */
 }
 
 Value interpreter_execute_callback(Value callback, int argc, Value* args) {
@@ -2242,11 +2357,15 @@ Value interpreter_execute_callback(Value callback, int argc, Value* args) {
     }
 
     ASTNode* func = callback.func_node;
-    /* Scoped call frames (nightshift 20261026): save each param's caller
-     * binding, bind for the callee, restore on exit — fixes param leakage
-     * into the caller AND makes recursion correct (inner calls no longer
-     * clobber the outer frame's bindings mid-expression). */
-    EnvShadow* frame = NULL;
+    /* Lexical call frames (nightshift 20261104): every call pushes a
+     * Scope whose parent is the closure's CAPTURED scope (declaration
+     * environment), falling back to global for legacy/un-captured
+     * functions. Params bind as declarations into the new frame; the
+     * frame is released on exit so uncaptured recursion stays O(1)
+     * memory, while captured frames live as long as their closures. */
+    Scope* saved_scope = current_scope;
+    Scope* frame = scope_create(callback.closure ? callback.closure : NULL);
+    current_scope = frame;
     if (func->function_decl.parameters) {
         int param_count = (int)func->function_decl.parameters->count;
         for (int i = 0; i < param_count; i++) {
@@ -2267,13 +2386,13 @@ Value interpreter_execute_callback(Value callback, int argc, Value* args) {
                 pname = param_node->identifier.name;
                 arg = (i < argc && args) ? value_clone(args[i]) : make_null();
             }
-            frame_push_param(&frame, pname);
-            env_set(pname, arg);
+            scope_bind(frame, pname, arg);
             value_free(&arg);
         }
     }
     ExecResult r = exec_statement(func->function_decl.body);
-    frame_pop(frame);
+    current_scope = saved_scope;
+    scope_release(frame);
     if (r == EXEC_RETURN && has_return_value) {
         Value rv = value_clone(current_return_value);
         value_free(&current_return_value);
@@ -2365,7 +2484,17 @@ int interpret(ASTNode* program) {
     // Pass 2: Execute main function if it exists
     Value main_val = env_get("main");
     if (main_val.type == VAL_FUNCTION) {
-        exec_statement(main_val.func_node->function_decl.body);
+        /* main is a function like any other (nightshift 20261104): its
+         * turbo/let decls and nested blasts bind into a CALL FRAME, not
+         * the global env. Closure field of the looked-up value points
+         * at the declaring scope (global here — NULL). */
+        Scope* saved = current_scope;
+        Scope* main_frame = scope_create(NULL);
+        current_scope = main_frame;
+        ExecResult mr = exec_statement(main_val.func_node->function_decl.body);
+        current_scope = saved;
+        scope_release(main_frame);
+        (void)mr;
         value_free(&main_val);
         if (has_thrown_value) {
             report_uncaught_throw();
@@ -2439,7 +2568,13 @@ int interpret_repl_statement(ASTNode* stmt) {
 
 // Clean up the global environment (call when exiting REPL)
 void interpreter_cleanup_environment(void) {
+    /* Order matters (nightshift 20261104): env_free first — its
+     * value_release() calls drain every closure ref the global bindings
+     * hold; acyclic scope chains then die naturally inside env_free's
+     * cascades. Whatever SURVIVES is a capture cycle (a frame holding a
+     * closure over itself), and only the sweep can break those. */
     env_free();
+    scope_registry_sweep();
     interned_struct_defs_free();
     env_free_structs();
     env_free_enums();

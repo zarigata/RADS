@@ -66,6 +66,12 @@ typedef struct Value {
         StructInstance* struct_instance;
         Iterator* iterator_val;
     };
+    /* Captured lexical scope — ONLY meaningful when type==VAL_FUNCTION
+     * (union members above alias each other, so func_node and the scope
+     * pointer cannot share it). All VAL_FUNCTION values originate from
+     * exactly two interpreter construction sites, both of which set
+     * this; every other value type never reads it. */
+    struct Scope* closure;
 } Value;
 
 /* Lazy iterator protocol (nightshift 20261025): one-shot, pull-based.
