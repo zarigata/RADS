@@ -8,7 +8,9 @@ extern Value make_int(long long val);
 extern Value make_string(const char* val);
 extern Value make_bool(bool val);
 extern Value make_null(void);
+extern void value_free(Value* v);
 extern Value interpreter_execute_callback(Value callback, int argc, Value* args);
+extern void interpreter_raise(Value v);
 
 // ANSI Color codes
 #define COLOR_RESET   "\033[0m"
@@ -78,7 +80,7 @@ Value stdlib_test_describe(Interpreter* interp, int argc, Value* args) {
     // Create new suite
     TestSuite* suite = malloc(sizeof(TestSuite));
     suite->name = strdup(args[0].string_val);
-    suite->callback = args[1];
+    suite->callback = value_retain(args[1]);   /* retain closure (scope ref) */
     suite->tests = NULL;
     suite->next = NULL;
     suite->passed = 0;
@@ -115,7 +117,7 @@ Value stdlib_test_it(Interpreter* interp, int argc, Value* args) {
     // Create test case (we'll add it to current suite during run)
     TestCase* test = malloc(sizeof(TestCase));
     test->name = strdup(args[0].string_val);
-    test->callback = args[1];
+    test->callback = value_retain(args[1]);    /* retain closure (scope ref) */
     test->next = NULL;
     
     // We need to store this for later execution
@@ -145,7 +147,7 @@ Value stdlib_test_expect(Interpreter* interp, int argc, Value* args) {
     }
     
     // Return the value so we can chain .toBe(), etc.
-    return args[0];
+    return value_retain(args[0]);
 }
 
 // Helper: Compare values for equality
@@ -239,7 +241,7 @@ Value stdlib_test_toBe(Interpreter* interp, int argc, Value* args) {
         char* expected_str = value_to_string(&expected);
         char message[256];
         snprintf(message, sizeof(message), "Expected %s, got %s", expected_str, actual_str);
-        set_test_result(false, strdup(message));
+        set_test_result(false, message);   /* set_test_result strdups — the stack buffer is fine */
         free(actual_str);
         free(expected_str);
     } else {
@@ -253,6 +255,33 @@ Value stdlib_test_toBe(Interpreter* interp, int argc, Value* args) {
 Value stdlib_test_toEqual(Interpreter* interp, int argc, Value* args) {
     // Same as toBe for now (deep compare)
     return stdlib_test_toBe(interp, argc, args);
+}
+
+/* assert(cond, message) — global assertion native (nightshift 20261101).
+ * Why: test_http/test_time/test_string/test_struct call a bare assert()
+ * that never existed; before honest-failure it was a SILENT no-op (null,
+ * exit 0), so those suites could not fail. Python parity: raise on false.
+ * The message carries a leading "FAIL: " so the runner's grep and humans
+ * can find assertion failures in output. Returns true on success. */
+Value stdlib_test_assert(struct Interpreter* interp, int argc, Value* args) {
+    (void)interp;
+    if (argc < 1) {
+        interpreter_raise(make_string("FAIL: assert() requires a condition"));
+        return make_bool(false);
+    }
+    bool passed = is_truthy(&args[0]);
+    if (!passed) {
+        char msg[512];
+        if (argc >= 2 && args[1].type == VAL_STRING) {
+            snprintf(msg, sizeof(msg), "FAIL: assertion failed: %s", args[1].string_val);
+        } else {
+            snprintf(msg, sizeof(msg), "FAIL: assertion failed (got falsy value)");
+        }
+        Value err = make_string(msg);
+        interpreter_raise(err);
+        value_free(&err);
+    }
+    return make_bool(passed);
 }
 
 // test.expect(val).toBeTruthy() - Truthy assertion
@@ -408,7 +437,7 @@ Value stdlib_test_beforeEach(Interpreter* interp, int argc, Value* args) {
         return make_null();
     }
     
-    before_each_callback = args[0];
+    before_each_callback = value_retain(args[0]);   /* retain closure */
     has_before_each = true;
     
     return make_null();
@@ -423,7 +452,7 @@ Value stdlib_test_afterEach(Interpreter* interp, int argc, Value* args) {
         return make_null();
     }
     
-    after_each_callback = args[0];
+    after_each_callback = value_retain(args[0]);    /* retain closure */
     has_after_each = true;
     
     return make_null();
@@ -493,7 +522,9 @@ Value stdlib_test_run(Interpreter* interp, int argc, Value* args) {
                 suite->passed++;
                 total_passed++;
             } else {
-                printf("  %s✗%s %s\n", COLOR_RED, COLOR_RESET, test->name);
+                /* Runner contract: run_tests.sh greps stdout for 'FAIL' —
+                 * a silent ✗ line was invisible to the honest gate. */
+                printf("  %s✗ FAIL: %s%s\n", COLOR_RED, test->name, COLOR_RESET);
                 if (current_test_message) {
                     printf("    %s└─ %s%s\n", COLOR_DIM, current_test_message, COLOR_RESET);
                 }
@@ -527,6 +558,7 @@ Value stdlib_test_run(Interpreter* interp, int argc, Value* args) {
 }
 
 void stdlib_test_register(void) {
+    register_native("assert", stdlib_test_assert);  /* global — no module (20261101) */
     register_native("test.describe", stdlib_test_describe);
     register_native("test.it", stdlib_test_it);
     register_native("test.expect", stdlib_test_expect);

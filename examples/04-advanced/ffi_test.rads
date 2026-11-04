@@ -1,12 +1,27 @@
-// FFI Linkage Test
+// FFI Linkage Test — real API (nightshift 20261101)
+// Old version called ffi.call(), a native that never existed (silent no-op
+// before honest-failure). The real surface is ffi.load/ffi.sym/ffi.close.
+// This demo loads the C math library and resolves a symbol EVERY machine
+// has, so it works without the fictional libturbo_graphics.so.
 blast main() {
-    echo("🔗 Initializing RADS FFI Bridge...");
-    
-    turbo lib = ffi.load("libturbo_graphics.so");
-    
-    echo("Calling external function: init_core");
-    turbo res = ffi.call(lib, "init_core");
-    
-    echo("FFI Result: " + res);
-    echo("⚡ Native linkage verified at peak performance!");
+    echo("Initializing RADS FFI Bridge...");
+
+    turbo lib = ffi.load("libm.so.6");
+    if (lib == null) {
+        echo("ffi.load failed (libm not found) — graceful exit");
+        return 1;
+    }
+    echo("libm loaded, handle type: " + type(lib));
+
+    turbo sym = ffi.sym(lib, "cos");
+    if (sym == null) {
+        echo("ffi.sym failed — graceful exit");
+        ffi.close(lib);
+        return 1;
+    }
+    echo("resolved symbol type: " + type(sym));
+
+    ffi.close(lib);
+    echo("FFI lifecycle verified: load -> sym -> close");
 }
+main()

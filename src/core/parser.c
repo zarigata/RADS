@@ -188,6 +188,204 @@ ASTNode* parse_statement(Parser* parser);  // Public for REPL
 static ASTNode* parse_declaration(Parser* parser);
 static ASTNode* parse_comparison(Parser* parser);
 static ASTNode* parse_block(Parser* parser);
+static void synchronize(Parser* parser);
+
+/* consume_semi — statement terminator with JS-style ASI (nightshift 20261031).
+ * Why: JS/TS parity — scripts written without trailing ';' (test_v0.0.12,
+ * test_http) must parse. A ';' is consumed when present; otherwise the
+ * statement may end at a NEWLINE (current token starts a later line than the
+ * last-consumed one) or at a block/EOF boundary. Restriction productions
+ * (a '(' or '[' on the next line continues the expression, JS-style) are
+ * intentionally NOT implemented: RADS statements are line-oriented here.
+ * Extend: for-header semicolons (cruise) deliberately stay STRICT — see
+ * parse_cruise; ASI inside a for-header would eat the loop structure. */
+static void consume_semi(Parser* parser, const char* message) {
+    if (match(parser, TOKEN_SEMICOLON)) return;
+    if (parser->current.line > parser->previous.line) return;  /* newline ends it */
+    if (check(parser, TOKEN_RIGHT_BRACE) || check(parser, TOKEN_EOF)) return;
+    error_at_current(parser, message);
+}
+
+/* is_fn_lambda — contextual `fn(params) {` lookahead (nightshift 20261031).
+ * Why: `fn` is NOT a keyword (existing programs may use it as a name), so
+ * fn-lambdas are recognized by LOOKAHEAD only when the full shape matches:
+ * `fn` IDENT? no — `fn` `(` [IDENT (, IDENT)*] `)` `{`. Anything else (a
+ * call `fn(5)`, a variable `fn`, member access `fn.x`) falls through to the
+ * normal identifier path untouched.
+ * How: the lexer is a self-contained struct (pointers into the source plus
+ * a fixed template stack), so a plain struct copy is a complete snapshot —
+ * save lexer + current/previous, scan ahead, restore. Parser error state
+ * set during lookahead is kept: a TOKEN_ERROR found here is a real error
+ * at the true site. */
+static bool is_fn_lambda(Parser* parser) {
+    if (parser->current.type != TOKEN_IDENTIFIER) return false;
+    if (parser->current.length != 2 || strncmp(parser->current.start, "fn", 2) != 0) {
+        return false;
+    }
+
+    Lexer save_lexer = *parser->lexer;
+    Token save_current = parser->current;
+    Token save_previous = parser->previous;
+    bool ok = false;
+
+    advance(parser);                              /* previous = fn */
+    if (parser->current.type == TOKEN_LEFT_PAREN) {
+        advance(parser);                          /* previous = ( */
+        while (parser->current.type == TOKEN_IDENTIFIER) {
+            advance(parser);                      /* previous = param */
+            if (parser->current.type == TOKEN_COMMA) {
+                advance(parser);                  /* previous = , */
+                continue;
+            }
+            break;
+        }
+        if (parser->current.type == TOKEN_RIGHT_PAREN) {
+            advance(parser);                      /* previous = ) */
+            ok = (parser->current.type == TOKEN_LEFT_BRACE);
+        }
+    }
+
+    *parser->lexer = save_lexer;
+    parser->current = save_current;
+    parser->previous = save_previous;
+    return ok;
+}
+
+/* is_let_decl — contextual `let NAME` lookahead (nightshift 20261031).
+ * Why: `let` stays a valid identifier; only `let <identifier>` (same line)
+ * declares. `let(x)` / `let.foo` / `let = 5` parse as expressions. */
+static bool is_let_decl(Parser* parser) {
+    if (parser->current.type != TOKEN_IDENTIFIER) return false;
+    if (parser->current.length != 3 || strncmp(parser->current.start, "let", 3) != 0) {
+        return false;
+    }
+
+    Lexer save_lexer = *parser->lexer;
+    Token save_current = parser->current;
+    Token save_previous = parser->previous;
+    bool ok = false;
+
+    advance(parser);                              /* previous = let */
+    ok = (parser->current.type == TOKEN_IDENTIFIER);
+    /* 'let' as a plain variable read on the next line must not swallow the
+     * line below: require the name on the SAME line as the let itself. */
+    if (ok && parser->current.line != save_current.line) ok = false;
+
+    *parser->lexer = save_lexer;
+    parser->current = save_current;
+    parser->previous = save_previous;
+    return ok;
+}
+
+/* parse_fn_lambda — parse `fn(params) { body }` as an anonymous function.
+ * Identical AST shape to the blast() lambda: a nameless AST_FUNCTION_DECL,
+ * which the interpreter already executes as a first-class VAL_FUNCTION. */
+static ASTNode* parse_fn_lambda(Parser* parser) {
+    int line = parser->current.line;
+    int column = parser->current.column;
+
+    advance(parser);                              /* consume fn */
+    consume(parser, TOKEN_LEFT_PAREN, "Expected '(' after 'fn'");
+    ASTList* params = ast_list_create();
+    if (!check(parser, TOKEN_RIGHT_PAREN)) {
+        do {
+            consume(parser, TOKEN_IDENTIFIER, "Expected parameter name");
+            char* pname = malloc(parser->previous.length + 1);
+            memcpy(pname, parser->previous.start, parser->previous.length);
+            pname[parser->previous.length] = '\0';
+            ASTNode* param = ast_create_identifier(pname, parser->previous.line, parser->previous.column);
+            free(pname);
+            if (param) ast_list_append(params, param);
+        } while (match(parser, TOKEN_COMMA));
+    }
+    consume(parser, TOKEN_RIGHT_PAREN, "Expected ')' after fn parameters");
+    consume(parser, TOKEN_LEFT_BRACE, "Expected '{' before fn body");
+    ASTNode* body = parse_block(parser);
+
+    return ast_create_function_decl(NULL, params, NULL, body, false, line, column);
+}
+
+/* parse_let_decl — parse `let name [= expr]` as an untyped variable decl.
+ * Lowered to the same AST_VARIABLE_DECL turbo uses (is_turbo=false), so the
+ * interpreter path is the battle-tested one. */
+static ASTNode* parse_let_decl(Parser* parser) {
+    int line = parser->current.line;
+    int column = parser->current.column;
+
+    advance(parser);                              /* consume let */
+    consume(parser, TOKEN_IDENTIFIER, "Expected variable name after 'let'");
+    char* name = malloc(parser->previous.length + 1);
+    memcpy(name, parser->previous.start, parser->previous.length);
+    name[parser->previous.length] = '\0';
+
+    ASTNode* initializer = NULL;
+    if (match(parser, TOKEN_EQUAL)) {
+        initializer = parse_expression(parser);
+    }
+    consume_semi(parser, "Expected ';' (or newline) after let declaration");
+
+    ASTNode* node = ast_create_variable_decl(name, NULL, initializer, false, line, column);
+    free(name);
+    return node;
+}
+
+
+/* str_dup_range — malloc'd NUL-terminated copy of [from, from+len).
+ * Why: template chunks arrive as raw spans; the AST owns its strings, so
+ *      every chunk needs its own heap copy before entering a string node.
+ * Extend: if chunks ever need unescaping, do it here — one home for it. */
+static char* str_dup_range(const char* from, size_t len) {
+    char* out = malloc(len + 1);
+    if (!out) return NULL;
+    memcpy(out, from, len);
+    out[len] = '\0';
+    return out;
+}
+
+/* parse_template_literal — backtick template with ${...} interpolation.
+ * Lowering: LEFT-FOLD of OP_ADD over pieces —
+ *   `a${x}b${y}c`  ==  ((("a" + x) + "b") + y) + "c"
+ * seeded with a string literal even when the head is empty, so `${7}`
+ * evaluates to "7" (the "" + x conversion applies to every piece).
+ * Grammar: START (CHUNK | EXPR_BEGIN expr EXPR_END)* END.
+ * Nested templates recurse through parse_expression -> parse_primary.
+ * Raw law: chunks are raw source spans (no unescaping — house gotcha). */
+static ASTNode* parse_template_literal(Parser* parser) {
+    int line = parser->previous.line;
+    int column = parser->previous.column;
+    ASTNode* acc = NULL;
+
+    while (true) {
+        if (match(parser, TOKEN_TEMPLATE_CHUNK)) {
+            char* text = str_dup_range(parser->previous.start, parser->previous.length);
+            ASTNode* piece = ast_create_string(text, line, column);
+            free(text);
+            acc = acc ? ast_create_binary_op(OP_ADD, acc, piece, line, column) : piece;
+        } else if (match(parser, TOKEN_TEMPLATE_EXPR_BEGIN)) {
+            ASTNode* expr = parse_expression(parser);
+            consume(parser, TOKEN_TEMPLATE_EXPR_END, "Expected '}' to close ${...} interpolation");
+            if (!acc) {
+                ASTNode* seed = ast_create_string("", line, column);
+                acc = ast_create_binary_op(OP_ADD, seed, expr, line, column);
+            } else {
+                acc = ast_create_binary_op(OP_ADD, acc, expr, line, column);
+            }
+        } else if (match(parser, TOKEN_TEMPLATE_END)) {
+            break;
+        } else if (check(parser, TOKEN_EOF)) {
+            error(parser, "Unterminated template literal");
+            return acc;
+        } else {
+            error(parser, "Malformed template literal");
+            return acc;
+        }
+    }
+
+    if (!acc) {
+        acc = ast_create_string("", line, column);
+    }
+    return acc;
+}
 
 // Parse primary expressions
 static ASTNode* parse_primary(Parser* parser) {
@@ -203,6 +401,10 @@ static ASTNode* parse_primary(Parser* parser) {
         return ast_create_float(value, parser->previous.line, parser->previous.column);
     }
     
+    if (match(parser, TOKEN_TEMPLATE_START)) {
+        return parse_template_literal(parser);
+    }
+
     if (match(parser, TOKEN_STRING)) {
         // Remove quotes
         size_t len = parser->previous.length - 2;
@@ -226,6 +428,13 @@ static ASTNode* parse_primary(Parser* parser) {
         return ast_create_null(parser->previous.line, parser->previous.column);
     }
     
+    /* Contextual fn-lambda (JS parity): only when the full
+     * `fn ( params ) {` shape matches; plain `fn` identifiers are
+     * untouched (see is_fn_lambda). */
+    if (is_fn_lambda(parser)) {
+        return parse_fn_lambda(parser);
+    }
+
     if (match(parser, TOKEN_IDENTIFIER)) {
         char* name = malloc(parser->previous.length + 1);
         memcpy(name, parser->previous.start, parser->previous.length);
@@ -275,6 +484,66 @@ static ASTNode* parse_primary(Parser* parser) {
         return expr;
     }
 
+    /* Anonymous object literal (JS parity, nightshift 20261101): a bare '{'
+     * at EXPRESSION position builds an anonymous struct instance —
+     * json.stringify({"test": "rads"}) and friends. Statement position is
+     * untouched: parse_statement routes a leading '{' to parse_block, so
+     * blocks and object literals never collide (the same disambiguation
+     * rule JavaScript uses). Keys: identifier ({name: expr}), string
+     * ({"name": expr}), or shorthand ({name} == {name: name}). Extend:
+     * computed keys [expr] and spread ...obj when a use case lands. */
+    if (match(parser, TOKEN_LEFT_BRACE)) {
+        int line = parser->previous.line;
+        int column = parser->previous.column;
+        ASTList* fields = ast_list_create();
+        if (!check(parser, TOKEN_RIGHT_BRACE)) {
+            do {
+                char* key = NULL;
+                if (match(parser, TOKEN_IDENTIFIER)) {
+                    key = malloc(parser->previous.length + 1);
+                    memcpy(key, parser->previous.start, parser->previous.length);
+                    key[parser->previous.length] = '\0';
+                } else if (match(parser, TOKEN_STRING)) {
+                    size_t klen = parser->previous.length - 2;  /* strip quotes */
+                    key = malloc(klen + 1);
+                    memcpy(key, parser->previous.start + 1, klen);
+                    key[klen] = '\0';
+                } else {
+                    error_at_current(parser, "Expected field name (identifier or string) in object literal");
+                    ast_list_free(fields);
+                    /* Panic-mode progress law: the offending token must be
+                     * consumed or enclosing loops re-report forever. */
+                    if (!check(parser, TOKEN_EOF)) advance(parser);
+                    return NULL;
+                }
+
+                ASTNode* value = NULL;
+                if (match(parser, TOKEN_COLON)) {
+                    value = parse_expression(parser);
+                } else {
+                    /* Shorthand {k} == {k: k} — value is the key identifier. */
+                    value = ast_create_identifier(key, parser->previous.line, parser->previous.column);
+                }
+                if (!value) {
+                    free(key);
+                    ast_list_free(fields);
+                    return NULL;
+                }
+
+                ASTNode* field_ident = ast_create_identifier(key, line, column);
+                free(key);  /* ast_create_identifier strdups */
+                ASTNode* assign = ast_create_assign(field_ident, value, line, column);
+                ast_list_append(fields, assign);
+                /* Trailing comma is legal (JS parity): break before asking
+                 * for another field if '}' follows the comma. */
+                if (!match(parser, TOKEN_COMMA)) break;
+                if (check(parser, TOKEN_RIGHT_BRACE)) break;
+            } while (true);
+        }
+        consume(parser, TOKEN_RIGHT_BRACE, "Expected '}' after object literal");
+        return ast_create_struct_literal(NULL, fields, line, column);
+    }
+
     // Anonymous function: blast(params) { body }
     if (match(parser, TOKEN_BLAST)) {
         int line = parser->previous.line;
@@ -302,6 +571,11 @@ static ASTNode* parse_primary(Parser* parser) {
     }
     
     error(parser, "Expected expression");
+    /* Panic-mode progress law: the offending token must be consumed or every
+     * enclosing loop re-reports the identical error forever. */
+    if (!check(parser, TOKEN_EOF)) {
+        advance(parser);
+    }
     return NULL;
 }
 
@@ -309,13 +583,29 @@ static ASTNode* parse_primary(Parser* parser) {
 static ASTNode* parse_call(Parser* parser) {
     ASTNode* expr = parse_primary(parser);
     
+    /* parse_primary returns NULL after an error (and has consumed the bad
+     * token); cascading callers must stop instead of dereferencing NULL. */
+    if (!expr) return NULL;
+    
     while (true) {
-        if (match(parser, TOKEN_LEFT_BRACE)) { // Struct literal
+        /* Struct literal postfix (IDENT { ... }) — SAME LINE ONLY: a '{' on
+         * a fresh line never continues an expression (JS law). Without this,
+         * `{ marker = 1 }` after a complete call statement was swallowed as a
+         * struct-literal continuation and errored (nightshift 20261101). */
+        if (parser->current.type == TOKEN_LEFT_BRACE &&
+            parser->current.line == parser->previous.line) {
+            advance(parser);
             if (expr->type != AST_IDENTIFIER) {
-                error(parser, "Expected struct name before '{'");
+                error(parser, "Unexpected '{' after expression — named struct literals need a struct name (Point {x: 1}); for an anonymous object, wrap it: ({x: 1})");
+                /* Panic path must release the partial AST we own, or every
+                 * malformed call leaks callee+args (LSan-confirmed). */
+                ast_free(expr);
                 return NULL;
             }
             char* struct_name = expr->identifier.name;
+            /* The identifier node is consumed by this literal: steal its name
+             * and free the node shell, otherwise both leak (backlog 3b). */
+            free(expr);
             int line = parser->previous.line;
             int column = parser->previous.column;
 
@@ -339,6 +629,7 @@ static ASTNode* parse_call(Parser* parser) {
             consume(parser, TOKEN_RIGHT_BRACE, "Expected '}' after struct literal");
 
             expr = ast_create_struct_literal(struct_name, fields, line, column);
+            free(struct_name); /* ast_create_struct_literal strdups; release the stolen original */
 
         } else if (match(parser, TOKEN_LEFT_PAREN)) {
             ASTList* args = ast_list_create();
@@ -376,14 +667,52 @@ static ASTNode* parse_call(Parser* parser) {
             expr = ast_create_member_expr(expr, name, parser->previous.line, parser->previous.column);
             free(name);
         } else if (match(parser, TOKEN_LEFT_BRACKET)) {
-            ASTNode* index = parse_expression(parser);
+            /* Python slice parity (nightshift 20261102): inside [ ] a ':'
+             * (or '::' — the lexer fuses them into DOUBLE_COLON) makes a
+             * slice: [a], [a:b], [:b], [a:], [:], [::2], [a::2], [1::-1].
+             * Omitted arms are NULL; the interpreter applies Python's
+             * step-sign defaults. */
+            ASTNode* start = NULL;
+            ASTNode* end = NULL;
+            ASTNode* step = NULL;
+            bool is_slice = false;
+            int colons_seen = 0;
+            if (!check(parser, TOKEN_RIGHT_BRACKET)) {
+                if (!check(parser, TOKEN_COLON) && !check(parser, TOKEN_DOUBLE_COLON)) {
+                    start = parse_expression(parser);
+                }
+                if (match(parser, TOKEN_COLON)) { colons_seen = 1; is_slice = true; }
+                else if (match(parser, TOKEN_DOUBLE_COLON)) { colons_seen = 2; is_slice = true; }
+                if (is_slice && colons_seen == 1) {
+                    /* one colon so far: optional end arm, then maybe ':'/'::' */
+                    if (!check(parser, TOKEN_RIGHT_BRACKET) && !check(parser, TOKEN_COLON)
+                        && !check(parser, TOKEN_DOUBLE_COLON)) {
+                        end = parse_expression(parser);
+                    }
+                    if (match(parser, TOKEN_COLON) || match(parser, TOKEN_DOUBLE_COLON)) {
+                        colons_seen = 2;
+                    }
+                }
+                if (is_slice && colons_seen >= 2) {
+                    if (!check(parser, TOKEN_RIGHT_BRACKET)) {
+                        step = parse_expression(parser);
+                    }
+                }
+            }
+            if (is_slice) {
+                expr = ast_create_slice(expr, start, end, step,
+                                        parser->previous.line, parser->previous.column);
+            } else if (start != NULL) {
+                expr = ast_create_index(expr, start, parser->previous.line, parser->previous.column);
+            } else {
+                error(parser, "Expected expression before ']'");
+            }
             consume(parser, TOKEN_RIGHT_BRACKET, "Expected ']' after index expression");
-            expr = ast_create_index(expr, index, parser->previous.line, parser->previous.column);
         } else {
             break;
         }
     }
-    
+
     return expr;
 }
 
@@ -536,7 +865,7 @@ static ASTNode* parse_echo_statement(Parser* parser) {
     consume(parser, TOKEN_LEFT_PAREN, "Expected '(' after 'echo'");
     ASTNode* expr = parse_expression(parser);
     consume(parser, TOKEN_RIGHT_PAREN, "Expected ')' after expression");
-    consume(parser, TOKEN_SEMICOLON, "Expected ';' after statement");
+    consume_semi(parser, "Expected ';' after echo");
     
     return ast_create_echo(expr, line, column);
 }
@@ -546,10 +875,13 @@ static ASTNode* parse_return_statement(Parser* parser) {
     int line = parser->previous.line;
     int column = parser->previous.column;
     ASTNode* value = NULL;
-    if (!check(parser, TOKEN_SEMICOLON)) {
+    /* JS parity: `return` with a newline before the value returns null
+     * (restriction production) — the value must start on the SAME line. */
+    if (!check(parser, TOKEN_SEMICOLON) && !check(parser, TOKEN_RIGHT_BRACE) &&
+        parser->current.line == parser->previous.line) {
         value = parse_expression(parser);
     }
-    consume(parser, TOKEN_SEMICOLON, "Expected ';' after return value");
+    consume_semi(parser, "Expected ';' after return value");
     return ast_create_return(value, line, column);
 }
 
@@ -557,7 +889,7 @@ static ASTNode* parse_return_statement(Parser* parser) {
 static ASTNode* parse_await_statement(Parser* parser) {
     (void)parser->previous; // unused for now
     ASTNode* value = parse_expression(parser);
-    consume(parser, TOKEN_SEMICOLON, "Expected ';' after await expression");
+    consume_semi(parser, "Expected ';' after await expression");
     // For now, await is a no-op; just evaluate the expression.
     // In the future, we can add async/await semantics.
     return value;
@@ -580,7 +912,7 @@ static ASTNode* parse_loop_statement(Parser* parser) {
 static ASTNode* parse_break_or_continue(Parser* parser, bool is_break) {
     int line = parser->previous.line;
     int column = parser->previous.column;
-    consume(parser, TOKEN_SEMICOLON, "Expected ';' after statement");
+    consume_semi(parser, "Expected ';' after break/continue");
     return is_break ? ast_create_break(line, column) : ast_create_continue(line, column);
 }
 
@@ -679,7 +1011,15 @@ static ASTNode* parse_block(Parser* parser) {
     
     while (!check(parser, TOKEN_RIGHT_BRACE) && !check(parser, TOKEN_EOF)) {
         ASTNode* stmt = parse_statement(parser);
-        if (stmt) ast_list_append(statements, stmt);
+        if (stmt) {
+            ast_list_append(statements, stmt);
+        } else if (parser->panic_mode) {
+            /* Statement failed without producing a node. Without this guard
+             * the loop re-parsed the SAME unconsumed token forever (an
+             * 'else' at statement position produced 158MB of errors).
+             * synchronize() skips to the next statement boundary. */
+            synchronize(parser);
+        }
     }
     
     consume(parser, TOKEN_RIGHT_BRACE, "Expected '}' after block");
@@ -695,7 +1035,9 @@ static ASTNode* parse_destructure_element(Parser* parser) {
         char* name = malloc(parser->previous.length + 1);
         memcpy(name, parser->previous.start, parser->previous.length);
         name[parser->previous.length] = '\0';
-        return ast_create_destructure_rest(name, line, column);
+        ASTNode* rest = ast_create_destructure_rest(name, line, column);
+        free(name); /* creator strdups; this temp used to leak (LSan-found) */
+        return rest;
     }
     
     if (match(parser, TOKEN_COMMA)) {
@@ -835,7 +1177,7 @@ static ASTNode* parse_variable(Parser* parser) {
         initializer = parse_expression(parser);
     }
     
-    consume(parser, TOKEN_SEMICOLON, "Expected ';' after variable declaration");
+    consume_semi(parser, "Expected ';' after variable declaration");
     
     ASTNode* node = ast_create_variable_decl(name, type, initializer, is_turbo, line, column);
     if (name) free(name);
@@ -1029,7 +1371,7 @@ static ASTNode* parse_declaration(Parser* parser) {
         char* filename = malloc(parser->previous.length - 1); // -2 for quotes, +1 for null
         memcpy(filename, parser->previous.start + 1, parser->previous.length - 2);
         filename[parser->previous.length - 2] = '\0';
-        consume(parser, TOKEN_SEMICOLON, "Expected ';' after import");
+        consume_semi(parser, "Expected ';' after import");
         ASTNode* import_node = ast_create_import(filename, line, column);
         free(filename);
         return import_node;
@@ -1181,14 +1523,18 @@ ASTNode* parse_statement(Parser* parser) {
             finally_block = parse_block(parser);
         }
         
-        return ast_create_try(try_block, catch_var, catch_block, finally_block, line, column);
+        /* ast_create_try strdups catch_var — free the parser-local copy
+         * (nightshift 20261027 leak fix; LSan caught it via test_promise). */
+        ASTNode* try_node = ast_create_try(try_block, catch_var, catch_block, finally_block, line, column);
+        free(catch_var);
+        return try_node;
     }
     
     if (match(parser, TOKEN_THROW)) {
         int line = parser->previous.line;
         int column = parser->previous.column;
         ASTNode* expr = parse_expression(parser);
-        consume(parser, TOKEN_SEMICOLON, "Expected ';' after throw expression");
+        consume_semi(parser, "Expected ';' after throw expression");
         return ast_create_throw(expr, line, column);
     }
     
@@ -1208,9 +1554,14 @@ ASTNode* parse_statement(Parser* parser) {
         return parse_function(parser, is_async);
     }
 
+    /* Contextual let declaration (JS parity): `let name [= expr]`. */
+    if (is_let_decl(parser)) {
+        return parse_let_decl(parser);
+    }
+
     // Expression statement
     ASTNode* expr = parse_expression(parser);
-    consume(parser, TOKEN_SEMICOLON, "Expected ';' after expression");
+    consume_semi(parser, "Expected ';' after expression");
     return expr;
 }
 
@@ -1219,7 +1570,15 @@ static void synchronize(Parser* parser) {
     parser->panic_mode = false;
 
     while (parser->current.type != TOKEN_EOF) {
-        // Semicolon marks end of statement
+        /* Semicolon marks end of statement. It must be CONSUMED to guarantee
+         * forward progress: an unconsumed ';' as current (e.g. after
+         * "Expected ';' after expression" on the same token) used to loop
+         * the same error forever. */
+        if (parser->current.type == TOKEN_SEMICOLON) {
+            advance(parser);
+            return;
+        }
+
         if (parser->previous.type == TOKEN_SEMICOLON) return;
 
         // Right brace at top level (end of block/struct) - advance past it

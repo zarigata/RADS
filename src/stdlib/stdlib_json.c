@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "stdlib_json.h"
+extern Value value_retain(Value v);
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -184,15 +185,20 @@ static Value jp_parse_object(JsonParser* p) {
     while (1) {
         jp_skip_ws(p);
         Value key = jp_parse_string(p);
-        if (key.type != VAL_STRING) { break; }
+        if (key.type != VAL_STRING) { value_free(&key); break; }
+        /* array_push deep-copies: release the original after the push or
+         * every key string leaks (LSan-confirmed, nightshift 20261031). */
         array_push(entries, key);
+        value_free(&key);
 
         jp_skip_ws(p);
         if (jp_peek(p) != ':') break;
         p->pos++; /* skip : */
 
         Value val = jp_parse_value(p);
+        /* Same push-clone law as keys: array_push owns its copy. */
         array_push(entries, val);
+        value_free(&val);
 
         jp_skip_ws(p);
         if (jp_peek(p) == ',') { p->pos++; continue; }
@@ -653,7 +659,12 @@ Value native_json_get(struct Interpreter* interp, int argc, Value* args) {
     }
 
     free(path_copy);
-    return current;
+    /* `current` ALIASES an item inside args[0] (arr->items[i+1]) — the
+     * interpreter frees the args array right after this call, so returning
+     * the borrowed Value is a use-after-free at env_set/teardown (the 20261024
+     * aliasing-UAF class; this site survived that sweep because json.get
+     * paths only became hot once test_v0.0.12 could run, 20261101). */
+    return value_retain(current);
 }
 
 /* json.keys(parsed_object) → array of key strings */

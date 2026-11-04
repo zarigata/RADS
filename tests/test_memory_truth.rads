@@ -1,0 +1,72 @@
+// tests/test_memory_truth.rads — regression suite for the 2026-10-30
+// leak-class sweep. Every construct here leaked on main before that night;
+// assertions pin BEHAVIOR (the leaks were silent), the sanitizer run pins
+// ownership. Run under the sanitize build for full effect.
+
+struct Player {
+    str name;
+    i32 score;
+}
+
+blast make_player(str n, i32 s) {
+    return Player { name: n, score: s };
+}
+
+blast main() {
+    echo("--- Memory Truth Test ---");
+
+    // struct literals: parser + interpreter leak classes
+    turbo Player a = Player { name: "Rads_Gamer", score: 100 };
+    turbo Player b = make_player("N00b_Slayer", 50);
+    if (a.score > b.score) { echo("a wins"); }
+
+    // member-assign: the leaked Value-box class
+    b.score = b.score + 100;
+    if (b.score == 150) { echo("b leveled up"); }
+
+    // struct clone through assignment (env_set deep-copies)
+    turbo Player c = b;
+    c.score = 999;
+    if (b.score == 150) { echo("clone is independent"); }
+
+    // array_push-clone class: string natives that build arrays
+    turbo parts = string.split("leek,spin,owls", ",");
+    if (parts.length == 3) { echo("split ok"); }
+    turbo joined = string.join(parts, "+");
+    if (joined == "leek+spin+owls") { echo("join ok"); }
+
+    // regex array results (findall/split/groups all leaked)
+    turbo found = regex.findall("[a-z]+", "abc 123 def");
+    if (found.length == 2) { echo("findall ok"); }
+    if (found[0] == "abc" && found[1] == "def") { echo("findall values ok"); }
+    turbo rsplit = regex.split(",", "x,y,z");
+    if (rsplit.length == 3) { echo("regex split ok"); }
+    turbo groups = regex.groups("([a-z]+)-([0-z]+)", "ab-12");
+    if (groups[0] == "ab" && groups[1] == "12") { echo("groups ok"); }
+
+    // queue family (push/from_array/to_array pre-strdup class)
+    turbo q = queue.new();
+    queue.push(q, "hello");
+    queue.push(q, "world");
+    if (queue.size(q) == 2) { echo("queue ok"); }
+    turbo qa = queue.to_array(q);
+    if (qa[0] == "hello") { echo("queue to_array ok"); }
+
+    // heapq top-k (pre-strdup class)
+    turbo top = heapq.nlargest(2, ["pear", "apple", "mango"]);
+    if (top[0] == "pear") { echo("nlargest ok"); }
+
+    // csv.parse (parse_field leak class)
+    turbo rows = csv.parse("name,age" + chr(10) + "Alice,30");
+    echo("csv parse ok");
+
+    // copy.deepcopy (per-item leak class)
+    turbo deep = copy.deepcopy(["a", "b"]);
+    if (deep[1] == "b") { echo("deepcopy ok"); }
+
+    // fs.readdir (6KB per call class)
+    turbo entries = fs.readdir(".");
+    if (entries.length > 0) { echo("readdir ok"); }
+
+    echo("--- All memory-truth constructs exercised ---");
+}

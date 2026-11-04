@@ -32,7 +32,7 @@ Value stdlib_cli_args(Interpreter* interp, int argc, Value* args) {
     for (int i = 1; i < g_argc; i++) {
         Value item;
         item.type = VAL_STRING;
-        item.string_val = strdup(g_argv[i]);
+        item.string_val = g_argv[i]; /* array_push clones it — the pre-strdup leaked */
         array_push(arr, item);
     }
     
@@ -137,7 +137,7 @@ Value stdlib_cli_flags(Interpreter* interp, int argc, Value* args) {
         if (arg[0] == '-') {
             Value item;
             item.type = VAL_STRING;
-            item.string_val = strdup(arg);
+            item.string_val = (char*)arg; /* array_push clones it — the pre-strdup leaked */
             array_push(arr, item);
         }
     }
@@ -175,7 +175,7 @@ Value stdlib_cli_args_after_flag(Interpreter* interp, int argc, Value* args) {
                 
                 Value item;
                 item.type = VAL_STRING;
-                item.string_val = strdup(g_argv[j]);
+                item.string_val = g_argv[j]; /* array_push clones it — the pre-strdup leaked */
                 array_push(arr, item);
             }
             
