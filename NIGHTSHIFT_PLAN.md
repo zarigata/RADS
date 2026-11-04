@@ -16,6 +16,48 @@ Branch `nightshift/20261013-stdlib-float-parity` carries the completed port to t
 **clean-build green** (trio 11+8+17 PASS, runner 9/9, exit 0). Merge that branch to unblock main.
 
 ## Night Log
+ - **2026-11-04**: (1) sync: fetch clean, PRs #19-#35 all still open, none merged; cut
+   nightshift/20261104-local-scope from slice-assign head aac72b4 (freshest green). (2) feat(core):
+   **BACKLOG 3(a) CLOSED — lexical scope chain + real closures**. Was: bindings lived in ONE global
+   list, so (probe-verified on base) a()'s `turbo x` leaked into sibling b() (Python: NameError), a
+   callee's plain assignment CLOBBERED the caller's variable (outer x=1 -> 99 via inner; Python: 1),
+   and the 20261026 EnvShadow patch only papered params. Now: every blast/fn call pushes a
+   refcounted Scope frame (params, turbo/let, catch vars, destructure names, nested blast names bind
+   INTO it); reads walk chain->global; PLAIN ASSIGNMENT WALKS the chain and writes the frame that
+   HAS the name — deliberate JS-law divergence from Python (the corpus's accumulator callbacks and
+   test_debugger's update_value demand it), unseen names mint a local so globals stay clean;
+   VAL_FUNCTION captures its DECLARING scope PER-VALUE (make_adder(5)/make_adder(7) carry different
+   frames — output byte-identical to node v20: 15/17, counters 1,2/1); uncaptured frames die at
+   return (recursion O(1) memory), captured frames live while closures reference them, capture
+   cycles broken by a teardown sweep (env_free FIRST then sweep — my first order UAF'd the global
+   closure bindings, ASan caught it). main() runs in its own frame. (3) THE CLOSURES EXPOSED A NEW
+   INSTANCE OF THE 20261024 ALIAS CLASS: test framework describe/it/beforeEach/afterEach stored RAW
+   args[1] struct copies — the closure's captured scope died when the interpreter freed the args
+   array, so test_v0.0.12 HUNG forever (zero output past 'hash module'); fixed with value_retain at
+   store + async.timeout ctx callbacks retained too. Also: eval_call learned index-expression
+   callees — fns[0](x) was 'expression is not callable', now invokes the value (JS/Python parity).
+   (4) tests/test_closures.rads — 24 pins (CPython 3.14 + node v20 semantics, all verified against
+   real interpreters on this box: chain reads, per-value capture, independent counters, JS walk
+   writes, param non-clobber, fib(10)=55, sibling nested blasts, shadowing, cruise-var persistence
+   law [1..3 = {1,2} exclusive end], catch-var binding, destructure locals, closures-in-arrays,
+   dead-frame reads null), wired as suite 27; runner gate negative-tested with a REAL planted
+   condition break (fib(10)==999): grep-able FAIL: line + runner exit 1 — my first plant only
+   changed the LABEL and the suite correctly passed it (label vs condition lesson). (5) My own
+   corpse bugs tonight, ALL caught by gates before commit: put the closure field INSIDE the Value
+   union — func_node and closure aliased (segfault at 0x18, ASan traced it in 30s); the teardown
+   sweep ran BEFORE env_free (UAF on global closure bindings, ASan); stdlib called private
+   value_clone (link errors, value_retain is the public seam); a comma-operator garbage line from
+   a sloppy patch (rewrite caught it); patched run_tests.sh then git-checkout'd it away in the same
+   command (wiring vanished silently — grep caught it); plant.py single-quoted $TMPDIR (assertion
+   caught it); patch-chain on the suite file appended duplicate pins (31/24 — count gate caught it).
+   Verified: make clean && make -j4 exit 0, 0 warnings from touched files, runner **27/27 suites
+   PASSED 0 FAIL lines grepped THREE times**, ASan+UBSan+LSan: closures 24/24 0 findings 0 leaks,
+   v0.0.12 50/50 clean, probes clean, repo-wide tests+examples sweep: only pre-existing leaks
+   (filesystem async backlog-10 288B/12alloc, graphql 10B, webengine 149B — all identical on base,
+   verified by stash-swap). deep(2000) recursion stack-overflows ONLY under ASan builds — IDENTICAL
+   on base (C-stack recursion, pre-existing, not a regression). DISCOVERED pre-existing on base:
+   REPL segfaults when calling a function defined on a previous line (backlog 12). Not verified:
+   CI on the PR. PR #36: https://github.com/zarigata/RADS/pull/36
 
  - **2026-11-03**: (1) sync: fetch clean, PRs #19-#34 all still open, none merged; cut
    nightshift/20261103-slice-assign from string-parity head 369b598 (freshest green). (2) feat(core):
@@ -268,6 +310,7 @@ Branch `nightshift/20261013-stdlib-float-parity` carries the completed port to t
 
 ## Open PR Review
 | PR | Title | Status | Verdict |
+| 36 | lexical scope chain + real closures (backlog 3a) | OPEN — head Dagoth-Ur-69:nightshift/20261104-local-scope | awaiting master review; locals leaked globally, no closures existed |
 | 35 | Python-parity slice assignment (splice + extended) | OPEN — head Dagoth-Ur-69:nightshift/20261103-slice-assign | awaiting master review; closes last night's loud stopgap |
 | 34 | Python-parity slicing + string indexing + index assignment | OPEN — head Dagoth-Ur-69:nightshift/20261102-string-parity | awaiting master review; a[1:3] was a parse error, s[0] returned null, a[0]=x was a silent no-op |
 |----|-------|--------|---------|
@@ -288,8 +331,7 @@ Branch `nightshift/20261013-stdlib-float-parity` carries the completed port to t
 2. Stdlib parity: ~~itertools lazy generators~~ SHIPPED 2026-10-25 (PR #26). TS parity: ~~optional chaining ?.~~ ~~nullish ??~~ already wired (verified 2026-10-25). TS PARITY TRACK COMPLETE 2026-10-27: template literals PR #27, Promise.allSettled (+all/race/any, + throw-barrier core fix) PR #28.
    ~~template literals~~ SHIPPED 2026-10-26 (PR #27, with recursion fix). Remaining: `Promise.allSettled`. ~~datetime.strptime~~ SHIPPED 2026-10-20 (PR #22). ~~decimal~~ SHIPPED
    2026-10-21 (PR #23). ~~fractions~~ SHIPPED 2026-10-22 (PR #24).
-3. **BUGHUNT backlog**: (a) fn-LOCAL `turbo` decls still bind globally (frame fix 2026-10-26 covers PARAMS only; e2 probe: local=1 leaks into caller) — needs a real scope chain
-   when closures arrive. (b) CLOSED 2026-10-30 (PR #31): struct-literal leak + the whole strdup-then-array_push clone class swept, 20+ sites.
+3. **BUGHUNT backlog**: (a) CLOSED 2026-11-04 (PR #36): real scope chain + closures shipped; locals frame-bound, per-value closure capture, JS-walk assignment law. (b) CLOSED 2026-10-30 (PR #31): struct-literal leak + the whole strdup-then-array_push clone class swept, 20+ sites.
    (c) sweep `-Wunused`/`-Wformat` warnings (rads-mask sprintf overflow is a real stack-smash risk). (d) CLOSED 2026-10-28: Makefile -MMD -MP autodeps shipped (PR #29).
 4. `.gitignore`: add `benchmarks/`, root symlinks (`rads`, `rads-mask`, `radpkg`),
    `tools/rads-mask/rads-mask` build binary.
@@ -299,3 +341,9 @@ Branch `nightshift/20261013-stdlib-float-parity` carries the completed port to t
 9. ~~fn-lambda syntax parity gap~~ CLOSED 2026-10-31 (PR #32): fn(){} lambdas + let + ASI + script mode shipped; test_v0.0.12 resurrected 50/50 (suite 22), test_js_syntax 15 pins (suite 23). BONUS: the test framework's assertions never actually RAN before (chained calls silently null) — fixed with module-shaped chained dispatch; json.parse leak class swept.
 10. **async_utils callback leaks**: stdlib_async_series/parallel leak ~32B per callback via interpreter_execute_callback value_clone + the result Array (LSan on tests/test_filesystem.rads). Pre-existing, untouched by the 2026-10-30 sweep. Needs an event-loop-owned lifetime audit.
 11. ~~bare-{ object literals at argument position~~ CLOSED 2026-11-01: bare `{` at expression position parses as an anonymous struct instance (string/identifier/shorthand keys, trailing comma, insertion order); statement-position `{` stays a block; struct-literal postfix is same-line only. test_http.rads now runs end-to-end. BONUS shipped same night: undefined calls were silent no-ops (make_null fallback) — now throw NameError/TypeError-style errors; global natives assert/print/str/type/chr/ord; csv.parse garbage definition pointer + row leak; http header leak; json.get aliasing UAF (pre-existing on base, 3/3 deterministic) all fixed.
+
+12. **REPL cross-line call segfault** (found 2026-11-04, PRE-EXISTING on base): defining a
+    blast on one REPL line and calling it on the next segfaults (rc 139) — verified identical on
+    base aac72b4 via stash-swap. REPL statement path re-parses per line; the function Value's
+    lifetime across lines needs an audit. Also flagged: `try` is statement-only (no expression
+    form) — `echo(try { x } catch (e) { y })` is a parse error.
