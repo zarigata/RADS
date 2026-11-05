@@ -28,7 +28,7 @@ Value native_collections_pop(struct Interpreter* interp, int argc, Value* args) 
     (void)interp;
     if (argc < 1 || args[0].type != VAL_ARRAY || args[0].array_val->count == 0) return make_null();
     Array* arr = args[0].array_val;
-    Value v = arr->items[arr->count - 1];
+    Value v = arr->items[arr->count - 1]; /* MOVE: slot hidden by count--, payload solely owned by the return */
     arr->count--;
     return v;
 }
@@ -37,7 +37,7 @@ Value native_collections_pop(struct Interpreter* interp, int argc, Value* args) 
 Value native_collections_peek(struct Interpreter* interp, int argc, Value* args) {
     (void)interp;
     if (argc < 1 || args[0].type != VAL_ARRAY || args[0].array_val->count == 0) return make_null();
-    return args[0].array_val->items[args[0].array_val->count - 1];
+    return value_retain(args[0].array_val->items[args[0].array_val->count - 1]);
 }
 
 /* === Queue operations (FIFO) === */
@@ -47,7 +47,7 @@ Value native_collections_dequeue(struct Interpreter* interp, int argc, Value* ar
     (void)interp;
     if (argc < 1 || args[0].type != VAL_ARRAY || args[0].array_val->count == 0) return make_null();
     Array* arr = args[0].array_val;
-    Value v = arr->items[0];
+    Value v = arr->items[0]; /* MOVE: slot overwritten by memmove, payload solely owned by the return */
     if (arr->count > 1) {
         memmove(arr->items, arr->items + 1, sizeof(Value) * (arr->count - 1));
     }

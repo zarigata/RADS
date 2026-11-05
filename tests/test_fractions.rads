@@ -1,0 +1,82 @@
+// Test: fractions module — Python-parity exact rationals (nightshift 20261022).
+// All expectations pinned against python3.13 fractions on this box.
+blast main() {
+    // constructors + reduction
+    if (fractions.to_str(fractions.make(6, 4)) == "3/2") { echo("PASS make(6,4)=3/2"); } else { echo("FAIL 6/4"); }
+    if (fractions.to_str(fractions.make(4, 2)) == "2") { echo("PASS make(4,2)=2"); } else { echo("FAIL 4/2"); }
+    if (fractions.to_str(fractions.make(0, -5)) == "0") { echo("PASS make(0,-5)=0"); } else { echo("FAIL 0/-5"); }
+    if (fractions.to_str(fractions.make(-6, 4)) == "-3/2") { echo("PASS make(-6,4)=-3/2"); } else { echo("FAIL -6/4"); }
+    if (fractions.to_str(fractions.make("3/4")) == "3/4") { echo("PASS parse 3/4"); } else { echo("FAIL p3/4"); }
+    if (fractions.to_str(fractions.make("-3/4")) == "-3/4") { echo("PASS parse -3/4"); } else { echo("FAIL p-3/4"); }
+    if (fractions.to_str(fractions.make("  3/4  ")) == "3/4") { echo("PASS parse ws"); } else { echo("FAIL pws"); }
+    if (fractions.to_str(fractions.make("0.5")) == "1/2") { echo("PASS parse 0.5"); } else { echo("FAIL p0.5"); }
+    if (fractions.to_str(fractions.make("3.14")) == "157/50") { echo("PASS parse 3.14"); } else { echo("FAIL p3.14"); }
+    if (fractions.to_str(fractions.make("7e-6")) == "7/1000000") { echo("PASS parse 7e-6"); } else { echo("FAIL 7e-6"); }
+    if (fractions.to_str(fractions.make("1.5/2")) == "3/4") { echo("PASS parse 1.5/2"); } else { echo("FAIL p1.5/2"); }
+    // float exactness — the whole point
+    if (fractions.to_str(fractions.make(0.1)) == "3602879701896397/36028797018963968") { echo("PASS float 0.1 exact"); } else { echo("FAIL f0.1"); }
+    if (fractions.to_str(fractions.make(0.5)) == "1/2") { echo("PASS float 0.5 exact"); } else { echo("FAIL f0.5"); }
+    // arithmetic
+    if (fractions.to_str(fractions.add(fractions.make(1,3), fractions.make(1,6))) == "1/2") { echo("PASS 1/3+1/6=1/2"); } else { echo("FAIL add"); }
+    if (fractions.to_str(fractions.add(fractions.make(1,3), fractions.make(1,2))) == "5/6") { echo("PASS 1/3+1/2=5/6"); } else { echo("FAIL add2"); }
+    if (fractions.to_str(fractions.sub(fractions.make(1,2), fractions.make(1,3))) == "1/6") { echo("PASS 1/2-1/3=1/6"); } else { echo("FAIL sub"); }
+    if (fractions.to_str(fractions.mul(fractions.make(1,2), fractions.make(2,3))) == "1/3") { echo("PASS 1/2*2/3=1/3"); } else { echo("FAIL mul"); }
+    if (fractions.to_str(fractions.div(fractions.make(1,2), fractions.make(3,4))) == "2/3") { echo("PASS (1/2)/(3/4)=2/3"); } else { echo("FAIL div"); }
+    // big/precise values
+    turbo big = fractions.make("10000000000000000000000000001/3");
+    if (fractions.to_str(big) == "10000000000000000000000000001/3") { echo("PASS big29 round-trip"); } else { echo("FAIL big29"); }
+    if (fractions.to_str(fractions.mul(big, big)) == "100000000000000000000000000020000000000000000000000000001/9") { echo("PASS (10^28+1)^2/9"); } else { echo("FAIL bigmul"); }
+    // floor division / mod — Python law
+    if (fractions.to_str(fractions.floordiv(fractions.make(7,2), fractions.make(2))) == "1") { echo("PASS 7/2//2=1"); } else { echo("FAIL fd1"); }
+    if (fractions.to_str(fractions.floordiv(fractions.make(-7,2), fractions.make(2))) == "-2") { echo("PASS -7/2//2=-2"); } else { echo("FAIL fd2"); }
+    if (fractions.to_str(fractions.mod(fractions.make(7,2), fractions.make(2))) == "3/2") { echo("PASS 7/2%2=3/2"); } else { echo("FAIL m1"); }
+    if (fractions.to_str(fractions.mod(fractions.make(-7,2), fractions.make(2))) == "1/2") { echo("PASS -7/2%2=1/2"); } else { echo("FAIL m2"); }
+    if (fractions.to_str(fractions.mod(fractions.make(1,2), fractions.make(1,3))) == "1/6") { echo("PASS 1/2%1/3=1/6"); } else { echo("FAIL m3"); }
+    // pow
+    if (fractions.to_str(fractions.pow(fractions.make(1,2), 2)) == "1/4") { echo("PASS (1/2)^2"); } else { echo("FAIL pw1"); }
+    if (fractions.to_str(fractions.pow(fractions.make(1,2), -1)) == "2") { echo("PASS (1/2)^-1"); } else { echo("FAIL pw2"); }
+    if (fractions.to_str(fractions.pow(fractions.make(2,3), 3)) == "8/27") { echo("PASS (2/3)^3"); } else { echo("FAIL pw3"); }
+    if (fractions.to_str(fractions.pow(fractions.make(3), -2)) == "1/9") { echo("PASS 3^-2"); } else { echo("FAIL pw4"); }
+    if (fractions.to_str(fractions.pow(fractions.make(-3,4), -1)) == "-4/3") { echo("PASS (-3/4)^-1"); } else { echo("FAIL pw5"); }
+    if (fractions.to_str(fractions.pow(fractions.make(7), 0)) == "1") { echo("PASS 7^0"); } else { echo("FAIL pw6"); }
+    // neg / abs
+    if (fractions.to_str(fractions.neg(fractions.make(3,4))) == "-3/4") { echo("PASS neg"); } else { echo("FAIL neg"); }
+    if (fractions.to_str(fractions.abs(fractions.make(-3,4))) == "3/4") { echo("PASS abs"); } else { echo("FAIL abs"); }
+    // comparisons
+    if (fractions.eq(fractions.make(1,3), fractions.make(2,6))) { echo("PASS 1/3==2/6"); } else { echo("FAIL eq"); }
+    if (fractions.lt(fractions.make(1,3), fractions.make(1,2))) { echo("PASS 1/3<1/2"); } else { echo("FAIL lt"); }
+    if (fractions.lte(fractions.make(1,2), fractions.make(3,6))) { echo("PASS 1/2<=3/6"); } else { echo("FAIL lte"); }
+    if (fractions.gt(fractions.make(2,3), fractions.make(1,2))) { echo("PASS 2/3>1/2"); } else { echo("FAIL gt"); }
+    if (fractions.gte(fractions.make(-1,2), fractions.make(-2,3))) { echo("PASS -1/2>=-2/3"); } else { echo("FAIL gte"); }
+    // int/float conversion
+    if (fractions.to_int(fractions.make(7,2)) == 3) { echo("PASS int(7/2)=3"); } else { echo("FAIL ti1"); }
+    if (fractions.to_int(fractions.make(-7,2)) == -3) { echo("PASS int(-7/2)=-3"); } else { echo("FAIL ti2"); }
+    if (fractions.to_float(fractions.make(22,7)) == 3.142857142857143) { echo("PASS float(22/7)"); } else { echo("FAIL tf1"); }
+    // numerator/denominator accessors + is_integer
+    if (fractions.numerator(fractions.make(6,4)) == 3) { echo("PASS numerator 3"); } else { echo("FAIL num"); }
+    if (fractions.denominator(fractions.make(6,4)) == 2) { echo("PASS denominator 2"); } else { echo("FAIL den"); }
+    if (fractions.is_integer(fractions.make(4,2))) { echo("PASS is_integer 2"); } else { echo("FAIL isi1"); }
+    if (!fractions.is_integer(fractions.make(1,3))) { echo("PASS is_integer 1/3 false"); } else { echo("FAIL isi2"); }
+    // limit_denominator — CPython algorithm pins
+    turbo pi = fractions.make("355/113");
+    if (fractions.to_str(fractions.limit_denominator(pi, 100)) == "311/99") { echo("PASS ld 355/113@100"); } else { echo("FAIL ld1"); }
+    if (fractions.to_str(fractions.limit_denominator(fractions.make("103993/33102"), 1000)) == "355/113") { echo("PASS ld pi-frac@1000"); } else { echo("FAIL ld2"); }
+    if (fractions.to_str(fractions.limit_denominator(fractions.make(-4,3), 5)) == "-4/3") { echo("PASS ld -4/3@5"); } else { echo("FAIL ld3"); }
+    if (fractions.to_str(fractions.limit_denominator(fractions.make(201,25), 10)) == "8") { echo("PASS ld 201/25@10"); } else { echo("FAIL ld4"); }
+    if (fractions.to_str(fractions.limit_denominator(fractions.make(7,3), 1)) == "2") { echo("PASS ld 7/3@1"); } else { echo("FAIL ld5"); }
+    if (fractions.to_str(fractions.limit_denominator(fractions.make(5,2), 1)) == "2") { echo("PASS ld 5/2@1"); } else { echo("FAIL ld6"); }
+    if (fractions.to_str(fractions.limit_denominator(fractions.make("3.14159265358979"), 8)) == "22/7") { echo("PASS ld pi@8"); } else { echo("FAIL ld7"); }
+    if (fractions.to_str(fractions.limit_denominator(fractions.make("3.14159265358979"), 100)) == "311/99") { echo("PASS ld pi@100"); } else { echo("FAIL ld8"); }
+    // struct fields
+    turbo q = fractions.make(3,4);
+    if (q.text == "3/4" && q.numerator == 3 && q.denominator == 4) { echo("PASS struct fields"); } else { echo("FAIL fields"); }
+    // min/max
+    if (fractions.to_str(fractions.min(fractions.make(1,3), fractions.make(1,2))) == "1/3") { echo("PASS min"); } else { echo("FAIL min"); }
+    if (fractions.to_str(fractions.max(fractions.make(1,3), fractions.make(1,2))) == "1/2") { echo("PASS max"); } else { echo("FAIL max"); }
+    // unhappy paths (must return null, not crash)
+    if (fractions.make(1, 0) == null) { echo("PASS 1/0 rejected"); } else { echo("FAIL z1"); }
+    if (fractions.make("junk") == null) { echo("PASS junk rejected"); } else { echo("FAIL z2"); }
+    if (fractions.div(fractions.make(1,2), fractions.make(0)) == null) { echo("PASS div-by-zero rejected"); } else { echo("FAIL z3"); }
+    echo("done");
+}
+// ⚕ Forged for Master Zarigata 🜂

@@ -1,0 +1,101 @@
+// ═══════════════════════════════════════════════════════════
+// JS syntax parity — fn() lambdas, let, ASI, script mode (20261031)
+// Pins every construct this branch taught the parser/interpreter.
+// No semicolons anywhere in this file ON PURPOSE: ASI is under test.
+// No blast main() ON PURPOSE: script-mode execution is under test.
+// Gate law: expected MUST equal the number of check() call sites.
+// ═══════════════════════════════════════════════════════════
+
+let pass = 0
+let expected = 15
+
+blast check(name, cond) {
+    if (cond) {
+        echo("PASS " + name)
+        return 1
+    }
+    echo("FAIL: " + name)
+    return 0
+}
+
+// Named fn registered at Pass 1 — call it BEFORE the let rebinds the
+// name below (script mode runs top-level statements in file order).
+blast fn(x) { return x + 100 }
+
+// ── fn-lambda as a value ────────────────────────────────────
+let square = fn(x) { return x * x }
+pass = pass + check("fn lambda assigned to let", square(7) == 49)
+
+// ── fn-lambda passed as an argument (the JS idiom) ─────────
+blast apply_twice(f, v) {
+    return f(f(v))
+}
+let inc = fn(n) { return n + 1 }
+pass = pass + check("fn lambda as argument", apply_twice(inc, 5) == 7)
+
+// ── fn-lambda inline in a call ──────────────────────────────
+let r = apply_twice(fn(n) { return n * 3 }, 2)
+pass = pass + check("inline fn lambda", r == 18)
+
+// ── multi-param fn-lambda ───────────────────────────────────
+let add = fn(a, b) { return a + b }
+pass = pass + check("fn lambda two params", add(20, 22) == 42)
+
+// ── zero-param fn-lambda ────────────────────────────────────
+let forty_two = fn() { return 42 }
+pass = pass + check("fn lambda zero params", forty_two() == 42)
+
+// ── a real function NAMED fn: call shape, not lambda shape ──
+// (fn(1) has no '{' after ')' so is_fn_lambda declines it)
+pass = pass + check("fn(...) call not hijacked", fn(1) == 101)
+
+// ── `fn` as a plain identifier still works ──────────────────
+let fn = "still just a name"
+pass = pass + check("fn usable as identifier", fn == "still just a name")
+
+// ── let with initializer expressions ────────────────────────
+let arr = [1, 2, 3, 4]
+pass = pass + check("let array", array.count(arr) == 4)
+let s = "abc" + "def"
+pass = pass + check("let concat", s == "abcdef")
+
+// ── let reassignment ────────────────────────────────────────
+let counter = 0
+counter = counter + 1
+counter = counter + 1
+pass = pass + check("let reassign", counter == 2)
+
+// ── let NOT followed by an identifier stays an expression ──
+let x = 3
+pass = pass + check("math after let", x * 2 == 6)
+
+// ── ASI: statements end at newlines ─────────────────────────
+let a = 1
+let b = 2
+pass = pass + check("ASI basic", a + b == 3)
+
+// ── semicolons still accepted (mixed style) ─────────────────
+let c = 9;
+pass = pass + check("explicit semis still fine", c == 9);
+
+// ── if/return inside fn body across lines ───────────────────
+let grade = fn(score) {
+    if (score >= 90) {
+        return "A"
+    }
+    return "B"
+}
+pass = pass + check("fn lambda branches", grade(95) == "A" && grade(80) == "B")
+
+// ── chained call on call result (str methods on any string) ─
+let js = json.stringify_pretty(json.parse(`{"k":[1,2]}`))
+pass = pass + check("chained str method on call result", str.len(js) > 10)
+
+// ── script mode: this whole file has no main() ──────────────
+if (pass == expected) {
+    echo("")
+    echo("ALL JS SYNTAX TESTS PASSED (" + pass + "/" + expected + ")")
+} else {
+    echo("")
+    echo("SOME JS SYNTAX TESTS FAILED (" + pass + "/" + expected + ")")
+}

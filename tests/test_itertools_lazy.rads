@@ -1,0 +1,140 @@
+// Test: lazy Python-parity itertools + first-class iterators (nightshift 20261025).
+// Every expectation pinned against python3.13 itertools on this box.
+// Law: combinator natives return <iterator> values, one-shot like Python
+// generators; consume via itertools.list/next, cruise, or nested combinators.
+blast fmt(v) {
+    if (typeof(v) == "null") { return "null"; }
+    if (typeof(v) == "array") {
+        turbo out = "[";
+        turbo first = true;
+        cruise (item in v) {
+            if (first) { first = false; } else { out = out + ", "; }
+            out = out + fmt(item);
+        }
+        return out + "]";
+    }
+    return "" + v;
+}
+blast lt3(x) { return x < 3; }
+blast dbl(x) { return x * 2; }
+blast add2(a, b) { return a + b; }
+blast sub2(a, b) { return a - b; }
+blast mul2(a, b) { return a * b; }
+blast even(x) { return x % 2 == 0; }
+blast main() {
+    // values are LAZY: typeof iterator, not array
+    if (typeof(itertools.count(0)) == "iterator") { echo("PASS typeof count=iterator"); } else { echo("FAIL typeof count"); }
+    if (typeof(itertools.repeat(1, 3)) == "iterator") { echo("PASS typeof repeat=iterator"); } else { echo("FAIL typeof repeat"); }
+
+    // count(10, -2) first 6 = [10, 8, 6, 4, 2, 0]  (CPython pin)
+    if (fmt(itertools.list(itertools.islice(itertools.count(10, -2), 6))) == "[10, 8, 6, 4, 2, 0]") { echo("PASS count(10,-2) 6"); } else { echo("FAIL count"); }
+    // count() defaults start=0 step=1
+    if (fmt(itertools.list(itertools.islice(itertools.count(), 3))) == "[0, 1, 2]") { echo("PASS count() default"); } else { echo("FAIL count default"); }
+
+    // repeat('x', 3)
+    if (fmt(itertools.list(itertools.repeat("x", 3))) == "[x, x, x]") { echo("PASS repeat x3"); } else { echo("FAIL repeat x3"); }
+    // repeat(obj) infinite — islice caps it
+    if (fmt(itertools.list(itertools.islice(itertools.repeat(7), 4))) == "[7, 7, 7, 7]") { echo("PASS repeat infinite capped"); } else { echo("FAIL repeat inf"); }
+
+    // cycle([1,2,3]) first 7
+    if (fmt(itertools.list(itertools.islice(itertools.cycle([1,2,3]), 7))) == "[1, 2, 3, 1, 2, 3, 1]") { echo("PASS cycle 7"); } else { echo("FAIL cycle"); }
+    // cycle of empty = empty (Python law)
+    if (fmt(itertools.list(itertools.islice(itertools.cycle([]), 3))) == "[]") { echo("PASS cycle empty"); } else { echo("FAIL cycle empty"); }
+
+    // chain variadic
+    if (fmt(itertools.list(itertools.chain([1,2], [3], ["a"]))) == "[1, 2, 3, a]") { echo("PASS chain 3"); } else { echo("FAIL chain"); }
+    // chain of iterators chaining iterators (lazy pipeline nesting)
+    if (fmt(itertools.list(itertools.chain(itertools.chain([1,2],[3]), itertools.repeat(9, 2)))) == "[1, 2, 3, 9, 9]") { echo("PASS chain nested"); } else { echo("FAIL chain nested"); }
+
+    // zip stops at shortest
+    if (fmt(itertools.list(itertools.zip([1,2,3], ["a","b"]))) == "[[1, a], [2, b]]") { echo("PASS zip shortest"); } else { echo("FAIL zip"); }
+    // zip_longest positional fill 0
+    if (fmt(itertools.list(itertools.zip_longest([1,2,3], ["a","b"], 0))) == "[[1, a], [2, b], [3, 0]]") { echo("PASS zip_longest fill 0"); } else { echo("FAIL zl"); }
+    // zip_longest null fill (Python default None)
+    if (fmt(itertools.list(itertools.zip_longest([1,2,3], ["a","b"]))) == "[[1, a], [2, b], [3, null]]") { echo("PASS zip_longest null fill"); } else { echo("FAIL zl2"); }
+
+    // enumerate
+    if (fmt(itertools.list(itertools.enumerate(["a","b"], 10))) == "[[10, a], [11, b]]") { echo("PASS enumerate start 10"); } else { echo("FAIL enum10"); }
+    if (fmt(itertools.list(itertools.enumerate(["x","y"]))) == "[[0, x], [1, y]]") { echo("PASS enumerate default"); } else { echo("FAIL enum def"); }
+
+    // islice forms
+    if (fmt(itertools.list(itertools.islice(itertools.count(), 2, 10, 3))) == "[2, 5, 8]") { echo("PASS islice 2..10 step3"); } else { echo("FAIL islice"); }
+    if (fmt(itertools.list(itertools.islice([9,8,7,6], 2))) == "[9, 8]") { echo("PASS islice stop-only"); } else { echo("FAIL islice stop"); }
+    if (fmt(itertools.list(itertools.islice([1,2,3,4], 2, null, 2))) == "[3]") { echo("PASS islice start+step unbounded"); } else { echo("FAIL islice s-s"); }
+
+    // takewhile / dropwhile (CPython pins)
+    if (fmt(itertools.list(itertools.takewhile(lt3, [1,2,3,4,1]))) == "[1, 2]") { echo("PASS takewhile"); } else { echo("FAIL takewhile"); }
+    if (fmt(itertools.list(itertools.dropwhile(lt3, [1,2,3,4,1]))) == "[3, 4, 1]") { echo("PASS dropwhile"); } else { echo("FAIL dropwhile"); }
+
+    // filter / filterfalse / filter(None)
+    if (fmt(itertools.list(itertools.filter(even, [1,2,3,4,5,6]))) == "[2, 4, 6]") { echo("PASS filter even fn"); } else { echo("FAIL filter"); }
+    if (fmt(itertools.list(itertools.filterfalse(even, [1,2,3,4,5,6]))) == "[1, 3, 5]") { echo("PASS filterfalse"); } else { echo("FAIL filterfalse"); }
+    if (fmt(itertools.list(itertools.filter(null, [0, 1, "a", null, 2]))) == "[1, a, 2]") { echo("PASS filter None-mode"); } else { echo("FAIL filter null"); }
+
+    // map 1-ary and 2-ary
+    if (fmt(itertools.list(itertools.map(dbl, [1,2,3]))) == "[2, 4, 6]") { echo("PASS map x2"); } else { echo("FAIL map"); }
+    if (fmt(itertools.list(itertools.map(add2, [1,2,3], [10,20]))) == "[11, 22]") { echo("PASS map 2-ary shortest"); } else { echo("FAIL map2"); }
+
+    // starmap
+    if (fmt(itertools.list(itertools.starmap(sub2, [[3,1],[5,2]]))) == "[2, 3]") { echo("PASS starmap"); } else { echo("FAIL starmap"); }
+
+    // accumulate default + and with fn
+    if (fmt(itertools.list(itertools.accumulate([1,2,3]))) == "[1, 3, 6]") { echo("PASS accumulate +"); } else { echo("FAIL acc"); }
+    if (fmt(itertools.list(itertools.accumulate([1,2,3,4], mul2))) == "[1, 2, 6, 24]") { echo("PASS accumulate *"); } else { echo("FAIL acc2"); }
+
+    // compress over a STRING selector/data pair (strings iterate as chars)
+    if (fmt(itertools.list(itertools.compress("ABCDEF", [1,0,1,0,1,1]))) == "[A, C, E, F]") { echo("PASS compress"); } else { echo("FAIL compress"); }
+    // chain over string chars
+    if (fmt(itertools.list(itertools.chain("ab", "c"))) == "[a, b, c]") { echo("PASS chain string chars"); } else { echo("FAIL chain str"); }
+
+    // pairwise (the sliding window)
+    if (fmt(itertools.list(itertools.pairwise([1,2,3,4]))) == "[[1, 2], [2, 3], [3, 4]]") { echo("PASS pairwise"); } else { echo("FAIL pairwise"); }
+
+    // product cartesian
+    if (fmt(itertools.list(itertools.product([1,2], ["a","b"]))) == "[[1, a], [1, b], [2, a], [2, b]]") { echo("PASS product"); } else { echo("FAIL product"); }
+
+    // combinations lexicographic
+    if (fmt(itertools.list(itertools.combinations(["A","B","C","D"], 2))) == "[[A, B], [A, C], [A, D], [B, C], [B, D], [C, D]]") { echo("PASS combinations order"); } else { echo("FAIL comb order"); }
+    if (itertools.list(itertools.combinations([1,2], 0)).length == 1) { echo("PASS combinations r0 one empty"); } else { echo("FAIL comb r0"); }
+    if (itertools.list(itertools.combinations([1], 2)).length == 0) { echo("PASS combinations r>pool"); } else { echo("FAIL comb r>pool"); }
+
+    // permutations
+    if (fmt(itertools.list(itertools.permutations(["A","B"]))) == "[[A, B], [B, A]]") { echo("PASS permutations full"); } else { echo("FAIL perm full"); }
+    if (fmt(itertools.list(itertools.permutations(["A","B","C"], 2))) == "[[A, B], [A, C], [B, A], [B, C], [C, A], [C, B]]") { echo("PASS permutations r2"); } else { echo("FAIL perm r2"); }
+    if (itertools.list(itertools.permutations([1], 2)).length == 0) { echo("PASS permutations r>n"); } else { echo("FAIL perm r>n"); }
+
+    // iter / next consumers
+    turbo it = itertools.iter(["aa","bb"]);
+    if (itertools.next(it) == "aa") { echo("PASS next 1st"); } else { echo("FAIL next1"); }
+    if (itertools.next(it) == "bb") { echo("PASS next 2nd"); } else { echo("FAIL next2"); }
+    if (itertools.next(it) == null) { echo("PASS next exhausted null"); } else { echo("FAIL next3"); }
+    if (itertools.next(it, "dflt") == "dflt") { echo("PASS next default"); } else { echo("FAIL next4"); }
+
+    // one-shot law: exhausting via list() then pulling again gives null
+    turbo once = itertools.iter([1,2]);
+    itertools.list(once);
+    if (itertools.next(once) == null) { echo("PASS one-shot after drain"); } else { echo("FAIL oneshot"); }
+
+    // reduce (functools arg order) incl. lazy source
+    if (itertools.reduce(add2, [1,2,3,4]) == 10) { echo("PASS reduce sum"); } else { echo("FAIL reduce"); }
+    if (itertools.reduce(mul2, [], 42) == 42) { echo("PASS reduce initial on empty"); } else { echo("FAIL reduce init"); }
+    if (itertools.reduce(add2, itertools.islice(itertools.count(1), 5)) == 15) { echo("PASS reduce over lazy islice"); } else { echo("FAIL reduce lazy"); }
+
+    // cruise over an array (was: silently zero iterations before tonight)
+    turbo total = 0;
+    cruise (x in [1,2,3]) { total = total + x; }
+    if (total == 6) { echo("PASS cruise array sum"); } else { echo("FAIL cruise array"); }
+
+    // cruise over a LAZY iterator
+    turbo lazy_sum = 0;
+    cruise (x in itertools.islice(itertools.count(10, -2), 3)) { lazy_sum = lazy_sum + x; }
+    if (lazy_sum == 24) { echo("PASS cruise lazy 10+8+6"); } else { echo("FAIL cruise lazy"); }
+
+    // cruise with break over lazy
+    turbo hit = 0;
+    cruise (x in itertools.count(0)) {
+        hit = hit + 1;
+        if (x == 4) { break; }
+    }
+    if (hit == 5) { echo("PASS cruise lazy break"); } else { echo("FAIL cruise break"); }
+}

@@ -42,11 +42,11 @@ static Value shallowcopy_value(Value* v) {
                 Array* src = v->array_val;
                 Array* arr = array_create(src->count);
                 for (size_t i = 0; i < src->count; i++) {
-                    /* Copy Value struct but don't recurse — strings still get strdup'd */
+                    /* Copy Value struct but don't recurse — array_push clones strings */
                     Value item;
                     item.type = src->items[i].type;
                     if (item.type == VAL_STRING) {
-                        item.string_val = strdup(src->items[i].string_val);
+                        item.string_val = src->items[i].string_val; /* array_push clones it — the pre-strdup leaked */
                     } else {
                         item = src->items[i];
                     }
@@ -81,8 +81,7 @@ static Value deepcopy_value(Value* v) {
                 Array* src = v->array_val;
                 Array* arr = array_create(src->count);
                 for (size_t i = 0; i < src->count; i++) {
-                    Value item = deepcopy_value(&src->items[i]);
-                    array_push(arr, item);
+                    array_push(arr, src->items[i]); /* array_push deep-copies; a pre-copy leaked */
                 }
                 copy.array_val = arr;
             }
