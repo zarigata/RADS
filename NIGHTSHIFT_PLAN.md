@@ -16,6 +16,42 @@ Branch `nightshift/20261013-stdlib-float-parity` carries the completed port to t
 **clean-build green** (trio 11+8+17 PASS, runner 9/9, exit 0). Merge that branch to unblock main.
 
 ## Night Log
+ - **2026-11-05**: (1) sync: fetch clean, PRs #19-#36 all still open, none merged; cut
+   nightshift/20261105-repl-uaf from closures head e6f511e (freshest green, PR #36). (2) fix(core):
+   **BACKLOG 12 CLOSED — REPL session lifetime**. Was (re-verified on base in a worktree, rc 139
+   deterministic): defining a blast on one REPL line and calling it on the next segfaulted; same
+   for turbo f = blast(...){} then f(21), and echo(f) — the printer derefs func_node too. Root
+   cause: VAL_FUNCTION values hold a RAW func_node pointer into the AST that parsed them (struct
+   defs borrow their AST the same way); file mode is safe ONLY because interpret() tears the env
+   down BEFORE ast_free(program) — the REPL inverted that order per line, ast_free(stmt) while
+   the env kept values pointing into the freed tree. Fix: REPL statements park in a session
+   arena (repl_ast_park: AST + source buffer) and are released ONCE, after
+   interpreter_cleanup_environment() drains the env — JS/Python REPL law: session code lives
+   for the session; teardown order env -> trees -> regex cache -> event loop. The parse-error
+   path frees its half-built tree immediately (nothing references it; also plugged the old leak
+   where a non-NULL stmt on had_error was never freed). (3) BONUS defect in the same path: the
+   REPL parsed lines with parse_statement, so struct/enum/import/async-blast top-level
+   declarations were UNREACHABLE from a session — struct P {...} was a silent parse error
+   (Expected expression) and every later P(...) hit Struct-not-defined. parse_declaration
+   (the file-mode top-level entry) is now public in parser.h and the REPL uses it; named
+   structs (Player {name, score} then p1.name cross-line) and enums (Color.Red -> 0, byte-equal
+   to file mode) work in sessions now. (4) Runner: @repl_session suite — scripted 16-line stdin
+   session, six markers asserted (cross-line call, lambda-in-var, closures with independent
+   captured frames 20/30, named struct, enum arithmetic); a segfault fails via missing markers.
+   Gate negative-tested with a planted bogus marker: suite FAILED + runner exit 1; restored
+   -> 28/28. (5) Corpses tonight, all caught by gates before commit: two malformed hand-rolled
+   unified diffs (patch rejected, tree verified untouched by grep before continuing); the cron
+   sandbox blocks heredocs and python -c, so all patching went through printf-to-script-file;
+   first runner session had double-escaped quotes (line arrived as backslash-quote -> lexer
+   Unexpected character), then the un-escape pass stripped ALL quotes — both caught by the
+   MISSING-marker check doing its job. Verified: make clean && make -j4 exit 0 (0 new
+   warnings; parser.c:980 update_block warning pre-existing on base); runner **28/28 suites
+   PASSED 0 FAIL lines, run twice identical**; ASan+UBSan+LSan: full 18-line REPL session rc 0,
+   0 findings 0 leaks (cross-line closures included); closures/structs/object_literals/
+   v0.0.12/js_syntax suites clean under sanitizers. Not verified: CI on the PR. PR #37:
+   https://github.com/zarigata/RADS/pull/37
+
+
  - **2026-11-04**: (1) sync: fetch clean, PRs #19-#35 all still open, none merged; cut
    nightshift/20261104-local-scope from slice-assign head aac72b4 (freshest green). (2) feat(core):
    **BACKLOG 3(a) CLOSED — lexical scope chain + real closures**. Was: bindings lived in ONE global
@@ -310,6 +346,7 @@ Branch `nightshift/20261013-stdlib-float-parity` carries the completed port to t
 
 ## Open PR Review
 | PR | Title | Status | Verdict |
+| 37 | REPL session lifetime: cross-line call UAF + struct/enum REPL entry (backlog 12) | OPEN — head Dagoth-Ur-69:nightshift/20261105-repl-uaf | awaiting master review; REPL crashed rc 139 calling a fn from a prior line |
 | 36 | lexical scope chain + real closures (backlog 3a) | OPEN — head Dagoth-Ur-69:nightshift/20261104-local-scope | awaiting master review; locals leaked globally, no closures existed |
 | 35 | Python-parity slice assignment (splice + extended) | OPEN — head Dagoth-Ur-69:nightshift/20261103-slice-assign | awaiting master review; closes last night's loud stopgap |
 | 34 | Python-parity slicing + string indexing + index assignment | OPEN — head Dagoth-Ur-69:nightshift/20261102-string-parity | awaiting master review; a[1:3] was a parse error, s[0] returned null, a[0]=x was a silent no-op |
@@ -342,7 +379,7 @@ Branch `nightshift/20261013-stdlib-float-parity` carries the completed port to t
 10. **async_utils callback leaks**: stdlib_async_series/parallel leak ~32B per callback via interpreter_execute_callback value_clone + the result Array (LSan on tests/test_filesystem.rads). Pre-existing, untouched by the 2026-10-30 sweep. Needs an event-loop-owned lifetime audit.
 11. ~~bare-{ object literals at argument position~~ CLOSED 2026-11-01: bare `{` at expression position parses as an anonymous struct instance (string/identifier/shorthand keys, trailing comma, insertion order); statement-position `{` stays a block; struct-literal postfix is same-line only. test_http.rads now runs end-to-end. BONUS shipped same night: undefined calls were silent no-ops (make_null fallback) — now throw NameError/TypeError-style errors; global natives assert/print/str/type/chr/ord; csv.parse garbage definition pointer + row leak; http header leak; json.get aliasing UAF (pre-existing on base, 3/3 deterministic) all fixed.
 
-12. **REPL cross-line call segfault** (found 2026-11-04, PRE-EXISTING on base): defining a
+12. ~~REPL cross-line call segfault~~ CLOSED 2026-11-05 (PR #37): session AST arena (park per line, free after env drains) + REPL now enters through parse_declaration so struct/enum/import/async-blast work in sessions. STILL OPEN from this item: try is statement-only (no expression form). Original finding: defining a
     blast on one REPL line and calling it on the next segfaults (rc 139) — verified identical on
     base aac72b4 via stash-swap. REPL statement path re-parses per line; the function Value's
     lifetime across lines needs an audit. Also flagged: `try` is statement-only (no expression
