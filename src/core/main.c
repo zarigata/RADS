@@ -349,6 +349,51 @@ void print_repl_help() {
     printf("\n");
 }
 
+/* --- REPL AST registry (nightshift 20261105) -----------------------------
+ * VAL_FUNCTION values hold a RAW func_node pointer into the AST that parsed
+ * them; struct definitions borrow their AST the same way. File mode is safe
+ * because interpret() tears the environment down BEFORE ast_free(program).
+ * The REPL used to ast_free() every line tree while the environment kept
+ * values pointing into it -- calling a function defined on a previous line
+ * was a use-after-free (segfault rc 139, backlog 12). JS/Python REPL law:
+ * code parsed in a session stays alive for the session. Statements are
+ * parked in this arena and released ONCE, after the environment drains. */
+typedef struct ReplAstNode {
+    ASTNode* ast;
+    char* source;               /* line text outlives borrowed lexer state */
+    struct ReplAstNode* next;
+} ReplAstNode;
+
+static ReplAstNode* repl_ast_registry = NULL;
+
+/* Park one parsed REPL line (AST + its source buffer) for the session.
+ * Returns true when the caller must NOT free the AST itself. */
+static bool repl_ast_park(ASTNode* ast, char* source) {
+    if (!ast) return false;
+    ReplAstNode* entry = malloc(sizeof(ReplAstNode));
+    if (!entry) return false;   /* OOM: caller keeps per-line free semantics */
+    entry->ast = ast;
+    entry->source = source;
+    entry->next = repl_ast_registry;
+    repl_ast_registry = entry;
+    return true;
+}
+
+/* Free every parked AST. MUST run after interpreter_cleanup_environment():
+ * env values (functions, struct defs) point into these trees, so the
+ * environment has to drain first. */
+static void repl_ast_release_all(void) {
+    ReplAstNode* it = repl_ast_registry;
+    while (it) {
+        ReplAstNode* next = it->next;
+        ast_free(it->ast);
+        free(it->source);
+        free(it);
+        it = next;
+    }
+    repl_ast_registry = NULL;
+}
+
 int run_repl() {
     print_repl_welcome();
 
@@ -456,13 +501,18 @@ int run_repl() {
         Lexer lexer;
         lexer_init(&lexer, source);
 
-        // Parse
+        /* Parse. parse_declaration is the file-mode top-level entry:
+         * struct/enum/import/async-blast declarations were UNREACHABLE
+         * from the REPL (parse_statement never matched them) - struct decls
+         * in a session were a silent parse error. Same law as file mode. */
         Parser parser;
         parser_init(&parser, &lexer);
-        ASTNode* stmt = parse_statement(&parser);
+        ASTNode* stmt = parse_declaration(&parser);
 
         if (stmt == NULL || parser.had_error) {
-            // Error already printed by parser
+            // Error already printed by parser; a half-built tree may
+            // still exist and owns its strings -- free it, never park.
+            if (stmt) ast_free(stmt);
             free(source);
             line_num++;
             continue;
@@ -471,9 +521,13 @@ int run_repl() {
         // Execute statement in REPL context (preserves environment)
         interpret_repl_statement(stmt);
 
-        // Cleanup AST and source (environment persists)
-        ast_free(stmt);
-        free(source);
+        /* Park AST + source for the session instead of freeing per line:
+         * env values (function/struct values) borrow pointers into the
+         * tree; freeing here was the backlog-12 use-after-free. */
+        if (!repl_ast_park(stmt, source)) {
+            ast_free(stmt);
+            free(source);
+        }
 
         line_num++;
     }
@@ -484,7 +538,10 @@ int run_repl() {
     fflush(stdout);
 
     // Clean up environment and event loop on exit
+    /* ORDER: environment FIRST (its values point into the parked REPL
+     * ASTs), then the trees themselves, then caches/loop. */
     interpreter_cleanup_environment();
+    repl_ast_release_all();
     stdlib_regex_cache_flush(); /* pattern cache owns heap nothing else frees */
     interpreter_cleanup_event_loop();
     return 0;

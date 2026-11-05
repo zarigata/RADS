@@ -16,5 +16,6 @@ typedef struct {
 void parser_init(Parser* parser, Lexer* lexer);
 ASTNode* parser_parse(Parser* parser);
 ASTNode* parse_statement(Parser* parser);  // For REPL mode
+ASTNode* parse_declaration(Parser* parser);  // top-level entry (struct/enum/import/blast) - REPL uses this too
 
 #endif // RADS_PARSER_H

@@ -185,7 +185,8 @@ static void consume(Parser* parser, TokenType type, const char* message) {
 // Forward declarations
 static ASTNode* parse_expression(Parser* parser);
 ASTNode* parse_statement(Parser* parser);  // Public for REPL
-static ASTNode* parse_declaration(Parser* parser);
+ASTNode* parse_declaration(Parser* parser);  // Public for REPL (struct/enum/import)
+
 static ASTNode* parse_comparison(Parser* parser);
 static ASTNode* parse_block(Parser* parser);
 static void synchronize(Parser* parser);
@@ -1362,7 +1363,7 @@ static ASTNode* parse_enum_declaration(Parser* parser) {
 }
 
 // Parse declaration
-static ASTNode* parse_declaration(Parser* parser) {
+ASTNode* parse_declaration(Parser* parser) {
     // Import statement: import "filename.rads";
     if (match(parser, TOKEN_IMPORT)) {
         int line = parser->previous.line;

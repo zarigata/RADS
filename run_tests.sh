@@ -45,10 +45,50 @@ test_files=(
     "test_slices.rads"
     "test_slice_assign.rads"
     "test_closures.rads"
+    "@repl_session"
 )
 
 for test_file in "${test_files[@]}"; do
     test_path="$RADS_TEST_DIR/$test_file"
+
+    # REPL smoke session (backlog 12): scripted stdin lines, output grepped
+    # for expected markers. The runner cannot run sessions as .rads files.
+    if [ "$test_file" = "@repl_session" ]; then
+        repl_out="$TMPDIR/rads_repl_session.out"
+        [ -z "$TMPDIR" ] && repl_out="/tmp/rads_repl_session.out"
+        printf %s\\n \
+            "blast greet(name) { return \"hi \" + name; }" \
+            "echo(greet(\"zari\"))" \
+            "turbo f = blast(x){ return x*2; }" \
+            "echo(f(21))" \
+            "turbo mk = blast(n) { turbo acc = 0; return blast(x) { acc = acc + x*n; return acc; }; }" \
+            "turbo t2 = mk(2)" \
+            "turbo t3 = mk(3)" \
+            "echo(t2(10))" \
+            "echo(t3(10))" \
+            "struct Player { str name; i32 score; }" \
+            "turbo Player p1 = Player { name: \"Rads_Gamer\", score: 100 };" \
+            "echo(p1.name)" \
+            "enum Color { Red, Green, Blue }" \
+            "turbo c = Color.Red" \
+            "echo(c + 1000)" \
+            ".exit" \
+            | "$RADS_BIN" > "$repl_out" 2>&1
+        # every marker must appear; segfault (rc 139/-11) fails via missing markers
+        ok=1
+        for marker in "hi zari" "42" "20" "30" "Rads_Gamer" "1000"; do
+            grep -aqF -- "$marker" "$repl_out" || ok=0
+        done
+        if [ "$ok" -eq 1 ]; then
+            echo "✅ $test_file PASSED"
+            ((total_passed++))
+        else
+            echo "❌ $test_file FAILED"
+            cat "$repl_out"
+            ((total_failed++))
+        fi
+        continue
+    fi
 
     if [ ! -f "$test_path" ]; then
         echo "⚠ Skipping $test_file (not found)"
