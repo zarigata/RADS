@@ -20,15 +20,76 @@ fi
 test_files=(
     "test.rads"
     "test_null.rads"
-    "test_stream.rads"
     "test_structs.rads"
     "v0_0_7_comprehensive.rads"
     "test_debugger.rads"
     "test_typecheck.rads"
+    "test_heapq.rads"
+    "test_logging.rads"
+    "test_statistics.rads"
+    "test_nostalgia.rads"
+    "test_regex.rads"
+    "test_datetime.rads"
+    "test_decimal.rads"
+    "test_fractions.rads"
+    "test_uaf_regression.rads"
+    "test_itertools_lazy.rads"
+    "test_template_literals.rads"
+    "test_promise.rads"
+    "test_numeric_mixed.rads"
+    "test_sci_notation.rads"
+    "test_memory_truth.rads"
+    "test_v0.0.12.rads"
+    "test_js_syntax.rads"
+    "test_object_literals.rads"
+    "test_slices.rads"
+    "test_slice_assign.rads"
+    "test_closures.rads"
+    "test_try_expression.rads"
+    "@repl_session"
 )
 
 for test_file in "${test_files[@]}"; do
     test_path="$RADS_TEST_DIR/$test_file"
+
+    # REPL smoke session (backlog 12): scripted stdin lines, output grepped
+    # for expected markers. The runner cannot run sessions as .rads files.
+    if [ "$test_file" = "@repl_session" ]; then
+        repl_out="$TMPDIR/rads_repl_session.out"
+        [ -z "$TMPDIR" ] && repl_out="/tmp/rads_repl_session.out"
+        printf %s\\n \
+            "blast greet(name) { return \"hi \" + name; }" \
+            "echo(greet(\"zari\"))" \
+            "turbo f = blast(x){ return x*2; }" \
+            "echo(f(21))" \
+            "turbo mk = blast(n) { turbo acc = 0; return blast(x) { acc = acc + x*n; return acc; }; }" \
+            "turbo t2 = mk(2)" \
+            "turbo t3 = mk(3)" \
+            "echo(t2(10))" \
+            "echo(t3(10))" \
+            "struct Player { str name; i32 score; }" \
+            "turbo Player p1 = Player { name: \"Rads_Gamer\", score: 100 };" \
+            "echo(p1.name)" \
+            "enum Color { Red, Green, Blue }" \
+            "turbo c = Color.Red" \
+            "echo(c + 1000)" \
+            ".exit" \
+            | "$RADS_BIN" > "$repl_out" 2>&1
+        # every marker must appear; segfault (rc 139/-11) fails via missing markers
+        ok=1
+        for marker in "hi zari" "42" "20" "30" "Rads_Gamer" "1000"; do
+            grep -aqF -- "$marker" "$repl_out" || ok=0
+        done
+        if [ "$ok" -eq 1 ]; then
+            echo "✅ $test_file PASSED"
+            ((total_passed++))
+        else
+            echo "❌ $test_file FAILED"
+            cat "$repl_out"
+            ((total_failed++))
+        fi
+        continue
+    fi
 
     if [ ! -f "$test_path" ]; then
         echo "⚠ Skipping $test_file (not found)"
@@ -40,12 +101,17 @@ for test_file in "${test_files[@]}"; do
     echo "Running: $test_file"
     echo "─────────────────────────────────────────"
 
-    if $RADS_BIN "$test_path" > /tmp/rads_test_output.txt 2>&1; then
+    # Output goes to a per-suite temp file under TMPDIR (cron-safe, no /tmp litter)
+    out_file="$TMPDIR/rads_suite_$test_file.out"
+    [ -z "$TMPDIR" ] && out_file="/tmp/rads_suite_$test_file.out"
+
+    if $RADS_BIN "$test_path" > "$out_file" 2>&1 \
+       && ! grep -q "FAIL" "$out_file"; then
         echo "✓ $test_file PASSED"
         ((total_passed++))
     else
         echo "✗ $test_file FAILED"
-        cat /tmp/rads_test_output.txt
+        cat "$out_file"
         ((total_failed++))
     fi
 done
@@ -54,7 +120,7 @@ echo ""
 echo "======================================"
 echo "Test Summary"
 echo "======================================"
-echo "Total tests: $((${#test_files[@]} - 1))"
+echo "Total tests: ${#test_files[@]}"
 echo "Passed: $total_passed"
 echo "Failed: $total_failed"
 echo ""

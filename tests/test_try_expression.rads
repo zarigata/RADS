@@ -1,0 +1,142 @@
+// ═══════════════════════════════════════════════════════════
+// Expression-form try/catch/finally (nightshift 20261106).
+// Law: Ruby begin/rescue — `turbo v = try { A } catch (e) { B }`
+// evaluates to the completing block's final expression statement.
+// Backlog 12 leftover closed. Pins: real semantics probed on this
+// box (base behavior + Ruby law); no semicolons ON PURPOSE (ASI).
+// Gate law: expected == checks.
+// ═══════════════════════════════════════════════════════════
+
+let pass = 0
+let expected = 22
+
+blast check(name, cond) {
+    if (cond) {
+        echo("PASS " + name)
+        return 1
+    }
+    echo("FAIL: " + name)
+    return 0
+}
+
+// ── 1. value law ────────────────────────────────────────────
+turbo v1 = try { 1 + 1 } catch (e) { 99 }
+pass = pass + check("no-throw tail value", v1 == 2)
+
+turbo v2 = try { throw "boom" } catch (e) { "caught:" + e }
+pass = pass + check("throw takes catch value", v2 == "caught:boom")
+
+turbo v3 = try { echo("side"); 5 } catch (e) { 0 }
+pass = pass + check("earlier statements run for effect", v3 == 5)
+
+turbo v4 = null
+try {
+    v4 = try { throw "a" } catch (e) { throw "b:" + e }
+} catch (propagated) {
+    v4 = "saw:" + propagated
+}
+pass = pass + check("catch rethrow propagates pending", v4 == "saw:b:a")
+
+// ── 2. if-tails (Ruby if-expression law) ───────────────────
+turbo v5 = try { if (v1 == 2) { "one" } else { "other" } } catch (e) { "err" }
+pass = pass + check("if-tail value (then)", v5 == "one")
+
+turbo v6 = try { if (v1 == 99) { "no" } else { "yes" } } catch (e) { "err" }
+pass = pass + check("if-tail value (else)", v6 == "yes")
+
+turbo v7 = try { if (v1 == 99) { "no" } } catch (e) { "err" }
+pass = pass + check("if-tail no-else completes null", v7 == null)
+
+// ── 3. nested try-expressions ───────────────────────────────
+turbo v8 = try { try { throw "inner" } catch (a) { throw "outer:" + a } } catch (b) { "won:" + b }
+pass = pass + check("nested try, outer catches rethrow", v8 == "won:outer:inner")
+
+turbo v9 = try { try { 7 } catch (a) { 0 } } catch (b) { -1 }
+pass = pass + check("nested try, inner clean", v9 == 7)
+
+// ── 4. finally law ─────────────────────────────────────────
+let fin_ran = "no"
+turbo v10 = try { throw "x" } catch (e) { 5 } finally { fin_ran = "yes" }
+pass = pass + check("finally runs on caught path", fin_ran == "yes")
+pass = pass + check("finally does not change the value", v10 == 5)
+
+try {
+    turbo v11 = try { 1 } catch (e) { 2 } finally { throw "fin" }
+} catch (outer) {
+    pass = pass + check("finally-throw replaces in-flight", outer == "fin")
+}
+
+blast fin_ret() {
+    try {
+        turbo v12 = try { throw "z" } catch (e) { 1 } finally { return "fr" }
+        return "body-after"
+    } catch (never) {
+        return "caught"
+    }
+    return "fell-through"
+}
+pass = pass + check("finally-return wins and unwinds function", fin_ret() == "fr")
+
+// ── 5. control flow bubbles from inside ─────────────────────
+blast ret_early() {
+    turbo v = try { throw "e" } catch (err) { return "early:" + err }
+    echo("unreachable")
+    return "nope"
+}
+pass = pass + check("return bubbles from catch", ret_early() == "early:e")
+
+blast ret_try() {
+    turbo v = try { return 42 } catch (e) { 7 }
+    echo("unreachable")
+    return 0
+}
+pass = pass + check("return bubbles from try", ret_try() == 42)
+
+blast break_out() {
+    turbo total = 0
+    cruise (i in [1,2,3,4,5]) {
+        turbo keep = try { if (i == 3) { throw "stop" } else { i } } catch (e) { break }
+        total = total + keep
+    }
+    return total
+}
+pass = pass + check("break bubbles from catch", break_out() == 3)
+
+// ── 6. composition ─────────────────────────────────────────
+blast passthru(v) { return v }
+pass = pass + check("try-expr as call argument", passthru(try { throw "arg" } catch (e) { "v:" + e }) == "v:arg")
+
+turbo v13 = (try { throw "l" } catch (e) { 10 }) + (try { 5 } catch (e) { 0 })
+pass = pass + check("try-expr in binary op", v13 == 15)
+
+turbo arr = [try { throw "a" } catch (e) { 1 }, 2, try { 3 } catch (e) { 0 }]
+pass = pass + check("try-expr in array literal", arr[0] + arr[1] + arr[2] == 6)
+
+if (try { throw "no" } catch (e) { true }) {
+    pass = pass + check("try-expr as if-condition", true)
+} else {
+    pass = pass + check("try-expr as if-condition", false)
+}
+
+// ── 7. statement form unchanged (regression) ───────────────
+let stmt_log = ""
+try {
+    throw "stmt"
+} catch (e) {
+    stmt_log = "caught " + e
+} finally {
+    stmt_log = stmt_log + " fin"
+}
+pass = pass + check("statement form still works", stmt_log == "caught stmt fin")
+
+turbo v14 = 0
+v14 = try { throw "x" } catch (e) { 77 }
+pass = pass + check("plain assignment target", v14 == 77)
+
+echo("")
+echo("try_expression: " + pass + "/" + expected + " checks passed")
+if (pass == expected) {
+    echo("ALL TRY-EXPRESSION TESTS PASSED")
+} else {
+    echo("TRY-EXPRESSION TESTS FAILED")
+}

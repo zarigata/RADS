@@ -219,8 +219,8 @@ Value stdlib_async_timeout(struct Interpreter* interp, int argc, Value* args) {
     uint64_t timeout_ms = (uint64_t)timeout_val.int_val;
 
     TimeoutContext* ctx = malloc(sizeof(TimeoutContext));
-    ctx->callback = func_val;
-    ctx->done_callback = done_callback;
+    ctx->callback = value_retain(func_val);
+    ctx->done_callback = value_retain(done_callback);
     ctx->interp = interp;
     ctx->completed = false;
 

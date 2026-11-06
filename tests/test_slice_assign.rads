@@ -1,0 +1,128 @@
+// ═══════════════════════════════════════════════════════════
+// Slice assignment a[lo:hi(:st)] = rhs (nightshift 20261103).
+// Every pin from real CPython 3.14 runs on this box. Step==1
+// splices (any length); other steps extended (exact length).
+// Was: stderr shrug + exit 0 with the array UNCHANGED.
+// No semicolons ON PURPOSE (ASI). Gate law: expected == checks.
+// ═══════════════════════════════════════════════════════════
+
+let pass = 0
+let expected = 25
+
+blast check(name, cond) {
+    if (cond) {
+        echo("PASS " + name)
+        return 1
+    }
+    echo("FAIL: " + name)
+    return 0
+}
+
+// ── splice (step 1): grow / shrink / delete / insert ────────
+turbo a1 = [1, 2, 3, 4, 5]
+a1[1:3] = [9, 9, 9, 9]
+pass = pass + check("grow [1,9,9,9,9,4,5]", str(a1) == "[1, 9, 9, 9, 9, 4, 5]")
+turbo a2 = [1, 2, 3, 4, 5]
+a2[1:4] = [8]
+pass = pass + check("shrink [1,8,5]", str(a2) == "[1, 8, 5]")
+turbo a3 = [1, 2, 3, 4, 5]
+a3[1:3] = []
+pass = pass + check("delete [1,4,5]", str(a3) == "[1, 4, 5]")
+turbo a4 = [1, 2, 3]
+a4[:] = [7, 8]
+pass = pass + check("full replace [7,8]", str(a4) == "[7, 8]")
+turbo a5 = [1, 2, 3, 4, 5]
+a5[3:1] = [9]
+pass = pass + check("insert at 3", str(a5) == "[1, 2, 3, 9, 4, 5]")
+turbo a6 = [1, 2, 3, 4, 5]
+a6[100:200] = [9]
+pass = pass + check("oob window appends", str(a6) == "[1, 2, 3, 4, 5, 9]")
+turbo a7 = [1, 2, 3, 4, 5]
+a7[-100:-2] = [9]
+pass = pass + check("neg clamp [9,4,5]", str(a7) == "[9, 4, 5]")
+turbo a8 = [1, 2, 3]
+a8[0:2:1] = [9, 9, 9]
+pass = pass + check("explicit step 1 splices", str(a8) == "[9, 9, 9, 3]")
+turbo a9 = []
+a9[:] = [1]
+pass = pass + check("empty array grows", str(a9) == "[1]")
+
+// ── extended (step != 1): exact length, visit order ─────────
+turbo x1 = [1, 2, 3, 4, 5]
+x1[::-1] = [1, 2, 3, 4, 5]
+pass = pass + check("neg step reverses", str(x1) == "[5, 4, 3, 2, 1]")
+turbo x2 = [1, 2, 3, 4, 5, 6]
+x2[::2] = [0, 0, 0]
+pass = pass + check("every other", str(x2) == "[0, 2, 0, 4, 0, 6]")
+turbo x3 = [1, 2, 3, 4, 5, 6]
+x3[1:5:2] = ["x", "y"]
+pass = pass + check("skip write", str(x3) == "[1, x, 3, y, 5, 6]")
+
+// ── RHS shapes: string / iterator / self ────────────────────
+turbo r1 = [1, 2, 3]
+r1[0:2] = "hi"
+pass = pass + check("string rhs splices chars", str(r1) == "[h, i, 3]")
+turbo r2 = [1, 2, 3, 4, 5]
+r2[0:2] = r2
+pass = pass + check("self rhs snapshots first", str(r2) == "[1, 2, 3, 4, 5, 3, 4, 5]")
+turbo r3 = [0, 0, 0, 0]
+r3[0:4] = itertools.islice(itertools.count(10), 4)
+pass = pass + check("iterator rhs splice", str(r3) == "[10, 11, 12, 13]")
+blast times7(v) { return v * 7 }
+turbo r4 = [1, 2, 3, 4, 5, 6]
+r4[::2] = itertools.map(times7, itertools.iter([7, 8, 9]))
+pass = pass + check("iterator rhs extended", str(r4) == "[49, 2, 56, 4, 63, 6]")
+
+// ── write-through: nested / member / alias shares ───────────
+turbo m = [[1, 2, 3], [4, 5, 6]]
+m[1][0:2] = [90, 91]
+pass = pass + check("nested base persists", str(m) == "[[1, 2, 3], [90, 91, 6]]")
+turbo sobj = {arr: [1, 2, 3]}
+sobj.arr[0:1] = [50]
+pass = pass + check("member base persists", str(sobj.arr) == "[50, 2, 3]")
+turbo shared = [1, 2, 3]
+turbo alias = shared
+shared[:0] = [0]
+pass = pass + check("alias observes insert", str(alias) == "[0, 1, 2, 3]")
+turbo big = [1, 2, 3]
+big[3:3] = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+pass = pass + check("grow past capacity", str(big) == "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]")
+turbo u8 = [1, 2, 3]
+u8[0:0] = ["ñ", "☺"]
+pass = pass + check("utf8 rhs splice", str(u8) == "[ñ, ☺, 1, 2, 3]")
+
+// ── honest failures (CPython-worded, catchable) ─────────────
+try {
+    turbo e1 = [1, 2, 3, 4, 5, 6]
+    e1[::2] = [0, 0]
+    pass = pass + check("size mismatch throws", false)
+} catch (e) {
+    pass = pass + check("ValueError size mismatch", e == "attempt to assign sequence of size 2 to extended slice of size 3")
+}
+try {
+    turbo e2 = [1, 2]
+    e2[0:2] = 5
+    pass = pass + check("non-iterable rhs throws", false)
+} catch (e) {
+    pass = pass + check("TypeError non-iterable rhs", e == "must assign iterable to extended slice")
+}
+try {
+    turbo e3 = [1]
+    e3[0:1:0] = [2]
+    pass = pass + check("zero step throws", false)
+} catch (e) {
+    pass = pass + check("ValueError zero step", e == "slice step cannot be zero")
+}
+try {
+    turbo e4 = "abc"
+    e4[0:1] = "x"
+    pass = pass + check("string target throws", false)
+} catch (e) {
+    pass = pass + check("TypeError string target", e == "'string' object does not support item assignment")
+}
+
+if (pass == expected) {
+    echo("ALL " + expected + " SLICE-ASSIGN ASSERTIONS PASSED")
+} else {
+    echo("FAIL: " + pass + "/" + expected + " slice-assign assertions passed")
+}

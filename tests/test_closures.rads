@@ -1,0 +1,224 @@
+// ═══════════════════════════════════════════════════════════
+// Lexical scope chain + closures (nightshift 20261104).
+// Pins: real CPython 3.14 + Node v20 semantics run on this box.
+// Law: reads walk the chain; plain assignment writes the frame that
+// HAS the name (JS law — accumulators); turbo/let/params are LOCAL.
+// No semicolons ON PURPOSE (ASI). Gate law: expected == checks.
+// ═══════════════════════════════════════════════════════════
+
+let pass = 0
+let expected = 24
+
+blast check(name, cond) {
+    if (cond) {
+        echo("PASS " + name)
+        return 1
+    }
+    echo("FAIL: " + name)
+    return 0
+}
+
+// ── 1. locals stay local (READ law: unbound reads null) ─────
+blast scope_a() {
+    turbo x = 1
+    return x
+}
+scope_a()
+turbo leak_read = "dirty"
+blast scope_b() {
+    turbo peek = x       // x was scope_a's local — must NOT resolve
+    if (peek == null) {
+        leak_read = "clean"
+    } else {
+        leak_read = peek
+    }
+}
+scope_b()
+pass = pass + check("locals do not leak across functions", leak_read == "clean")
+
+// ── 2. reads walk the chain (CPython: outer() -> 1) ─────────
+blast read_outer() {
+    turbo x = 1
+    blast read_inner() { return x }
+    return read_inner()
+}
+pass = pass + check("closure reads enclosing frame", read_outer() == 1)
+
+// ── 3. per-value capture (CPython/Node: 15, 17) ─────────────
+blast make_adder(n) {
+    return fn(a) { return a + n }
+}
+turbo add5 = make_adder(5)
+turbo add7 = make_adder(7)
+pass = pass + check("make_adder(5)(10) == 15", add5(10) == 15)
+pass = pass + check("make_adder(7)(10) == 17", add7(10) == 17)
+
+// ── 4. independent counters (Node: 1, 2 -> next 3 and 1) ───
+blast make_counter() {
+    turbo count = 0
+    return fn() { count = count + 1; return count }
+}
+turbo c1 = make_counter()
+turbo c2 = make_counter()
+turbo u1 = c1()
+turbo u2 = c1()
+pass = pass + check("counters independent (3 vs 1)", c1() == 3 && c2() == 1)
+
+// ── 5. assignment walks the chain (JS law) ──────────────────
+blast write_outer() {
+    turbo x = 1
+    blast write_inner() { x = 99 }
+    write_inner()
+    return x
+}
+pass = pass + check("inner assignment reaches enclosing frame (JS)", write_outer() == 99)
+
+// ── 6. params local: caller's var NOT clobbered ─────────────
+turbo pv = 100
+blast param_shadow(pv) { return pv }
+param_shadow(7)
+pass = pass + check("param binding does not clobber caller", pv == 100)
+
+// ── 7. recursion through own name ───────────────────────────
+blast fib(n) {
+    if (n < 2) { return n }
+    return fib(n - 1) + fib(n - 2)
+}
+pass = pass + check("fib(10) == 55", fib(10) == 55)
+
+// ── 8. nested helpers call each other (test_debugger law) ──
+blast sibling_host() {
+    blast helper_one() { return 11 }
+    blast helper_two() { return helper_one() + 22 }
+    return helper_two()
+}
+pass = pass + check("sibling nested blasts resolve", sibling_host() == 33)
+
+// ── 9. loop accumulator in frame ────────────────────────────
+blast summer(items) {
+    turbo total = 0
+    cruise (x in items) { total = total + x }
+    return total
+}
+pass = pass + check("loop accumulator in frame", summer([1, 2, 3]) == 6)
+
+// ── 10. shadowing: inner turbo shadows outer ────────────────
+blast shadow_host() {
+    turbo v = 1
+    blast shadow_inner() {
+        turbo v = 2
+        return v
+    }
+    turbo got = shadow_inner()
+    return v * 10 + got
+}
+pass = pass + check("inner turbo shadows, outer intact", shadow_host() == 12)
+
+// ── 11. cruise iterator: frame-local, persists after loop ──
+// RADS 1..3 = {1,2} (exclusive end) so the last bound value is 2.
+blast loop_shadow() {
+    cruise (i in 1..3) { }
+    return i
+}
+pass = pass + check("cruise var persists after loop", loop_shadow() == 2)
+
+blast loop_shadow2() {
+    turbo i = 100
+    cruise (i in 1..3) { }      // rebinds the LOCAL i (env_declare)
+    return i
+}
+pass = pass + check("cruise rebind of turbo local", loop_shadow2() == 2)
+
+// ── 12. closure over param survives frame exit ──────────────
+blast make_multiplier(k) {
+    return fn(v) { return v * k }
+}
+turbo triple = make_multiplier(3)
+pass = pass + check("closure over param survives caller exit", triple(14) == 42)
+
+// ── 13. deep chain: three frames ────────────────────────────
+blast level1() {
+    turbo a = 1
+    blast level2() {
+        turbo b = 2
+        blast level3() { return a + b }
+        return level3()
+    }
+    return level2()
+}
+pass = pass + check("three-frame chain reads", level1() == 3)
+
+// ── 14. callback accumulator via walk ───────────────────────
+turbo seen_total = 0
+blast collect(x) { seen_total = seen_total + x }
+turbo src = [1, 2, 3]
+cruise (v in src) { collect(v) }
+pass = pass + check("callback writes outer accumulator", seen_total == 6)
+
+// ── 15. catch var binds fresh; try-without-throw runs clean ─
+turbo caught = "none"
+try {
+    turbo arr = [1]
+    turbo bad = arr[99]      // real IndexError-shape throw
+} catch (e) {
+    caught = e
+}
+pass = pass + check("catch var bound in frame", caught == "list index 99 out of range")
+
+turbo caught2 = "none"
+try {
+    caught2 = "try-ran"
+} catch (e) {
+    caught2 = "caught:" + e
+}
+pass = pass + check("try without throw runs clean", caught2 == "try-ran")
+
+// ── 16. globals readable from any frame ─────────────────────
+turbo g1 = 5
+blast read_global() { return g1 }
+pass = pass + check("functions read global bindings", read_global() == 5)
+
+// ── 17. destructure binds locally ───────────────────────────
+blast destructure_host() {
+    turbo pair = [7, 8]
+    turbo [one, two] = pair
+    return one * 10 + two
+}
+pass = pass + check("array destructure local", destructure_host() == 78)
+
+// ── 18. function value in array keeps its scope (fns[0](x)) ─
+blast make_fns() {
+    turbo fns = []
+    turbo base = 10
+    fns.push(fn(q) { return q + base })
+    return fns
+}
+turbo fns_out = make_fns()
+pass = pass + check("closure in array keeps captured scope", fns_out[0](5) == 15)
+
+// ── 19. nested call return values flow out ──────────────────
+turbo deep_msg = "none"
+blast deep_thrower() {
+    blast deep_inner() { return "deep!" }
+    return deep_inner()
+}
+deep_msg = deep_thrower()
+pass = pass + check("nested call return values flow", deep_msg == "deep!")
+
+// ── 20. frames see globals; dead locals read null ───────────
+turbo global_probe = "visible"
+blast read_global2() { return global_probe }
+pass = pass + check("frames read globals", read_global2() == "visible")
+
+blast local_die() { turbo dying = 1; return dying }
+local_die()
+turbo corpse = dying        // unbound -> null (locals never leak)
+pass = pass + check("dead frame locals read as null", corpse == null)
+
+echo("")
+echo("closures suite: " + pass + "/" + expected)
+if (pass == expected) {
+    echo("ALL CLOSURE TESTS PASSED")
+} else {
+    echo("FAIL: closure suite incomplete " + pass + "/" + expected)
+}
