@@ -57,7 +57,7 @@ Branch `nightshift/20261013-stdlib-float-parity` carries the completed port to t
    new suite 22/22 0 findings 0 leaks; try_catch/closures/promise/slices/slice_assign/
    structs/v0.0.12/js_syntax/object_literals/template_literals/itertools_lazy/memory_truth/
    uaf_regression all clean; REPL session under ASan clean. Not verified: CI on the PR.
-   PR #38: (URL pending — created below)
+   PR #38: https://github.com/zarigata/RADS/pull/38
 
  - **2026-11-05**: (1) sync: fetch clean, PRs #19-#36 all still open, none merged; cut
    nightshift/20261105-repl-uaf from closures head e6f511e (freshest green, PR #36). (2) fix(core):
@@ -389,6 +389,7 @@ Branch `nightshift/20261013-stdlib-float-parity` carries the completed port to t
 
 ## Open PR Review
 | PR | Title | Status | Verdict |
+| 38 | expression-form try/catch/finally (backlog 12 leftover) | OPEN — head Dagoth-Ur-69:nightshift/20261106-try-expression | awaiting master review; try was statement-only, Ruby begin/rescue law now |
 | 37 | REPL session lifetime: cross-line call UAF + struct/enum REPL entry (backlog 12) | OPEN — head Dagoth-Ur-69:nightshift/20261105-repl-uaf | awaiting master review; REPL crashed rc 139 calling a fn from a prior line |
 | 36 | lexical scope chain + real closures (backlog 3a) | OPEN — head Dagoth-Ur-69:nightshift/20261104-local-scope | awaiting master review; locals leaked globally, no closures existed |
 | 35 | Python-parity slice assignment (splice + extended) | OPEN — head Dagoth-Ur-69:nightshift/20261103-slice-assign | awaiting master review; closes last night's loud stopgap |
