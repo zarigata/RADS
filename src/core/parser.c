@@ -389,6 +389,44 @@ static ASTNode* parse_template_literal(Parser* parser) {
 }
 
 // Parse primary expressions
+
+/* parse_try_tail — shared body of BOTH try forms (nightshift 20261106):
+ * `{ block } [catch (ident) { block }] [finally { block }]` building one
+ * AST_TRY_STMT node. The statement form (parse_statement) and the new
+ * EXPRESSION form (parse_primary) are the same shape; the interpreter
+ * decides value-vs-effect by evaluation context. Catch and finally stay
+ * optional in both forms — a catch-less expression-try propagates its
+ * throw after running finally, exactly like the statement form. */
+static ASTNode* parse_try_tail(Parser* parser, int line, int column) {
+    consume(parser, TOKEN_LEFT_BRACE, "Expected '{' after 'try'");
+    ASTNode* try_block = parse_block(parser);
+
+    char* catch_var = NULL;
+    ASTNode* catch_block = NULL;
+    if (match(parser, TOKEN_CATCH)) {
+        consume(parser, TOKEN_LEFT_PAREN, "Expected '(' after 'catch'");
+        consume(parser, TOKEN_IDENTIFIER, "Expected variable name in catch");
+        catch_var = malloc(parser->previous.length + 1);
+        memcpy(catch_var, parser->previous.start, parser->previous.length);
+        catch_var[parser->previous.length] = '\0';
+        consume(parser, TOKEN_RIGHT_PAREN, "Expected ')' after catch variable");
+        consume(parser, TOKEN_LEFT_BRACE, "Expected '{' before catch body");
+        catch_block = parse_block(parser);
+    }
+
+    ASTNode* finally_block = NULL;
+    if (match(parser, TOKEN_FINALLY)) {
+        consume(parser, TOKEN_LEFT_BRACE, "Expected '{' after 'finally'");
+        finally_block = parse_block(parser);
+    }
+
+    /* ast_create_try strdups catch_var — free the parser-local copy
+     * (nightshift 20261027 leak fix; LSan caught it via test_promise). */
+    ASTNode* try_node = ast_create_try(try_block, catch_var, catch_block, finally_block, line, column);
+    free(catch_var);
+    return try_node;
+}
+
 static ASTNode* parse_primary(Parser* parser) {
     if (match(parser, TOKEN_INTEGER)) {
         char* end;
@@ -434,6 +472,17 @@ static ASTNode* parse_primary(Parser* parser) {
      * untouched (see is_fn_lambda). */
     if (is_fn_lambda(parser)) {
         return parse_fn_lambda(parser);
+    }
+
+    /* Expression-form try (nightshift 20261106, Ruby begin/rescue law):
+     * `try { ... } catch (e) { ... }` at expression position evaluates to
+     * the final expression statement of whichever block completes. Safe
+     * disambiguation: `try` is a keyword token, so it can never be an
+     * identifier, and statement-position `try` is claimed by
+     * parse_statement before any expression parse begins — no existing
+     * program changes meaning. */
+    if (match(parser, TOKEN_TRY)) {
+        return parse_try_tail(parser, parser->previous.line, parser->previous.column);
     }
 
     if (match(parser, TOKEN_IDENTIFIER)) {
@@ -1499,36 +1548,8 @@ ASTNode* parse_statement(Parser* parser) {
     }
     
     if (match(parser, TOKEN_TRY)) {
-        int line = parser->previous.line;
-        int column = parser->previous.column;
-        
-        consume(parser, TOKEN_LEFT_BRACE, "Expected '{' after 'try'");
-        ASTNode* try_block = parse_block(parser);
-        
-        char* catch_var = NULL;
-        ASTNode* catch_block = NULL;
-        if (match(parser, TOKEN_CATCH)) {
-            consume(parser, TOKEN_LEFT_PAREN, "Expected '(' after 'catch'");
-            consume(parser, TOKEN_IDENTIFIER, "Expected variable name in catch");
-            catch_var = malloc(parser->previous.length + 1);
-            memcpy(catch_var, parser->previous.start, parser->previous.length);
-            catch_var[parser->previous.length] = '\0';
-            consume(parser, TOKEN_RIGHT_PAREN, "Expected ')' after catch variable");
-            consume(parser, TOKEN_LEFT_BRACE, "Expected '{' before catch body");
-            catch_block = parse_block(parser);
-        }
-        
-        ASTNode* finally_block = NULL;
-        if (match(parser, TOKEN_FINALLY)) {
-            consume(parser, TOKEN_LEFT_BRACE, "Expected '{' after 'finally'");
-            finally_block = parse_block(parser);
-        }
-        
-        /* ast_create_try strdups catch_var — free the parser-local copy
-         * (nightshift 20261027 leak fix; LSan caught it via test_promise). */
-        ASTNode* try_node = ast_create_try(try_block, catch_var, catch_block, finally_block, line, column);
-        free(catch_var);
-        return try_node;
+        /* Statement form — same tail as the expression form (20261106). */
+        return parse_try_tail(parser, parser->previous.line, parser->previous.column);
     }
     
     if (match(parser, TOKEN_THROW)) {

@@ -349,6 +349,7 @@ ASTNode* ast_create_cruise(const char* iterator, ASTNode* iterable, ASTNode* bod
 ASTNode* ast_create_break(int line, int column);
 ASTNode* ast_create_continue(int line, int column);
 ASTNode* ast_create_try(ASTNode* try_block, const char* catch_var, ASTNode* catch_block, ASTNode* finally_block, int line, int column);
+bool ast_is_expression_node(const ASTNode* node); /* expression-position test (20261106) */
 ASTNode* ast_create_throw(ASTNode* expression, int line, int column);
 ASTNode* ast_create_program(ASTList* declarations);
 ASTNode* ast_create_spread(ASTNode* expression, int line, int column);

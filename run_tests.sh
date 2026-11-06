@@ -45,6 +45,7 @@ test_files=(
     "test_slices.rads"
     "test_slice_assign.rads"
     "test_closures.rads"
+    "test_try_expression.rads"
     "@repl_session"
 )
 

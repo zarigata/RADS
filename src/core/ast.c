@@ -226,6 +226,41 @@ ASTNode* ast_create_import(const char* filename, int line, int column) {
     return node;
 }
 
+/* ast_is_expression_node — can this node appear as an expression
+ * statement's payload (nightshift 20261106)? Used by run_block_for_value
+ * to find a try/catch block's completion value: the LAST statement, when
+ * it is an expression, is evaluated for its value (Ruby begin/rescue
+ * law). AST_TRY_STMT is deliberately included — the expression form of
+ * try is itself an expression, so expression-try blocks may nest. */
+bool ast_is_expression_node(const ASTNode* node) {
+    if (!node) return false;
+    switch (node->type) {
+        case AST_INTEGER_LITERAL:
+        case AST_FLOAT_LITERAL:
+        case AST_STRING_LITERAL:
+        case AST_CHAR_LITERAL:
+        case AST_BOOL_LITERAL:
+        case AST_NULL_LITERAL:
+        case AST_IDENTIFIER:
+        case AST_BINARY_OP:
+        case AST_UNARY_OP:
+        case AST_CALL_EXPR:
+        case AST_ASSIGN_EXPR:
+        case AST_ARRAY_LITERAL:
+        case AST_INDEX_EXPR:
+        case AST_MEMBER_EXPR:
+        case AST_TYPEOF_EXPR:
+        case AST_STRUCT_LITERAL:
+        case AST_SPREAD_EXPR:
+        case AST_OPTIONAL_CHAIN:
+        case AST_NULLISH_COALESCING:
+        case AST_TRY_STMT:      /* expression-form try (20261106) */
+            return true;
+        default:
+            return false;
+    }
+}
+
 ASTNode* ast_create_block(ASTList* statements, int line, int column) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = AST_BLOCK;

@@ -15,6 +15,7 @@ static Value eval_expression(ASTNode* node);
  * definition below (line ~734) — keeps -Wimplicit-decl off our back */
 static const char* format_float_shortest(double v, char* buf, size_t buflen);
 static ExecResult exec_statement(ASTNode* node);
+static Value eval_try_expression(ASTNode* node); /* expression-form try (20261106) */
 static void exec_function(ASTNode* node);
 static bool is_truthy(Value v);
 
@@ -1937,6 +1938,12 @@ static Value eval_expression(ASTNode* node) {
             return eval_expression(node->nullish_coalescing.right);
         }
 
+        case AST_TRY_STMT:
+            /* Expression-form try (nightshift 20261106): the same node
+             * the statement path executes, evaluated for its completion
+             * value. See eval_try_expression for the law. */
+            return eval_try_expression(node);
+
         default:
             return make_null();
     }
@@ -1956,6 +1963,165 @@ static Value current_return_value;
 static bool has_return_value = false;
 static Value thrown_value;
 static bool has_thrown_value = false;
+
+/* Pending control-flow channel (nightshift 20261106): return/break/
+ * continue raised INSIDE an expression-form try block must unwind like a
+ * throw — but eval_expression returns Value, not ExecResult, so the result
+ * parks here and the statement barrier (exec_statement entry) replays it.
+ * Same lifecycle law as has_thrown_value: set by eval, drained at the
+ * statement boundary, cleared when a frame (function call / program top)
+ * consumes it. */
+static ExecResult pending_control_flow = EXEC_OK;
+static bool has_pending_control_flow = false;
+
+/* is_expression_result — non-OK ExecResults an expression-try block must
+ * bubble (throw travels separately via thrown_value). */
+static bool is_expression_result(ExecResult r) {
+    return r == EXEC_RETURN || r == EXEC_BREAK || r == EXEC_CONTINUE;
+}
+
+/* run_stmt_for_value / run_if_tail / run_block_for_value — execute a
+ * try/catch block for its COMPLETION VALUE (Ruby law, nightshift
+ * 20261106). Value law, most-specific first:
+ *   - expression statement  -> its value (evaluated, not exec'd — same
+ *     effects, no double evaluation; statement parse returns the raw
+ *     expression node, so this is a type test, no side channel);
+ *   - if/elif/else tail     -> the taken branch's value (Ruby: if is an
+ *     an expression; without this, `try { if (c) throw "x" else v }`
+ *     silently completed null — the silent-failure class this codebase
+ *     hunts for sport). Branches are blocks, elif chains nest as
+ *     if_stmt.else_branch, single-statement branches are expressions;
+ *   - nested block tail     -> the inner block's value (recursion);
+ *   - anything else         -> runs for effect, completes null.
+ * Throw and control flow (return/break/continue) stop the walk through
+ * the existing pending channels; callers read the flags. */
+static Value run_block_for_value(ASTNode* block);
+static Value run_stmt_for_value(ASTNode* stmt);
+
+/* if-tail: value of the taken branch (elif chains recurse). */
+static Value run_if_tail(ASTNode* node) {
+    Value cond = eval_expression(node->if_stmt.condition);
+    bool truthy = is_truthy(cond);
+    value_free(&cond);
+    if (truthy) {
+        return run_stmt_for_value(node->if_stmt.then_branch);
+    }
+    if (node->if_stmt.else_branch) {
+        return run_stmt_for_value(node->if_stmt.else_branch);
+    }
+    return make_null();   /* cond false, no else: Ruby nil */
+}
+
+static Value run_stmt_for_value(ASTNode* stmt) {
+    if (!stmt) return make_null();
+    if (stmt->type == AST_IF_STMT) return run_if_tail(stmt);
+    if (stmt->type == AST_BLOCK)   return run_block_for_value(stmt);
+    if (ast_is_expression_node(stmt)) return eval_expression(stmt);
+    ExecResult r = exec_statement(stmt);
+    if (is_expression_result(r)) {
+        pending_control_flow = r;
+        has_pending_control_flow = true;
+    }
+    return make_null();   /* effect-only tail; thrown flag is checked by caller */
+}
+
+static Value run_block_for_value(ASTNode* block) {
+    if (!block || block->type != AST_BLOCK) {
+        return make_null();
+    }
+    ASTList* stmts = block->block.statements;
+    Value result = make_null();
+    for (size_t i = 0; i < stmts->count; i++) {
+        bool last = (i + 1 == stmts->count);
+        ASTNode* stmt = stmts->nodes[i];
+        if (last) {
+            value_free(&result);
+            result = run_stmt_for_value(stmt);
+        } else {
+            ExecResult r = exec_statement(stmt);
+            if (is_expression_result(r)) {
+                pending_control_flow = r;
+                has_pending_control_flow = true;
+                return result;
+            }
+            if (has_thrown_value) {
+                return result;   /* caller checks the pending flag */
+            }
+        }
+    }
+    return result;
+}
+
+/* eval_try_expression — the try statement's AST at expression position
+ * (nightshift 20261106). Law (Ruby begin/rescue, pinned against real
+ * semantics): the value is the completing block's final expression
+ * statement; catch binds its variable fresh in the frame; finally runs
+ * on every path, and a finally-throw REPLACES any in-flight exception
+ * (TS law, same as the statement form). Control flow (return/break/
+ * continue) bubbles to the statement barrier instead of being swallowed.
+ */
+static Value eval_try_expression(ASTNode* node) {
+    Value result = run_block_for_value(node->try_stmt.try_block);
+
+    if (has_thrown_value && node->try_stmt.catch_block) {
+        if (node->try_stmt.catch_var) {
+            env_declare(node->try_stmt.catch_var, thrown_value);  /* fresh per catch */
+        }
+        value_free(&thrown_value);
+        has_thrown_value = false;
+        value_free(&result);
+        result = run_block_for_value(node->try_stmt.catch_block);
+    }
+
+    if (node->try_stmt.finally_block) {
+        /* Park an in-flight throw (and any pending control flow) so the
+         * finally body actually runs — mirrors the statement form. */
+        bool parked_throw = has_thrown_value;
+        Value parked_value = thrown_value;
+        bool parked_ctrl = has_pending_control_flow;
+        ExecResult parked_ctrl_val = pending_control_flow;
+        if (parked_throw) has_thrown_value = false;
+        if (parked_ctrl) has_pending_control_flow = false;
+
+        ExecResult fr = exec_statement(node->try_stmt.finally_block);
+
+        if (fr != EXEC_OK && is_expression_result(fr)) {
+            /* Control flow from finally wins outright. */
+            pending_control_flow = fr;
+            has_pending_control_flow = true;
+            value_free(&parked_value);
+            value_free(&result);
+            return make_null();
+        }
+        if (parked_throw) {
+            if (has_thrown_value) {
+                /* TS semantics: a throw from finally REPLACES the
+                 * in-flight exception — the newer one wins. */
+                value_free(&parked_value);
+            } else {
+                thrown_value = parked_value;
+                has_thrown_value = true;
+            }
+        }
+        if (parked_ctrl && !has_pending_control_flow) {
+            pending_control_flow = parked_ctrl_val;
+            has_pending_control_flow = true;
+        }
+        /* A finally RETURN overrides the block value (fr==EXEC_RETURN
+         * with has_return_value already set by the return handler —
+         * the caller's function frame consumes it; we just don't fight
+         * it). Value result stays whatever completed before finally. */
+    }
+
+    /* In-flight throw (never caught, or the CATCH block rethrew — Ruby
+     * law: the new exception wins) keeps propagating: null value out,
+     * pending flag stays for the statement barrier. */
+    if (has_thrown_value) {
+        value_free(&result);
+        return make_null();
+    }
+    return result;
+}
 
 static bool is_truthy(Value v) {
     switch (v.type) {
@@ -1985,6 +2151,14 @@ static ExecResult exec_statement(ASTNode* node) {
      * by catching it, which keeps `boom(); try {...} catch` coherent. */
     if (has_thrown_value && node->type != AST_TRY_STMT) {
         return EXEC_THROW;
+    }
+    /* Control-flow bubble (nightshift 20261106): a return/break/continue
+     * born inside an expression-try unwinds here, exactly like the throw
+     * barrier above. Blocks/loops translate it as it passes through. */
+    if (has_pending_control_flow && node->type != AST_TRY_STMT) {
+        ExecResult r = pending_control_flow;
+        has_pending_control_flow = false;
+        return r;
     }
 
     switch (node->type) {
@@ -2065,6 +2239,15 @@ static ExecResult exec_statement(ASTNode* node) {
                 if (has_thrown_value) {
                     return EXEC_THROW;
                 }
+                /* Control-flow bubble (20261106): same law for return/
+                 * break/continue born inside an expression-form try —
+                 * translate at this statement boundary so later statements
+                 * in the block never run. */
+                if (has_pending_control_flow) {
+                    ExecResult cr = pending_control_flow;
+                    has_pending_control_flow = false;
+                    return cr;
+                }
             }
             return EXEC_OK;
 
@@ -2102,6 +2285,13 @@ static ExecResult exec_statement(ASTNode* node) {
                 if (r == EXEC_THROW) {
                     return EXEC_THROW;
                 }
+                /* Control-flow bubble (20261106): single-statement loop
+                 * bodies have no block to translate the pending result. */
+                if (has_pending_control_flow) {
+                    ExecResult cr = pending_control_flow;
+                    has_pending_control_flow = false;
+                    return cr;
+                }
             }
             return EXEC_OK;
         }
@@ -2135,6 +2325,12 @@ static ExecResult exec_statement(ASTNode* node) {
                     if (r == EXEC_THROW) {
                         return EXEC_THROW;
                     }
+                    /* Control-flow bubble (20261106): see loop case. */
+                    if (has_pending_control_flow) {
+                        ExecResult cr = pending_control_flow;
+                        has_pending_control_flow = false;
+                        return cr;
+                    }
                 }
             }
             // General path (nightshift 20261025): evaluate the iterable once and
@@ -2151,6 +2347,7 @@ static ExecResult exec_statement(ASTNode* node) {
                         r = exec_statement(node->cruise_stmt.body);
                         if (r == EXEC_BREAK) { r = EXEC_OK; break; }
                         if (r == EXEC_RETURN || r == EXEC_THROW) break;
+                        if (has_pending_control_flow) break; /* ctrl bubble (20261106) — drained below */
                     }
                 } else if (iterable.type == VAL_ITERATOR && iterable.iterator_val) {
                     Value item;
@@ -2160,9 +2357,14 @@ static ExecResult exec_statement(ASTNode* node) {
                         value_free(&item);
                         if (r == EXEC_BREAK) { r = EXEC_OK; break; }
                         if (r == EXEC_RETURN || r == EXEC_THROW) break;
+                        if (has_pending_control_flow) break; /* ctrl bubble (20261106) — drained below */
                      }
                 }
                 value_free(&iterable);
+                if (has_pending_control_flow) {
+                    r = pending_control_flow;          /* ctrl bubble (20261106) */
+                    has_pending_control_flow = false;
+                }
                 return r;
             }
             return EXEC_OK;
@@ -2350,6 +2552,14 @@ Value interpreter_execute_callback(Value callback, int argc, Value* args) {
     if (callback.type != VAL_FUNCTION) {
         return make_null();
     }
+    /* Control-flow bubble (nightshift 20261106): a return/break/continue
+     * born inside an expression-form try ABORTS any call that would run
+     * after it in the same expression — Ruby law, the return unwinds now.
+     * Without this guard the call would clobber current_return_value at
+     * the reset below and lose the pending return's value. */
+    if (has_pending_control_flow) {
+        return make_null();
+    }
     // Reset return tracking for this invocation
     if (has_return_value) {
         value_free(&current_return_value);
@@ -2393,6 +2603,13 @@ Value interpreter_execute_callback(Value callback, int argc, Value* args) {
     ExecResult r = exec_statement(func->function_decl.body);
     current_scope = saved_scope;
     scope_release(frame);
+    /* Ctrl bubble (20261106): a return in the body's LAST statement via
+     * an expression-try leaves the channel pending — translate it here so
+     * the value below is honored. */
+    if (r == EXEC_OK && has_pending_control_flow) {
+        r = pending_control_flow;
+        has_pending_control_flow = false;
+    }
     if (r == EXEC_RETURN && has_return_value) {
         Value rv = value_clone(current_return_value);
         value_free(&current_return_value);
@@ -2563,6 +2780,10 @@ int interpret_repl_statement(ASTNode* stmt) {
     if (has_thrown_value) {
         report_uncaught_throw();
     }
+    /* Ctrl bubble (20261106): top-level return/break/continue inside an
+     * expression-try is meaningless outside a function — clear it so the
+     * next line starts clean (Python REPL treats stray return as error). */
+    has_pending_control_flow = false;
     return 0;
 }
 
