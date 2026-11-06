@@ -16,6 +16,49 @@ Branch `nightshift/20261013-stdlib-float-parity` carries the completed port to t
 **clean-build green** (trio 11+8+17 PASS, runner 9/9, exit 0). Merge that branch to unblock main.
 
 ## Night Log
+ - **2026-11-06**: (1) sync: fetch clean, PRs #19-#37 all still open, none merged; cut
+   nightshift/20261106-try-expression from repl-uaf head 382e1e5 (freshest green, PR #37). (2)
+   feat(core): **BACKLOG 12 LEFTOVER CLOSED — expression-form try/catch/finally**.
+   `turbo v = try { risky() } catch (e) { fallback }` was a parse error (try was statement-only,
+   flagged 2026-11-05). Neither Python nor JS has an expression try — Ruby begin/rescue law
+   shipped, RADS beats both on this construct. Parser: parse_try_tail shared by BOTH forms;
+   parse_primary claims TOKEN_TRY (safe: keyword token, statement-position try claimed before
+   expression parse begins). Interpreter: eval_try_expression — value = completing block's
+   FINAL EXPRESSION STATEMENT (run_block_for_value); tails compose beyond bare expressions:
+   if/elif/else tails (Ruby if-expression law — probe-verified the wart first: try { if (c)
+   throw "x" else v } silently completed null, the exact silent-failure class this repo hunts),
+   nested blocks, nested expression-trys. Catch binds fresh per catch (pinned 20261104 law),
+   catch-rethrow propagates (outer catches b:a), finally runs on every path, finally-throw
+   REPLACES in-flight (TS law, pinned), finally-return wins and unwinds the function, catchless
+   propagates after finally (uncaught -> exit 1, file AND script mode). (3) CONTROL-FLOW BUBBLE
+   (the hard part): return/break/continue born inside an expression-try park in a pending
+   channel (pending_control_flow); the statement barrier replays it; block/loop/cruise bodies
+   translate it at their boundaries; interpreter_execute_callback consumes it (return in the
+   body's last statement) or skips (pending from an aborted sibling eval — protects
+   current_return_value from the reset clobber); REPL clears per line. try { return 42 }
+   catch { 7 } returns 42; cruise break-from-catch totals pin 3. (4) Probes en route, all
+   green: try-expr as call arg / in binary ops / array literals / if-conditions / template
+   holes (backtick law — my first probe wrongly used double quotes, templates are backtick-
+   only) / struct-literal fields / int+array throws (e+1, e[1]) / statement-try nested inside
+   expression-try / cross-line REPL session incl. return-bubble (f() -> 7). (5) Corpses
+   tonight, ALL caught by gates before commit: wrote is_expression_node into the interpreter
+   patch but never defined it (build error — forged into ast.c properly); cruise-array anchor
+   mismatched (ExecResult r vs reused r — assertion failed atomic, fixed, re-ran); heredoc-
+   to-python STILL blocked in the cron sandbox (cat-to-file works fine); suite bug 1: echo is
+   a STATEMENT keyword, not a callable — echo(try{...}) at initializer position is a parse
+   error (fixed the pin to passthru(v)); suite bug 2: pin 4 rethrow was uncaught-at-top-level
+   by design (wrapped in an outer try); suite bug 3: expected=24 but the finally-return pin
+   legitimately unwound past 2 unreachable checks (restructured into fin_ret() where every
+   check is reachable; expected=22). (6) Verified: make clean && make -j4 exit 0 (0 new
+   warnings from touched files; parser.c:1029 update_block + stdlib unused-param noise
+   pre-existing on base); runner **29/29 suites PASSED 0 FAIL lines, run twice identical**;
+   gate negative-tested END-TO-END: planted pin -> grep-able FAIL: line + TRY-EXPRESSION
+   TESTS FAILED verdict + **runner exit 1 / Failed: 1**; restored -> 29/29. ASan+UBSan+LSan:
+   new suite 22/22 0 findings 0 leaks; try_catch/closures/promise/slices/slice_assign/
+   structs/v0.0.12/js_syntax/object_literals/template_literals/itertools_lazy/memory_truth/
+   uaf_regression all clean; REPL session under ASan clean. Not verified: CI on the PR.
+   PR #38: (URL pending — created below)
+
  - **2026-11-05**: (1) sync: fetch clean, PRs #19-#36 all still open, none merged; cut
    nightshift/20261105-repl-uaf from closures head e6f511e (freshest green, PR #36). (2) fix(core):
    **BACKLOG 12 CLOSED — REPL session lifetime**. Was (re-verified on base in a worktree, rc 139
