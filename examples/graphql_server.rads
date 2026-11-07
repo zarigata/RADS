@@ -1,62 +1,15 @@
-// GraphQL Server Example - RADS v0.0.6
-// Demonstrates GraphQL queries and mutations with JSON responses
+// GraphQL parse example — real API (nightshift 20261101)
+// The old version called graphql_schema()/graphql_add_type() and friends —
+// natives that NEVER existed; before honest-failure they were silent no-ops.
+// This one uses the real graphql.parse surface.
 
 blast main() {
-    echo("🚀 RADS GraphQL Server v0.0.6");
-    echo("Starting on http://localhost:4000/graphql");
-    echo("Press Ctrl+C to stop\n");
-
-    // Create GraphQL schema
-    turbo schema = graphql_schema();
-
-    // Define User type
-    turbo user_fields = [
-        { "name": "id", "value": graphql_value_string("") },
-        { "name": "name", "value": graphql_value_string("") }
-    ];
-    graphql_add_type(schema, "User", user_fields, 2);
-
-    // Define Query type with fields
-    turbo query_fields = [
-        { "name": "user", "args": null, "value": graphql_value_string("") }
-    ];
-    graphql_add_query(schema, "user", get_user);
-
-    // Define Mutation type with fields
-    turbo mutation_fields = [
-        { "name": "createUser", "args": null, "value": graphql_value_string("") }
-    ];
-    graphql_add_mutation(schema, "createUser", create_user);
-
-    // Create GraphQL server
-    turbo server = graphql_server(4000, schema);
-
-    // Start listening
-    graphql_listen(server);
+    let query = `{ "query": "{ user(id: 1) { name email } }" }`
+    let parsed = graphql.parse(query)
+    echo("parsed query type: " + type(parsed))
+    let ok = `{"query":"{ user(id: 1) { name email } }"}`
+    let p2 = graphql.parse(ok)
+    echo("graphql.parse works: " + (p2 != null))
+    return 0
 }
-
-// Resolver for user query
-blast get_user(args) {
-    echo("🔍 Query: user(id=" + args.id + ")");
-
-    // Return sample user data
-    turbo user = graphql_value_object([
-        { "name": "id", "value": graphql_value_string("1") },
-        { "name": "name", "value": graphql_value_string("Alice") }
-    ], 2);
-
-    return user;
-}
-
-// Resolver for createUser mutation
-blast create_user(args) {
-    echo("✨ Mutation: createUser(name=" + args.name + ")");
-
-    // Return success response
-    turbo result = graphql_value_object([
-        { "name": "success", "value": graphql_value_bool(true) },
-        { "name": "message", "value": graphql_value_string("User created!") }
-    ], 2);
-
-    return result;
-}
+main()

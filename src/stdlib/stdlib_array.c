@@ -459,7 +459,7 @@ Value stdlib_array_push_val(struct Interpreter* interp, int argc, Value* args) {
     (void)interp;
     if (argc < 2 || args[0].type != VAL_ARRAY) return make_null();
     array_push(args[0].array_val, args[1]);
-    return args[0];
+    return value_retain(args[0]);
 }
 
 /* array.pop(arr) → removed value (mutating) */
@@ -468,7 +468,7 @@ Value stdlib_array_pop(struct Interpreter* interp, int argc, Value* args) {
     if (argc < 1 || args[0].type != VAL_ARRAY) return make_null();
     Array* arr = args[0].array_val;
     if (arr->count == 0) return make_null();
-    Value v = arr->items[arr->count - 1];
+    Value v = arr->items[arr->count - 1]; /* MOVE: slot hidden by count--, payload now solely owned by the return */
     arr->count--;
     return v;
 }
@@ -479,7 +479,7 @@ Value stdlib_array_shift(struct Interpreter* interp, int argc, Value* args) {
     if (argc < 1 || args[0].type != VAL_ARRAY) return make_null();
     Array* arr = args[0].array_val;
     if (arr->count == 0) return make_null();
-    Value v = arr->items[0];
+    Value v = arr->items[0]; /* MOVE: slot overwritten by memmove, payload solely owned by the return */
     memmove(arr->items, arr->items + 1, (arr->count - 1) * sizeof(Value));
     arr->count--;
     return v;
