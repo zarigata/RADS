@@ -38,5 +38,28 @@ blast main() {
     echo("  " + nostalgia.the_game());
     echo("  " + nostalgia.barrel_roll());
     echo("");
+    echo("");
+    echo("[The Connection Age]");
+    echo("  " + nostalgia.dial_up(0));
+    echo("  " + nostalgia.dial_up(1));
+    echo("  " + nostalgia.dial_up(2));
+    echo("  " + nostalgia.winamp());
+    echo("  " + nostalgia.limewire());
+    echo("  " + nostalgia.geocities(0));
+    echo("  " + nostalgia.geocities(1));
+    echo("  " + nostalgia.geocities(4));
+    echo("");
+    echo("[The Video Viral Age]");
+    echo("  " + nostalgia.dancing_baby());
+    echo("  " + nostalgia.numa_numa());
+    echo("  " + nostalgia.chocolate_rain());
+    echo("");
+    echo("[Forum Law]");
+    echo("  " + nostalgia.myspace_top8(1));
+    echo("  " + nostalgia.myspace_top8(8));
+    echo("  " + nostalgia.myspace_top8(99));
+    echo("  " + nostalgia.chuck_norris(0));
+    echo("  " + nostalgia.chuck_norris(2));
+    echo("  " + nostalgia.chuck_norris(3));
     echo("=== the dial-up drops. the memories remain. ===");
 }

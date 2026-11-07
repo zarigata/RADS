@@ -95,4 +95,85 @@ blast main() {
     else { echo("FAIL: banana stopped dancing"); }
 
     echo("Nostalgia Museum: all exhibits open.");
+
+    // ── NEW WING (2026-11-07): The Connection Age ──
+    // dial_up: 3 stages, deterministic, wraps like away_message
+    if (nostalgia.dial_up(0) != nostalgia.dial_up(2)) { echo("PASS: dial_up stages differ"); }
+    else { echo("FAIL: dial_up stages collapsed"); }
+    if (nostalgia.dial_up(3) == nostalgia.dial_up(0)) { echo("PASS: dial_up wraps mod 3"); }
+    else { echo("FAIL: dial_up wrap broken"); }
+    if (str.contains(nostalgia.dial_up(1), "56k")) { echo("PASS: dial_up handshake says 56k"); }
+    else { echo("FAIL: handshake silent"); }
+    if (str.contains(nostalgia.dial_up(2), "CONNECTED")) { echo("PASS: dial_up connects at 56,000 bps"); }
+    else { echo("FAIL: never connected"); }
+    if (nostalgia.dial_up(-1) == nostalgia.dial_up(0)) { echo("PASS: dial_up negative folds to 0"); }
+    else { echo("FAIL: negative dial traveled back in time"); }
+
+    // winamp: the llama, whipped
+    if (str.contains(nostalgia.winamp(), "llama")) { echo("PASS: winamp whips the llama"); }
+    else { echo("FAIL: llama unwhipped"); }
+
+    // limewire: it was never the song
+    if (str.contains(nostalgia.limewire(), ".exe")) { echo("PASS: limewire file is an exe"); }
+    else { echo("FAIL: the file was the song (impossible)"); }
+    if (str.contains(nostalgia.limewire(), "LimeWire")) { echo("PASS: limewire plaque named"); }
+    else { echo("FAIL: plaque unnamed"); }
+
+    // geocities: 5 lines, wrap, the sacred laws
+    if (nostalgia.geocities(0) != nostalgia.geocities(4)) { echo("PASS: geocities lines differ"); }
+    else { echo("FAIL: geocities collapsed"); }
+    if (nostalgia.geocities(5) == nostalgia.geocities(0)) { echo("PASS: geocities wraps mod 5"); }
+    else { echo("FAIL: geocities wrap broken"); }
+    if (str.contains(nostalgia.geocities(1), "guestbook")) { echo("PASS: geocities demands guestbook signatures"); }
+    else { echo("FAIL: guestbook removed"); }
+    if (str.contains(nostalgia.geocities(2), "800x600")) { echo("PASS: best viewed in 800x600"); }
+    else { echo("FAIL: viewport law broken"); }
+    if (str.contains(nostalgia.geocities(4), "MIDI")) { echo("PASS: the MIDI has no mute"); }
+    else { echo("FAIL: someone found the mute"); }
+
+    // ── NEW WING: The Video Viral Age ──
+    // dancing baby: the root of all exhibits
+    if (str.contains(nostalgia.dancing_baby(), "1996")) { echo("PASS: dancing baby is prehistoric (1996)"); }
+    else { echo("FAIL: baby's birth year lost"); }
+    if (str.contains(nostalgia.dancing_baby(), "cha-cha-cha")) { echo("PASS: baby still cha-cha-cha-ing"); }
+    else { echo("FAIL: baby stopped dancing"); }
+
+    // numa numa: pure happiness
+    if (str.contains(nostalgia.numa_numa(), "NUMA NUMA")) { echo("PASS: numa numa ye"); }
+    else { echo("FAIL: the joy didn't transmit"); }
+    if (str.contains(nostalgia.numa_numa(), "2004")) { echo("PASS: numa numa plaque dated 2004"); }
+    else { echo("FAIL: plaque undated"); }
+
+    // chocolate rain: move away from the microphone
+    if (str.contains(nostalgia.chocolate_rain(), "microphone")) { echo("PASS: he moves away from the microphone"); }
+    else { echo("FAIL: he breathed into the mic"); }
+    if (str.contains(nostalgia.chocolate_rain(), "Chocolate Rain")) { echo("PASS: the bass arrives"); }
+    else { echo("FAIL: drought"); }
+
+    // ── NEW WING: Forum Law ──
+    // myspace top 8: all four tiers + the unranked masses
+    if (str.contains(nostalgia.myspace_top8(1), "#1")) { echo("PASS: top8 #1 is sacred"); }
+    else { echo("FAIL: top spot desecrated"); }
+    if (str.contains(nostalgia.myspace_top8(3), "#2-3")) { echo("PASS: top8 inner circle tier"); }
+    else { echo("FAIL: inner circle missing"); }
+    if (str.contains(nostalgia.myspace_top8(5), "#4-6")) { echo("PASS: top8 mid-table tier"); }
+    else { echo("FAIL: mid-table vanished"); }
+    if (str.contains(nostalgia.myspace_top8(8), "demotion")) { echo("PASS: top8 demotion zone stings"); }
+    else { echo("FAIL: no drama in slots 7-8"); }
+    if (str.contains(nostalgia.myspace_top8(99), "unranked")) { echo("PASS: the unranked masses"); }
+    else { echo("FAIL: everyone made the list"); }
+
+    // chuck norris facts: 5 entries, wraps, compiler subset
+    if (nostalgia.chuck_norris(0) != nostalgia.chuck_norris(1)) { echo("PASS: chuck facts differ"); }
+    else { echo("FAIL: facts collapsed"); }
+    if (nostalgia.chuck_norris(5) == nostalgia.chuck_norris(0)) { echo("PASS: chuck facts wrap mod 5"); }
+    else { echo("FAIL: facts wrap broken"); }
+    if (str.contains(nostalgia.chuck_norris(3), "unit test")) { echo("PASS: code proves itself out of respect"); }
+    else { echo("FAIL: chuck unit tests like a mortal"); }
+    if (str.contains(nostalgia.chuck_norris(4), "divide by zero")) { echo("PASS: chuck divides by zero"); }
+    else { echo("FAIL: math won"); }
+    if (str.contains(nostalgia.chuck_norris(2), "runtime apologizes")) { echo("PASS: the runtime apologizes to chuck"); }
+    else { echo("FAIL: runtime threw at chuck unapologetically"); }
+
+    echo("Nostalgia Museum: new wing open.");
 }
